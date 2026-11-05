@@ -34,8 +34,8 @@ body{
 .bar{height:6px;background:rgba(247,238,221,.14);overflow:hidden}
 .bar i{display:block;height:100%;width:0;background:var(--sky)}
 #hud{position:fixed;inset:0;pointer-events:none}
-#vitals{position:fixed;left:max(16px,env(safe-area-inset-left,0px));top:calc(12px + env(safe-area-inset-top,0px));width:204px;padding:10px 12px;display:grid;gap:8px;border-radius:3px}
-#vitals .row{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+#vitals{position:fixed;left:max(16px,env(safe-area-inset-left,0px));top:calc(12px + env(safe-area-inset-top,0px));width:220px;padding:10px 12px;display:grid;gap:8px;border-radius:3px}
+#vitals .row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;white-space:nowrap}
 #manaNum{font:500 22px/1 var(--font-mono);font-variant-numeric:tabular-nums;color:var(--gold)}
 #manaCap{color:var(--mute);font-variant-numeric:tabular-nums}
 #manaNum.full,#manaCap.full{color:#ff9f43;animation:manaFull 1.6s ease-in-out infinite}

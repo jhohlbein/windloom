@@ -71,6 +71,16 @@ export const mats = {
 // Solid orange core for fireballs, drawn with normal blending: additive glow alone turns white over the bright,
 // blue water (orange + blue light = white); the core keeps the fireball orange over any background
 export const fireCoreMat = new THREE.SpriteMaterial({ map: glowTex, color: 0xff9a1c, transparent: true, depthWrite: false });
+// Projectiles are a solid core plus a soft halo, both drawn with normal blending in the glow material's colour
+// (one material per colour). Additive glows add up to white over the bright sea and sky; these do not.
+const coreMats = new Map(), haloMats = new Map();
+function projMat(cache, glow, opacity) {
+  const hex = glow.color.getHex();
+  if (!cache.has(hex)) cache.set(hex, new THREE.SpriteMaterial({ map: glowTex, color: hex, transparent: true, opacity, depthWrite: false }));
+  return cache.get(hex);
+}
+export const coreMatFor = glow => projMat(coreMats, glow, 1);
+export const haloMatFor = glow => projMat(haloMats, glow, 0.45);
 export function shared(g) { g.userData.shared = true; return g; }
 export const geo = {
   sph: shared(new THREE.SphereGeometry(1, 12, 9)),

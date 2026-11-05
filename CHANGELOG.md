@@ -4,6 +4,12 @@ All notable changes to Windloom are recorded here. The format follows [Keep a Ch
 
 ## [Unreleased]
 
+## [0.2.6] - 2026-11-05
+
+### Fixed
+- The mana counter at the top left could break onto two lines ("/ 200 full"); it now always stays on one line in a slightly wider box.
+- Enemy projectiles (wyvern and drake bolts, kraken ink, sandworm acid, the dragon's fire and boulders, arrows) washed out to white over the sea and sky, like the fireballs did. They now have a solid core and a soft, non-additive halo in their own colour (fireballs too).
+
 ## [0.2.5] - 2026-11-05
 
 ### Added

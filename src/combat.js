@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { CFG } from './config.js';
 import { G } from './state.js';
-import { scene, addSprite, mats, fireCoreMat } from './scene.js';
+import { scene, addSprite, mats, fireCoreMat, coreMatFor, haloMatFor } from './scene.js';
 import { TAU, clamp, lerp } from './util.js';
 import { terrainH, groundH } from './terrain.js';
 import { emit, burst, C } from './particles.js';
@@ -58,7 +58,9 @@ export function updateOrbs(dt) {
 
 /* ---------- enemy projectiles ---------- */
 export function addBolt(mat, size, pos, vel, dmg, grav, col, life) {
-  const g = addSprite(mat, size); g.position.copy(pos); scene.add(g);
+  const g = addSprite(haloMatFor(mat), size); g.position.copy(pos); scene.add(g);
+  // solid core in the projectile's colour, so it does not wash out to white over the bright sea or sky
+  const core = new THREE.Sprite(coreMatFor(mat)); core.scale.setScalar(0.55); core.renderOrder = 1; g.add(core);
   G.bolts.push({ g, pos: g.position, vel: vel.clone(), life: life || 4.5, dmg, grav: grav || 0, col, sz: size * 0.38, hitR: size > 10 ? 5.5 : size > 6 ? 4.4 : 3.6 });
 }
 // Ballistic lob that lands near where the player will be
@@ -151,7 +153,7 @@ export function castFire() {
   G.spellMana -= fb.manaCost; makeNoise();
   G.fireCd = Math.max(G.fireCd, -0.05) + fb.cooldownSeconds; // keep the overshoot so the rate does not depend on frame rate
   const dir = aimDir();
-  const g = addSprite(mats.fire, 5.5); g.position.copy(G.playerPos).addScaledVector(G.fwd, 3.2); g.position.y -= 0.3; scene.add(g);
+  const g = addSprite(haloMatFor(mats.fire), 5.5); g.position.copy(G.playerPos).addScaledVector(G.fwd, 3.2); g.position.y -= 0.3; scene.add(g);
   const core = new THREE.Sprite(fireCoreMat); core.scale.setScalar(0.6); core.renderOrder = 1; g.add(core); // scale is relative to the halo
   G.shots.push({ g, pos: g.position, vel: dir.multiplyScalar(fb.speed).add(G.playerVel.clone().multiplyScalar(0.3)), life: fb.lifetimeSeconds, dmg: fb.damage + fb.damagePerStage * (G.level - 1) });
   sfx('fire');

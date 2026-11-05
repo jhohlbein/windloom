@@ -56,7 +56,7 @@ export function updateHud() {
   elSp.classList.toggle('out', G.spellExhausted);
   setText(elSpLbl, 'sl', G.spellExhausted ? 'Spell mana · recovering' : 'Spell mana');
   setText(elMana, 'm', String(Math.floor(G.carried)));
-  setText(elCap, 'c', G.carried >= carryCap() ? '/ ' + carryCap() + ' full' : '/ ' + carryCap());
+  setText(elCap, 'c', '/ ' + carryCap()); // a full carry is shown by the orange pulse, not extra text (keeps the row on one line)
   const full = G.carried >= carryCap();
   elMana.classList.toggle('full', full); elCap.classList.toggle('full', full);
   setText(elStage, 's', stageLabel(G.level));

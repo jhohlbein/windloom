@@ -6,7 +6,7 @@ A browser flying game in the spirit of Bullfrog's *Magic Carpet* (1994). Ride a 
 
 Every game generates a new island. The page address ends with the island's seed (`#s123456789`); open that link to replay the same island.
 
-Version 0.2.5. See [CHANGELOG.md](CHANGELOG.md).
+Version 0.2.6. See [CHANGELOG.md](CHANGELOG.md).
 
 ## Controls
 
