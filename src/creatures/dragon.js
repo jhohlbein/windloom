@@ -117,6 +117,9 @@ function updateDragon(e, dt) {
   // the palace beam is a ward the dragon will not cross
   const wx = target.x - W.CX, wz = target.z - W.CZ, wd = Math.hypot(wx, wz) || 1;
   if (wd < ward + 30) { target.x = W.CX + wx / wd * (ward + 30); target.z = W.CZ + wz / wd * (ward + 30); }
+  // stay inside the sandstorm boundary, so the hoard always falls where the player can reach it
+  const B = CFG.world.boundRadius - 30, td = Math.hypot(target.x, target.z);
+  if (td > B) { target.x *= B / td; target.z *= B / td; }
   const minY = groundH(target.x, target.z) + 30; if (target.y < minY) target.y = minY;
   const dir = e._d.copy(target).sub(e.pos); dir.multiplyScalar(1 / (dir.length() || 1));
   const cur = e.vel.length() || 1;
@@ -129,6 +132,8 @@ function updateDragon(e, dt) {
   if (e.pos.y > 380) e.pos.y = 380;
   const px = e.pos.x - W.CX, pz = e.pos.z - W.CZ, pd = Math.hypot(px, pz) || 1;
   if (pd < ward) { e.pos.x = W.CX + px / pd * ward; e.pos.z = W.CZ + pz / pd * ward; }
+  const ed = Math.hypot(e.pos.x, e.pos.z), EB = CFG.world.boundRadius - 10;
+  if (ed > EB) { e.pos.x *= EB / ed; e.pos.z *= EB / ed; }
   const yawT = Math.atan2(-e.vel.x, -e.vel.z), dy = wrapA(yawT - e.lastYaw); e.lastYaw = yawT;
   const yawRate = dt > 0 ? dy / dt : 0;
   e.bank = lerp(e.bank, clamp(yawRate * 1.4, -0.75, 0.75), Math.min(1, dt * 2));

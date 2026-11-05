@@ -20,11 +20,32 @@ const leafGeo = shared((() => {
 const trunkMat = new THREE.MeshStandardMaterial({ color: 0x8a6a45, roughness: 1, flatShading: true });
 const leafMat = new THREE.MeshStandardMaterial({ roughness: 0.9, side: THREE.DoubleSide, flatShading: true });
 const rockGeo = shared(new THREE.DodecahedronGeometry(1, 0));
-const rockMat = new THREE.MeshStandardMaterial({ color: 0xb5714a, roughness: 1, flatShading: true });
+const rockMat = new THREE.MeshStandardMaterial({ color: 0x9c8472, roughness: 1, flatShading: true });
 const obsMat = new THREE.MeshStandardMaterial({ color: 0x1d1626, roughness: 0.5, metalness: 0.2, flatShading: true });
 
 function clearWorldGroup() {
   while (worldGroup.children.length) { const c = worldGroup.children[0]; worldGroup.remove(c); disposeTree(c); }
+}
+
+/* ---------- top-down map for the radar ---------- */
+// One pixel per SIZE/N metres over the whole terrain square; the same colours as the terrain, lightly
+// hill-shaded, and the sea in blue (shallows lighter). Stored on W.map; hud.js draws it under the radar.
+const MAP_N = 256, mapCanvas = document.createElement('canvas'); mapCanvas.width = mapCanvas.height = MAP_N;
+W.map = mapCanvas;
+function buildMap(colorAt) {
+  const g = mapCanvas.getContext('2d'), img = g.createImageData(MAP_N, MAP_N), step = SIZE / MAP_N;
+  const deep = new THREE.Color(0x1b4c78), shallow = new THREE.Color(0x3c8fb4), c = new THREE.Color();
+  for (let j = 0; j < MAP_N; j++) for (let i = 0; i < MAP_N; i++) {
+    const x = -SIZE / 2 + (i + 0.5) * step, z = -SIZE / 2 + (j + 0.5) * step, h = terrainH(x, z);
+    if (h < 0) c.copy(shallow).lerp(deep, clamp(-h / 14, 0, 1));
+    else {
+      const hx = terrainH(x + step, z), hz = terrainH(x, z + step), slope = (Math.abs(hx - h) + Math.abs(hz - h)) / step;
+      c.copy(colorAt(h, slope, x, z)).multiplyScalar(clamp(1 + (h - hx + h - hz) * 0.08, 0.7, 1.3)); // light from the north-west
+    }
+    const k = (j * MAP_N + i) * 4;
+    img.data[k] = c.r * 255; img.data[k + 1] = c.g * 255; img.data[k + 2] = c.b * 255; img.data[k + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
 }
 
 /* ---------- per-island landscape settings ---------- */
@@ -112,8 +133,8 @@ export function buildWorld(seed) {
   castle.position.set(W.CX, W.PH, W.CZ);
 
   // terrain mesh with vertex colours
-  const cSand = new THREE.Color(0xf3d39a), cSand2 = new THREE.Color(0xe0b574), cWet = new THREE.Color(0xb48e60), cRock = new THREE.Color(0xb8663f), cRock2 = new THREE.Color(0x854531),
-    cTop = new THREE.Color(0xdcae7c), cGrass = new THREE.Color(0x7d9a46), cScrub = new THREE.Color(0x9aa457), cBed = new THREE.Color(0x1e6d78), cAsh = new THREE.Color(0x3a3040);
+  const cSand = new THREE.Color(0xf3d39a), cSand2 = new THREE.Color(0xe0b574), cWet = new THREE.Color(0xb48e60), cRock = new THREE.Color(0x9a7d68), cRock2 = new THREE.Color(0x66554a), // muted taupe rock: contrast to fireballs
+    cTop = new THREE.Color(0xd4b896), cGrass = new THREE.Color(0x7d9a46), cScrub = new THREE.Color(0x9aa457), cBed = new THREE.Color(0x1e6d78), cAsh = new THREE.Color(0x3a3040);
   const out = new THREE.Color();
   function colorAt(h, slope, x, z) {
     if (h < -0.8) out.copy(cBed);
@@ -142,7 +163,9 @@ export function buildWorld(seed) {
   }
   tg.setAttribute('color', new THREE.BufferAttribute(tc, 3));
   tg.computeVertexNormals();
-  worldGroup.add(new THREE.Mesh(tg, terrainMat));
+  const terrainMesh = new THREE.Mesh(tg, terrainMat); terrainMesh.castShadow = terrainMesh.receiveShadow = true; worldGroup.add(terrainMesh);
+
+  buildMap(colorAt);
 
   // palms: around oases, in the palace garden and along the shore
   const palms = [];
@@ -176,7 +199,7 @@ export function buildWorld(seed) {
     }
   });
   trunks.instanceMatrix.needsUpdate = true; leaves.instanceMatrix.needsUpdate = true; if (leaves.instanceColor) leaves.instanceColor.needsUpdate = true;
-  worldGroup.add(trunks); worldGroup.add(leaves);
+  trunks.castShadow = leaves.castShadow = true; worldGroup.add(trunks); worldGroup.add(leaves);
 
   // sandstone boulders
   const rocks = new THREE.InstancedMesh(rockGeo, rockMat, W.P.rockCount); let ri = 0;
@@ -188,13 +211,13 @@ export function buildWorld(seed) {
     sc.set(rsc * (0.8 + rnd() * 0.6), rsc * (0.5 + rnd() * 0.5), rsc * (0.8 + rnd() * 0.6));
     m4.compose(ps, q4, sc); rocks.setMatrixAt(ri++, m4);
   }
-  rocks.count = ri; rocks.instanceMatrix.needsUpdate = true; worldGroup.add(rocks);
+  rocks.count = ri; rocks.instanceMatrix.needsUpdate = true; rocks.castShadow = rocks.receiveShadow = true; worldGroup.add(rocks);
 
   // dragon lair: obsidian spires and a smouldering glow
   for (let i = 0; i < 11; i++) {
     const la = i / 11 * TAU + rnd() * 0.4, lr = 12 + rnd() * 22, ox = W.LX + Math.cos(la) * lr, oz = W.LZ + Math.sin(la) * lr, oh = terrainH(ox, oz), os = 3 + rnd() * 5;
     const spire = new THREE.Mesh(new THREE.ConeGeometry(os * 0.45, os * 3.4, 5), obsMat);
-    spire.position.set(ox, oh + os * 1.3, oz); spire.rotation.set((rnd() - 0.5) * 0.5, rnd() * TAU, (rnd() - 0.5) * 0.5); worldGroup.add(spire);
+    spire.position.set(ox, oh + os * 1.3, oz); spire.rotation.set((rnd() - 0.5) * 0.5, rnd() * TAU, (rnd() - 0.5) * 0.5); spire.castShadow = true; worldGroup.add(spire);
   }
   // a dark red, flickering glow low on the summit (the fire itself is particles, see updateLair)
   lairGlow = addSprite(lairGlowMat, 34); lairGlow.position.set(W.LX, W.LH + 4, W.LZ); worldGroup.add(lairGlow);

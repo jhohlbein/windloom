@@ -1,8 +1,9 @@
 // Game flow: title / play / pause / results screens, new islands, and the main loop.
+import * as THREE from 'three';
 import { CFG } from './config.js';
 import { VERSION } from './version.js';
 import { G, W } from './state.js';
-import { renderer, scene, camera, updateSky, resizeRenderer, setDaylight } from './scene.js';
+import { renderer, scene, camera, updateSky, resizeRenderer, setDaylight, setShadows, updateShadows } from './scene.js';
 import { R } from './util.js';
 import { isleName } from './terrain.js';
 import { buildWorld, updateLair, islandTraits } from './world.js';
@@ -123,6 +124,9 @@ for (const r of document.querySelectorAll('input[name="rider"]')) {
   r.addEventListener('change', () => { if (r.checked) { saveSetting('rider', r.value); setRider(r.value); } });
 }
 setRider(settings.rider);
+const shadowBox = $('optShadows');
+shadowBox.checked = settings.shadows; setShadows(settings.shadows);
+shadowBox.addEventListener('change', () => { saveSetting('shadows', shadowBox.checked); setShadows(shadowBox.checked); });
 const fsBtn = $('fullscreen');
 fsBtn.addEventListener('click', () => { toggleFullscreen(); });
 const fsLabel = () => { fsBtn.textContent = isFullscreen() ? 'Leave full screen' : 'Full screen'; };
@@ -136,6 +140,7 @@ function resize() {
 window.addEventListener('resize', resize); resize();
 
 let last = performance.now(), hudTimer = 0;
+const shadowTitle = new THREE.Vector3();
 // FPS counter: frames counted over half a second, plus the slowest frame in that window
 const elFps = $('fps');
 let fpsFrames = 0, fpsStart = last, fpsWorst = 0;
@@ -174,6 +179,7 @@ function frame(now) {
   updateSky(dt);
   setDaylight(G.mode === 'title' ? CFG.sky.titlePhase
     : G.timed ? 1 - G.timeLeft / CFG.round.durationSeconds : G.playTime / (CFG.sky.freeFlightDayMinutes * 60), dt);
+  updateShadows(G.mode === 'title' ? shadowTitle.set(W.CX, W.PH, W.CZ) : G.playerPos);
   updateToast(dt);
   updateAudio(dt);
   hudTimer -= dt;

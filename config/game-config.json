@@ -33,6 +33,10 @@
       "palmMax": { "spread": 0.3 }
     }
   },
+  "graphics": {
+    "shadowMapSize": 2048,
+    "shadowRange": 220
+  },
   "controls": {
     "pointerLock": true,
     "lockedSensitivity": 1
@@ -115,6 +119,7 @@
     "stageNames": ["Minaret", "Palace", "Garden Walls", "Golden Dome", "Lantern Ring", "Crescent Sanctum"],
     "stageThresholds": [0, 50, 130, 250, 420, 650],
     "depositPerSecond": 28,
+    "depositPerSecondPerStage": 12,
     "depositRadius": 30,
     "healPerSecond": 10,
     "stageUpHealBonus": 20,

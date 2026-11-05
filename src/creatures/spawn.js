@@ -4,6 +4,7 @@ import { CFG, targetFor } from '../config.js';
 import { G, W } from '../state.js';
 import { TAU } from '../util.js';
 import { terrainH, groundH } from '../terrain.js';
+import { castShadows } from '../scene.js';
 import { applyFlash, countKind, removeEnemyObj } from './common.js';
 import { createFlyer } from './flyers.js';
 import { createKraken } from './kraken.js';
@@ -12,6 +13,8 @@ import { createDragon } from './dragon.js';
 import { createSkeleton, createSkeletonGroup } from './skeleton.js';
 import { spawnOrb } from '../combat.js';
 
+// Every creature casts a shadow
+function addEnemy(e) { castShadows(e.root); G.enemies.push(e); return e; }
 const far = (x, z, d) => !G.active || Math.hypot(x - G.playerPos.x, z - G.playerPos.z) >= d;
 
 export function spawnFlyer() {
@@ -21,7 +24,7 @@ export function spawnFlyer() {
   for (let t = 0; t < 30; t++) {
     const a = Math.random() * TAU, r = 110 + Math.random() * 320, x = Math.cos(a) * r, z = Math.sin(a) * r;
     if (Math.hypot(x - W.CX, z - W.CZ) < 110 || !far(x, z, 160)) continue;
-    G.enemies.push(createFlyer(kind, new THREE.Vector3(x, groundH(x, z) + 30 + Math.random() * 30, z))); return;
+    addEnemy(createFlyer(kind, new THREE.Vector3(x, groundH(x, z) + 30 + Math.random() * 30, z))); return;
   }
 }
 export function spawnKraken() {
@@ -29,7 +32,7 @@ export function spawnKraken() {
   for (let t = 0; t < 80; t++) {
     const a = Math.random() * TAU, r = 300 + Math.random() * (B - 310), x = Math.cos(a) * r, z = Math.sin(a) * r;
     if (terrainH(x, z) > -7 || !far(x, z, 150)) continue;
-    G.enemies.push(createKraken(new THREE.Vector3(x, 0, z))); return;
+    addEnemy(createKraken(new THREE.Vector3(x, 0, z))); return;
   }
 }
 export function spawnWorm() {
@@ -38,7 +41,7 @@ export function spawnWorm() {
     if (h < 5 || h > 38) continue;
     if ((Math.abs(terrainH(x + 10, z) - h) + Math.abs(terrainH(x, z + 10) - h)) / 10 > 0.6) continue;
     if (Math.hypot(x - W.CX, z - W.CZ) < 100 || Math.hypot(x - W.LX, z - W.LZ) < 60 || !far(x, z, 140)) continue;
-    G.enemies.push(createWorm(new THREE.Vector3(x, h, z))); return;
+    addEnemy(createWorm(new THREE.Vector3(x, h, z))); return;
   }
 }
 // Skeleton archers: a group of groupSizeMin..groupSizeMax on open, gentle land away from the palace (outside its
@@ -56,13 +59,13 @@ export function spawnSkeletonGroup() {
     const n = S.groupSizeMin + Math.floor(Math.random() * (S.groupSizeMax - S.groupSizeMin + 1));
     for (let i = 0; i < n; i++) {
       const oa = i / n * TAU + Math.random() * 0.5, od = 2.5 + Math.random() * 3.5, px = x + Math.cos(oa) * od, pz = z + Math.sin(oa) * od;
-      G.enemies.push(createSkeleton(new THREE.Vector3(px, groundH(px, pz), pz), group));
+      addEnemy(createSkeleton(new THREE.Vector3(px, groundH(px, pz), pz), group));
     }
     return;
   }
 }
 // There is only ever one Vharoth
-export function spawnDragon() { if (G.dragon || countKind('dragon')) return; G.dragon = createDragon(); G.enemies.push(G.dragon); }
+export function spawnDragon() { if (G.dragon || countKind('dragon')) return; G.dragon = addEnemy(createDragon()); }
 
 // A creature group (spawning.krakens, sandworms, drakes, dragon) is active from its fromStage on
 export const unlocked = (rule, stage = G.level) => stage >= (rule.fromStage || 1);

@@ -38,7 +38,9 @@ body{
 #vitals .row{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 #manaNum{font:500 22px/1 var(--font-mono);font-variant-numeric:tabular-nums;color:var(--gold)}
 #manaCap{color:var(--mute);font-variant-numeric:tabular-nums}
-#manaNum.full{color:#ff9f43}
+#manaNum.full,#manaCap.full{color:#ff9f43;animation:manaFull 1.6s ease-in-out infinite}
+@keyframes manaFull{0%,100%{opacity:1}50%{opacity:.3}}
+@media (prefers-reduced-motion:reduce){#manaNum.full,#manaCap.full{animation:none}}
 #radarWrap{position:fixed;right:max(16px,env(safe-area-inset-right,0px));top:calc(12px + env(safe-area-inset-top,0px));width:112px;height:112px}
 #radar{width:112px;height:112px;display:block}
 #fps{position:fixed;right:max(16px,env(safe-area-inset-right,0px));top:calc(130px + env(safe-area-inset-top,0px));white-space:nowrap;text-align:right;font:600 11px/1.2 ui-monospace,Menlo,monospace;color:var(--paper);opacity:.7;text-shadow:0 1px 4px rgba(20,15,34,.9)}

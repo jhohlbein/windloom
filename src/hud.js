@@ -5,6 +5,7 @@ import { G, W } from './state.js';
 import { camera } from './scene.js';
 import { clamp, smooth, TAU } from './util.js';
 import { carryCap } from './progress.js';
+import { SIZE } from './terrain.js';
 import { formatClock } from './round.js';
 
 const $ = id => document.getElementById(id);
@@ -56,7 +57,8 @@ export function updateHud() {
   setText(elSpLbl, 'sl', G.spellExhausted ? 'Spell mana · recovering' : 'Spell mana');
   setText(elMana, 'm', String(Math.floor(G.carried)));
   setText(elCap, 'c', G.carried >= carryCap() ? '/ ' + carryCap() + ' full' : '/ ' + carryCap());
-  elMana.classList.toggle('full', G.carried >= carryCap());
+  const full = G.carried >= carryCap();
+  elMana.classList.toggle('full', full); elCap.classList.toggle('full', full);
   setText(elStage, 's', stageLabel(G.level));
   const T = CFG.palace.stageThresholds, last = T.length;
   const lo = T[G.level - 1], hi = G.level < last ? T[G.level] : T[last - 1];
@@ -73,11 +75,20 @@ export function drawRadar() {
   const Wd = 224, c = 112, range = 320, k = (c - 8) / range, P = G.playerPos;
   rctx.clearRect(0, 0, Wd, Wd); rctx.save();
   rctx.beginPath(); rctx.arc(c, c, c - 2, 0, TAU); rctx.clip();
-  rctx.fillStyle = 'rgba(20,15,34,.66)'; rctx.fillRect(0, 0, Wd, Wd);
+  rctx.fillStyle = '#1b4c78'; rctx.fillRect(0, 0, Wd, Wd); // open sea beyond the map
+  const fx = -Math.sin(G.yaw), fz = -Math.cos(G.yaw), rx = Math.cos(G.yaw), rz = -Math.sin(G.yaw);
+  if (W.map) {
+    // bird's-eye map of the island, turned so that the flight direction points up (same mapping as toScreen)
+    const a = k * rx, b = -k * fx, cc = k * rz, d = -k * fz, S = SIZE;
+    rctx.save(); rctx.globalAlpha = 0.85;
+    rctx.setTransform(a, b, cc, d, c - (a * P.x + cc * P.z), c - (b * P.x + d * P.z));
+    rctx.imageSmoothingEnabled = true; rctx.drawImage(W.map, -S / 2, -S / 2, S, S);
+    rctx.restore();
+  }
+  rctx.fillStyle = 'rgba(20,15,34,.25)'; rctx.fillRect(0, 0, Wd, Wd); // darken a little so the dots stand out
   rctx.strokeStyle = 'rgba(247,238,221,.16)'; rctx.lineWidth = 1;
   [36, 72, 104].forEach(r => { rctx.beginPath(); rctx.arc(c, c, r, 0, TAU); rctx.stroke(); });
   rctx.beginPath(); rctx.moveTo(c, 6); rctx.lineTo(c, Wd - 6); rctx.moveTo(6, c); rctx.lineTo(Wd - 6, c); rctx.stroke();
-  const fx = -Math.sin(G.yaw), fz = -Math.cos(G.yaw), rx = Math.cos(G.yaw), rz = -Math.sin(G.yaw);
   function toScreen(x, z, clampEdge) {
     const dx = x - P.x, dz = z - P.z;
     const sx = dx * rx + dz * rz, sy = dx * fx + dz * fz;

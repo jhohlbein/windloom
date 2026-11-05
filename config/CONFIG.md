@@ -52,6 +52,13 @@ For the landscape settings listed here, the value above is the **mean**; each is
 
 Kinds: `{ "spread": s }` = mean × (1 ± s), uniform; `{ "min": a, "max": b }` = uniform in a–b; `{ "dist": "poisson", "min", "max" }` = Poisson around the mean, for counts. `min`/`max` also clamp the other kinds.
 
+## graphics
+
+| Key | Value | Meaning |
+|---|---|---|
+| `shadowMapSize` | 2048 | Resolution of the sun's shadow map (1024 is faster and blurrier, 4096 sharper and slower). |
+| `shadowRange` | 220 | Size in metres of the area around the player in which things cast shadows. Larger covers more but makes shadows blurrier. Shadows can be switched off in Settings. |
+
 ## controls
 
 | Key | Value | Meaning |
@@ -162,7 +169,7 @@ A timed game is a round. The clock keeps running everywhere, including in the pa
 |---|---|---|
 | `stageNames` | Minaret, Palace, Garden Walls, Golden Dome, Lantern Ring, Crescent Sanctum | Names shown on the HUD, one per stage. |
 | `stageThresholds` | 0, 50, 130, 250, 420, 650 | Banked mana needed for each stage (first must be 0). The number of entries is the number of stages; the last one wins the game. |
-| `depositPerSecond` | 28 | How fast carried mana flows into the palace. |
+| `depositPerSecond`, `depositPerSecondPerStage` | 28, 12 | How fast carried mana flows into the palace: 28 per second at stage 1, plus 12 per stage after that (88 at stage 6), so banking a bigger load stays quick. |
 | `depositRadius` | 30 | How close to the palace centre you must be to bank and heal. |
 | `healPerSecond` | 10 | Healing inside the beam. |
 | `stageUpHealBonus` | 20 | Instant healing when the palace rises. |

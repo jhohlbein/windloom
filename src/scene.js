@@ -6,6 +6,7 @@ import { TAU } from './util.js';
 export const canvas = document.getElementById('view');
 export const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 export const scene = new THREE.Scene();
 const FOG = new THREE.Color(0xeeae7c);
 scene.background = FOG;
@@ -16,7 +17,37 @@ export const camera = new THREE.PerspectiveCamera(72, 1, 0.5, 6500);
 const sunDir = new THREE.Vector3(-0.8, 0.30, -0.55).normalize();
 const sun = new THREE.DirectionalLight(0xffd6a0, 1.35);
 sun.position.copy(sunDir).multiplyScalar(500);
-scene.add(sun);
+scene.add(sun); scene.add(sun.target);
+/* ---------- shadows ---------- */
+// The sun casts shadows inside a box of graphics.shadowRange metres that follows the player (a box over the
+// whole island would make them blurry). Switched on and off in Settings.
+{
+  const S = CFG.graphics, sc = sun.shadow.camera, h = S.shadowRange / 2;
+  sun.shadow.mapSize.set(S.shadowMapSize, S.shadowMapSize);
+  sc.left = -h; sc.right = h; sc.top = h; sc.bottom = -h; sc.near = 1; sc.far = 1400; sc.updateProjectionMatrix();
+  sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.6;
+}
+export function setShadows(on) { sun.castShadow = !!on; }
+const shCenter = new THREE.Vector3();
+// Call every frame after setDaylight: centres the shadow box on `center`, snapped to whole shadow-map texels
+// so shadows do not shimmer as the box moves
+export function updateShadows(center) {
+  if (!sun.castShadow) return;
+  const texel = CFG.graphics.shadowRange / CFG.graphics.shadowMapSize;
+  shCenter.set(Math.round(center.x / texel) * texel, Math.round(center.y / texel) * texel, Math.round(center.z / texel) * texel);
+  sun.target.position.copy(shCenter); sun.position.copy(sunDir).multiplyScalar(600).add(shCenter);
+  sun.target.updateMatrixWorld();
+}
+// Marks every solid mesh under root to cast (and optionally receive) shadows; glows, sprites and see-through
+// parts are skipped
+export function castShadows(root, receive = false) {
+  root.traverse(o => {
+    if (!o.isMesh || o.isSprite) return;
+    const m = Array.isArray(o.material) ? o.material[0] : o.material;
+    if (!m || m.transparent || m.isMeshBasicMaterial) return;
+    o.castShadow = true; if (receive) o.receiveShadow = true;
+  });
+}
 const hemi = new THREE.HemisphereLight(0xc8a8e0, 0x8a6a48, 0.95);
 scene.add(hemi);
 
@@ -37,6 +68,9 @@ export const mats = {
   ink: glowMat(0x9b6bff), acid: glowMat(0x9dff4a), ember: glowMat(0xff5a1a), eye: glowMat(0xff3a1a)
 };
 // Geometries flagged as shared are never disposed when a palace stage or island is rebuilt.
+// Solid orange core for fireballs, drawn with normal blending: additive glow alone turns white over the bright,
+// blue water (orange + blue light = white); the core keeps the fireball orange over any background
+export const fireCoreMat = new THREE.SpriteMaterial({ map: glowTex, color: 0xff9a1c, transparent: true, depthWrite: false });
 export function shared(g) { g.userData.shared = true; return g; }
 export const geo = {
   sph: shared(new THREE.SphereGeometry(1, 12, 9)),
@@ -108,7 +142,7 @@ const water = new THREE.Mesh(new THREE.PlaneGeometry(9000, 9000), new THREE.Mesh
   color: 0x135a85, transparent: true, opacity: 0.85, roughness: 0.06, metalness: 0.1,
   envMap: envTarget.texture, envMapIntensity: 0.5, normalMap: waterNormals, normalScale: new THREE.Vector2(0.35, 0.35)
 }));
-water.rotation.x = -Math.PI / 2; scene.add(water);
+water.rotation.x = -Math.PI / 2; water.receiveShadow = true; scene.add(water);
 
 /* ---------- daylight: sunrise over the round ---------- */
 // Colour keyframes at phase 0 (dawn), 0.35 (early morning) and 1 (late morning)

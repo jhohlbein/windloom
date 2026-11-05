@@ -47,7 +47,8 @@ export function updateDeposit(dt) {
   const near = Math.hypot(P.x - W.CX, P.z - W.CZ) < cp.depositRadius && P.y < W.PH + G.castleTopY + 55;
   if (near && G.hp < G.maxHp) G.hp = Math.min(G.maxHp, G.hp + cp.healPerSecond * dt);
   if (near && G.carried > 0) {
-    const amt = Math.min(G.carried, cp.depositPerSecond * dt); G.carried -= amt; G.castleMana += amt;
+    const rate = cp.depositPerSecond + cp.depositPerSecondPerStage * (G.level - 1); // faster with every stage
+    const amt = Math.min(G.carried, rate * dt); G.carried -= amt; G.castleMana += amt;
     tmp2.set(W.CX, W.PH + G.castleTopY, W.CZ);
     for (let i = 0; i < 3; i++) {
       const v = tmp.copy(tmp2).sub(P); const l = v.length() || 1; v.multiplyScalar(45 / l);

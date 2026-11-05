@@ -1,6 +1,6 @@
 // The player's palace: six build stages from a lone minaret to the Crescent Sanctum.
 import * as THREE from 'three';
-import { scene, geo, shared, addSprite, mats, disposeTree } from './scene.js';
+import { scene, geo, shared, addSprite, mats, disposeTree, castShadows } from './scene.js';
 import { G } from './state.js';
 import { TAU } from './util.js';
 
@@ -152,6 +152,7 @@ export function buildCastle(L) {
     cg.position.y = top + 16; castle.add(cg); palace.spin.push({ o: cg, s: 0.25 });
     top += 26;
   }
+  castShadows(castle, true);
   G.castleTopY = top;
   const br = 1 + L * 0.35;
   palace.beam = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.4, 520, 14, 1, true), beamMat);

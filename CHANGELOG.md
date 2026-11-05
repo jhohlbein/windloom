@@ -4,6 +4,22 @@ All notable changes to Windloom are recorded here. The format follows [Keep a Ch
 
 ## [Unreleased]
 
+## [0.2.5] - 2026-11-05
+
+### Added
+- The radar shows a bird's-eye map of the island (land, green areas, rock and sea), turned with your heading.
+- Shadows from the sun for the carpet, creatures, palace, palms, rocks and mountains, in an area around the player (`graphics` section); can be switched off in Settings.
+
+### Changed
+- Removed the glow around the carpet.
+- Rock, mesa tops and boulders are a muted taupe instead of red-orange, so fireballs stand out against the mountains.
+- When your carry is full, the mana counter at the top left pulses slowly (orange) until you bank it.
+- Banking speeds up with each palace stage (`depositPerSecondPerStage`, 28 per second at stage 1 up to 88 at stage 6).
+
+### Fixed
+- Fireballs looked white over the water: their additive glow added up with the bright blue. They now have a solid orange core.
+- Vharoth could fly beyond the sandstorm boundary and drop its hoard where the player could not reach it. It now stays inside, and mana orbs never come to rest outside the boundary.
+
 ## [0.2.4] - 2026-11-05
 
 ### Added

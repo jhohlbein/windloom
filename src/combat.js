@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { CFG } from './config.js';
 import { G } from './state.js';
-import { scene, addSprite, mats } from './scene.js';
+import { scene, addSprite, mats, fireCoreMat } from './scene.js';
 import { TAU, clamp, lerp } from './util.js';
 import { terrainH, groundH } from './terrain.js';
 import { emit, burst, C } from './particles.js';
@@ -37,6 +37,9 @@ export function updateOrbs(dt) {
     if (canTake && d < cm.magnetRadius) {
       const sp = 22 + (cm.magnetRadius - d) * 3.2; o.pos.x += dx / d * sp * dt; o.pos.y += dy / d * sp * dt; o.pos.z += dz / d * sp * dt; o.vel.set(0, 0, 0);
     } else {
+      // orbs never come to rest outside the sandstorm boundary, where the player cannot follow
+      const od = Math.hypot(o.pos.x, o.pos.z), OB = CFG.world.boundRadius - 6;
+      if (od > OB) { o.pos.x *= OB / od; o.pos.z *= OB / od; o.vel.x = o.vel.z = 0; }
       const gy = groundH(o.pos.x, o.pos.z) + 2.4;
       if (o.pos.y > gy || o.vel.y > 0) {
         o.vel.y -= 22 * dt; o.vel.x *= 0.985; o.vel.z *= 0.985;
@@ -149,6 +152,7 @@ export function castFire() {
   G.fireCd = Math.max(G.fireCd, -0.05) + fb.cooldownSeconds; // keep the overshoot so the rate does not depend on frame rate
   const dir = aimDir();
   const g = addSprite(mats.fire, 5.5); g.position.copy(G.playerPos).addScaledVector(G.fwd, 3.2); g.position.y -= 0.3; scene.add(g);
+  const core = new THREE.Sprite(fireCoreMat); core.scale.setScalar(0.6); core.renderOrder = 1; g.add(core); // scale is relative to the halo
   G.shots.push({ g, pos: g.position, vel: dir.multiplyScalar(fb.speed).add(G.playerVel.clone().multiplyScalar(0.3)), life: fb.lifetimeSeconds, dmg: fb.damage + fb.damagePerStage * (G.level - 1) });
   sfx('fire');
 }

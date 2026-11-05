@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { CFG } from './config.js';
 import { G, W } from './state.js';
-import { scene, camera, addSprite, mats } from './scene.js';
+import { scene, camera, castShadows } from './scene.js';
 import { clamp, lerp } from './util.js';
 import { terrainH, groundH } from './terrain.js';
 import { emit, C } from './particles.js';
@@ -44,6 +44,7 @@ const riders = { sultan: new THREE.Group(), princess: new THREE.Group() };
   part(new THREE.TorusGeometry(0.3, 0.025, 6, 20), gold, 0, 1.76, 0.5, P).rotation.x = Math.PI / 2;
   part(new THREE.OctahedronGeometry(0.06, 0), mat(0x5fe0d6, { emissive: 0x1f6b66 }), 0, 1.78, 0.2, P);
 }
+castShadows(player);
 export function setRider(kind) { for (const k in riders) riders[k].visible = k === kind; }
 setRider('sultan');
 {
@@ -60,7 +61,6 @@ setRider('sultan');
   const fm = new THREE.MeshBasicMaterial({ color: 0xffcf63 });
   for (const z of [-2.6, 2.6]) { const f = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.08, 0.4), fm); f.position.z = z; player.add(f); }
   player.add(riders.sultan, riders.princess);
-  const aura = addSprite(mats.mana, 7); aura.position.set(0, 0.3, 0); player.add(aura);
 }
 
 export function placePlayerAtCastle() {
