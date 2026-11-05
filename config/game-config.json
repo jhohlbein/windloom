@@ -21,7 +21,17 @@
     "palaceFlattenOuter": 70,
     "palaceFlattenInner": 34,
     "lairMinDistanceFromPalace": 290,
-    "lairSearchRadius": 440
+    "lairSearchRadius": 440,
+    "variation": {
+      "heightScale": { "spread": 0.25 },
+      "mountainScale": { "spread": 0.35 },
+      "duneHeight": { "spread": 0.35 },
+      "duneWavelength": { "spread": 0.25 },
+      "greenCover": { "min": 0.25, "max": 0.55 },
+      "oasisCount": { "dist": "poisson", "min": 1, "max": 5 },
+      "rockCount": { "spread": 0.4 },
+      "palmMax": { "spread": 0.3 }
+    }
   },
   "controls": {
     "pointerLock": true,

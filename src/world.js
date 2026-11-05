@@ -27,9 +27,51 @@ function clearWorldGroup() {
   while (worldGroup.children.length) { const c = worldGroup.children[0]; worldGroup.remove(c); disposeTree(c); }
 }
 
+/* ---------- per-island landscape settings ---------- */
+// The config values are the means. world.variation varies some of them per island; every value is drawn from
+// the island's seed (one random stream per setting), so the same seed always gives the same island.
+// Kinds: { dist: "poisson", min, max } for counts, { spread } for mean x (1 +- spread), { min, max } for a range.
+const VARIED = ['heightScale', 'mountainScale', 'duneHeight', 'duneWavelength', 'greenCover', 'oasisCount', 'rockCount', 'palmMax'];
+const COUNTS = new Set(['oasisCount', 'rockCount', 'palmMax']);
+const strHash = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619); return h >>> 0; };
+function poisson(mean, rnd) { // Knuth; fine for the small means used here, normal approximation above 30
+  if (mean > 30) { const u = Math.max(1e-9, rnd()), v = rnd(); return Math.round(mean + Math.sqrt(mean) * Math.sqrt(-2 * Math.log(u)) * Math.cos(TAU * v)); }
+  const L = Math.exp(-mean); let k = 0, p = 1;
+  do { k++; p *= rnd(); } while (p > L);
+  return k - 1;
+}
+export function islandParams(seed) {
+  const cw = CFG.world, V = cw.variation || {}, P = {};
+  for (const k of VARIED) {
+    const mean = cw[k], v = V[k], rnd = mulberry((seed ^ strHash(k)) >>> 0);
+    let x = mean;
+    if (v) {
+      if (v.dist === 'poisson') x = poisson(mean, rnd);
+      else if (v.spread !== undefined) x = mean * (1 + v.spread * (2 * rnd() - 1));
+      else if (v.min !== undefined && v.max !== undefined) x = v.min + (v.max - v.min) * rnd();
+      if (v.min !== undefined) x = Math.max(v.min, x);
+      if (v.max !== undefined) x = Math.min(v.max, x);
+    }
+    P[k] = COUNTS.has(k) ? Math.max(0, Math.round(x)) : x;
+  }
+  return P;
+}
+// A few words for the island's character, from how far its settings are from the means (shown on the title)
+export function islandTraits() {
+  const cw = CFG.world, P = W.P, out = [];
+  const rel = k => P[k] / cw[k];
+  const relief = rel('heightScale') * rel('mountainScale');
+  if (relief > 1.2) out.push('rugged'); else if (relief < 0.8) out.push('flat');
+  if (rel('greenCover') > 1.15) out.push('lush'); else if (rel('greenCover') < 0.85) out.push('arid');
+  if (rel('duneHeight') > 1.15) out.push('high dunes'); else if (rel('duneHeight') < 0.85) out.push('low dunes');
+  if (P.oasisCount >= cw.oasisCount + 2) out.push('many oases'); else if (P.oasisCount <= 1) out.push(P.oasisCount ? 'one oasis' : 'no oasis');
+  return out.slice(0, 3);
+}
+
 export function buildWorld(seed) {
   const cw = CFG.world;
   W.SEED = seed >>> 0;
+  W.P = islandParams(W.SEED);
   const r = mulberry(W.SEED);
   for (let i = 0; i < 8; i++) W.OFF[i] = r() * 600;
   W.ISL_ANG = r() * Math.PI; W.ISL_EX = r() * 0.22; W.DUNE_ANG = r() * Math.PI;
@@ -37,7 +79,7 @@ export function buildWorld(seed) {
 
   // oases first, on land
   W.OASES = []; W.CX = 1e6; W.CZ = 1e6; W.PH = 0;
-  for (let k = 0, tries = 0; k < cw.oasisCount && tries < 60; tries++) {
+  for (let k = 0, tries = 0; k < W.P.oasisCount && tries < 60; tries++) {
     const a = r() * TAU, rr = 110 + r() * 200, ox = Math.cos(a) * rr, oz = Math.sin(a) * rr;
     if (rawH(ox, oz) < 5) continue;
     if (W.OASES.some(o => Math.hypot(o.x - ox, o.z - oz) < 150)) continue;
@@ -107,12 +149,12 @@ export function buildWorld(seed) {
   for (const o of W.OASES) for (let n = 0; n < 24; n++) { const a = rnd() * TAU, d = o.r * (0.5 + rnd() * 0.75), px = o.x + Math.cos(a) * d, pz = o.z + Math.sin(a) * d; if (terrainH(px, pz) > 0.6) palms.push([px, pz]); }
   for (let g = 0; g < 16; g++) { const ga = g / 16 * TAU + rnd() * 0.2, gd = 31 + rnd() * 10; palms.push([W.CX + Math.cos(ga) * gd, W.CZ + Math.sin(ga) * gd]); }
   // palms in the green patches
-  for (let pt = 0; pt < 4000 && palms.length < cw.palmMax * 0.6; pt++) {
+  for (let pt = 0; pt < 4000 && palms.length < W.P.palmMax * 0.6; pt++) {
     const px = (rnd() - 0.5) * SIZE * 0.95, pz = (rnd() - 0.5) * SIZE * 0.95, ph = terrainH(px, pz);
     const sl = (Math.abs(terrainH(px + 6, pz) - ph) + Math.abs(terrainH(px, pz + 6) - ph)) / 6;
     if (greenAt(px, pz, ph, sl) > 0.6 && Math.hypot(px - W.CX, pz - W.CZ) > 50 && rnd() < 0.35) palms.push([px, pz]);
   }
-  for (let pt = 0; pt < 2500 && palms.length < cw.palmMax; pt++) {
+  for (let pt = 0; pt < 2500 && palms.length < W.P.palmMax; pt++) {
     const px = (rnd() - 0.5) * SIZE * 0.95, pz = (rnd() - 0.5) * SIZE * 0.95, ph = terrainH(px, pz);
     if (ph < 0.8 || ph > 7) continue;
     const wet = terrainH(px + 16, pz) < 0 || terrainH(px - 16, pz) < 0 || terrainH(px, pz + 16) < 0 || terrainH(px, pz - 16) < 0;
@@ -137,8 +179,8 @@ export function buildWorld(seed) {
   worldGroup.add(trunks); worldGroup.add(leaves);
 
   // sandstone boulders
-  const rocks = new THREE.InstancedMesh(rockGeo, rockMat, cw.rockCount); let ri = 0;
-  for (let rt = 0; rt < 2000 && ri < cw.rockCount; rt++) {
+  const rocks = new THREE.InstancedMesh(rockGeo, rockMat, W.P.rockCount); let ri = 0;
+  for (let rt = 0; rt < 2000 && ri < W.P.rockCount; rt++) {
     const rx = (rnd() - 0.5) * SIZE * 0.9, rz = (rnd() - 0.5) * SIZE * 0.9, rh = terrainH(rx, rz);
     if (rh < 2 || Math.hypot(rx - W.CX, rz - W.CZ) < 50) continue;
     const rsc = 1 + rnd() * 3.5;

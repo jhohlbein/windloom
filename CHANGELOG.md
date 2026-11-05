@@ -4,6 +4,15 @@ All notable changes to Windloom are recorded here. The format follows [Keep a Ch
 
 ## [Unreleased]
 
+## [0.2.4] - 2026-11-05
+
+### Added
+- A message tells you when the mana you carry is enough to raise the palace to its next stage (once per stage).
+- Islands vary: heights, mountains, dunes, green cover, oases, rocks and palms are drawn per island from its seed around the config values (`world.variation`; oases Poisson-distributed). The start screen names an island's character, e.g. "rugged, lush". Gameplay numbers are not varied. Existing seeds look somewhat different from before.
+
+### Fixed
+- Opening the game with a seed only worked in the exact form `#s<seed>` and only on a fresh page load. It now also accepts `#<seed>`, `#seed=<seed>`, `?seed=<seed>`, `?s=<seed>` and `?<seed>`, and editing the seed in the address bar of an open page builds that island.
+
 ## [0.2.3] - 2026-11-05
 
 ### Added

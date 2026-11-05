@@ -35,6 +35,23 @@ The **Value** column shows what `game-config.json` currently contains. Keep it i
 | `lairMinDistanceFromPalace` | 290 | The dragon's peak is at least this far from the palace. |
 | `lairSearchRadius` | 440 | The dragon's peak is searched within this distance of the centre. |
 
+**variation** (per-island randomness)
+
+For the landscape settings listed here, the value above is the **mean**; each island draws its own value from its seed, so the same seed always gives the same island (and best scores per seed stay comparable). Gameplay numbers are never varied. Remove an entry to fix that setting; set `"variation": {}` to switch it off entirely. The start screen names an island's character when it is far from the mean (for example "rugged, lush").
+
+| Key | Value | Meaning |
+|---|---|---|
+| `heightScale` | spread 0.25 | Each island: mean × a factor between 0.75 and 1.25. |
+| `mountainScale` | spread 0.35 | Factor between 0.65 and 1.35. |
+| `duneHeight` | spread 0.35 | Factor between 0.65 and 1.35. |
+| `duneWavelength` | spread 0.25 | Factor between 0.75 and 1.25. |
+| `greenCover` | min 0.25, max 0.55 | Any value in this range (the mean above is not used). |
+| `oasisCount` | poisson, min 1, max 5 | Poisson-distributed around the mean (3), clamped to 1–5. |
+| `rockCount` | spread 0.4 | Factor between 0.6 and 1.4. |
+| `palmMax` | spread 0.3 | Factor between 0.7 and 1.3. |
+
+Kinds: `{ "spread": s }` = mean × (1 ± s), uniform; `{ "min": a, "max": b }` = uniform in a–b; `{ "dist": "poisson", "min", "max" }` = Poisson around the mean, for counts. `min`/`max` also clamp the other kinds.
+
 ## controls
 
 | Key | Value | Meaning |

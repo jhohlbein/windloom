@@ -30,6 +30,17 @@ export function applyLevel(L, announce) {
   }
 }
 
+// Tell the player once per stage when the mana they carry (plus what is banked) is enough for the next stage
+export function upgradeHint() {
+  const T = CFG.palace.stageThresholds;
+  if (G.level >= T.length || G.upgradeHint === G.level) return;
+  if (G.castleMana + G.carried >= T[G.level]) {
+    G.upgradeHint = G.level;
+    toast('You carry enough mana to raise the palace to ' + CFG.palace.stageNames[G.level] + '.\nBring it home to the beam!', 4500);
+    sfx('mana');
+  }
+}
+
 // Inside the beam: bank carried mana and heal
 export function updateDeposit(dt) {
   const P = G.playerPos, cp = CFG.palace;

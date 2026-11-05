@@ -6,7 +6,8 @@ import * as THREE from 'three';
 export const W = {
   SEED: 0, OFF: [0, 0, 0, 0, 0, 0, 0, 0], ISL_ANG: 0, ISL_EX: 0, DUNE_ANG: 0, OASES: [],
   CX: 0, CZ: 0, PH: 18,   // palace centre and plateau height
-  LX: 0, LZ: 0, LH: 12    // dragon lair
+  LX: 0, LZ: 0, LH: 12,   // dragon lair
+  P: {}                   // this island's landscape settings, drawn from the seed (see islandParams in world.js)
 };
 
 // Game state
@@ -25,6 +26,6 @@ export const G = {
   input: { mouseX: 0, mouseY: 0, touchX: 0, touchY: 0, mouseFire: false, touchFire: false, touchBoost: false, touchBack: false, novaReq: false },
   enemies: [], orbs: [], shots: [], bolts: [], rings: [],
   dragon: null, dragonTimer: 0, dragonSeen: false, surging: false,
-  spawnTimer: 0,
+  spawnTimer: 0, upgradeHint: 0, // last stage for which the 'enough mana' message was shown
   castleTopY: 24
 };

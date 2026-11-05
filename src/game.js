@@ -5,12 +5,12 @@ import { G, W } from './state.js';
 import { renderer, scene, camera, updateSky, resizeRenderer, setDaylight } from './scene.js';
 import { R } from './util.js';
 import { isleName } from './terrain.js';
-import { buildWorld, updateLair } from './world.js';
+import { buildWorld, updateLair, islandTraits } from './world.js';
 import { updatePalace } from './palace.js';
 import { updateParticles, resizeParticles } from './particles.js';
 import { audioInit, toggleMute, updateAudio } from './audio.js';
 import { hud, toast, clearToasts, updateToast, updateHud, drawRadar, drawBars, resizeFx, stageLabel } from './hud.js';
-import { applyLevel, updateDeposit, stageCount } from './progress.js';
+import { applyLevel, updateDeposit, stageCount, upgradeHint } from './progress.js';
 import { updateShots, updateBolts, updateOrbs, updateRings, clearProjectiles } from './combat.js';
 import { populate, spawnTick, spawnDragon, updateEnemies, clearCreatures, unlocked } from './creatures/spawn.js';
 import { updatePlayer, updateCamera, placePlayerAtCastle, setRider } from './player.js';
@@ -22,7 +22,7 @@ const $ = id => document.getElementById(id);
 const overlay = $('overlay'), goBtn = $('go'), freeBtn = $('goFree'), rerollBtn = $('reroll'), ovTitle = $('ovTitle'), ovText = $('ovText'),
   ovStats = $('stats'), ovIsle = $('isle'), ovCtl = $('ovCtl'), ovBeasts = $('ovBeasts'), ovLede = ovText.textContent;
 $('ver').textContent = 'Version ' + VERSION;
-const isleLabel = () => { const b = bestFor(); return 'Isle of ' + isleName(W.SEED) + ' · seed ' + W.SEED + (b ? ' · best ' + b.score : ''); };
+const isleLabel = () => { const b = bestFor(), tr = islandTraits(); return 'Isle of ' + isleName(W.SEED) + (tr.length ? ' · ' + tr.join(', ') : '') + ' · seed ' + W.SEED + (b ? ' · best ' + b.score : ''); };
 
 function showOverlay(mode) {
   G.mode = mode; G.active = false; unlockPointer();
@@ -54,7 +54,15 @@ function showOverlay(mode) {
   }
   releaseInput();
 }
-function rememberSeed() { try { history.replaceState(null, '', '#s' + W.SEED); } catch (err) { /* optional */ } }
+// The address keeps the island's seed as #s<seed>; any query string (e.g. ?seed=) is dropped so it cannot go stale
+function rememberSeed() { try { history.replaceState(null, '', location.pathname + '#s' + W.SEED); } catch (err) { /* optional */ } }
+// Accepts #s123, #123, #seed=123, ?seed=123, ?s=123 and ?123. Seeds are 32-bit; larger numbers wrap around.
+function seedFromUrl() {
+  const h = /^#(?:s(?:eed)?=?)?(\d{1,10})$/i.exec(location.hash || '');
+  if (h) return parseInt(h[1], 10) >>> 0;
+  const q = new URLSearchParams(location.search), v = q.get('seed') || q.get('s') || (/^\?(\d{1,10})$/.exec(location.search) || [])[1];
+  return v && /^\d{1,10}$/.test(v) ? parseInt(v, 10) >>> 0 : undefined;
+}
 function newIsland(seed) {
   clearCreatures(); clearProjectiles();
   buildWorld(seed === undefined ? Math.floor(R() * 1e9) : seed);
@@ -64,7 +72,7 @@ function newIsland(seed) {
 }
 function startGame(timed = G.timed) {
   Object.assign(G, { carried: 0, castleMana: 0, level: 1, maxHp: CFG.player.maxHp, hp: CFG.player.maxHp, kills: 0, playTime: 0, lastHurt: -99, dragonSeen: false, dragonTimer: 0 });
-  G.invuln = 2; resetRound(timed);
+  G.invuln = 2; resetRound(timed); G.upgradeHint = 0;
   G.spellMana = CFG.spells.mana.max; G.spellExhausted = false;
   clearCreatures(); clearProjectiles();
   applyLevel(1, false); placePlayerAtCastle();
@@ -147,7 +155,7 @@ function frame(now) {
     updateEnemies(dt);
     updateShots(dt); updateBolts(dt); updateOrbs(dt); updateRings(dt);
     if (G.mode === 'play') {
-      updateDeposit(dt);
+      updateDeposit(dt); upgradeHint();
       G.spawnTimer -= dt;
       if (G.spawnTimer <= 0) { G.spawnTimer = CFG.spawning.intervalSeconds; spawnTick(); }
       // The dragon appears once its stage is reached (announced by the palace) and returns after dragonRespawnSeconds when slain
@@ -175,8 +183,13 @@ function frame(now) {
 }
 
 // Boot: a seed in the address (#s12345) replays that island, otherwise a random one
-const hashSeed = /^#s(\d{1,10})$/.exec(location.hash || '');
-newIsland(hashSeed ? parseInt(hashSeed[1], 10) : undefined);
+newIsland(seedFromUrl());
+// Editing the seed in the address bar of an open page does not reload it; build the new island here
+window.addEventListener('hashchange', () => {
+  const s = seedFromUrl();
+  if (s === undefined || s === W.SEED) { rememberSeed(); return; }
+  newIsland(s); showOverlay('title');
+});
 showOverlay('title');
 goBtn.disabled = false; freeBtn.disabled = false; rerollBtn.disabled = false;
 requestAnimationFrame(frame);
