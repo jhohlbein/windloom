@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Windloom</title>
+<meta name="description" content="A browser flying game in the spirit of Magic Carpet: ride a carpet over a desert island, hunt creatures for mana and raise your palace.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js" } }
+</script>
+</head>
+<body>
+<canvas id="view"></canvas>
+<canvas id="fx"></canvas>
+
+<div id="hud" hidden>
+  <div id="vitals" class="glass">
+    <div>
+      <div class="lbl" id="hpLbl">Vitality</div>
+      <div class="bar" style="margin-top:5px"><i id="hpFill"></i></div>
+    </div>
+    <div class="row"><span class="lbl">Mana carried</span><span><span id="manaNum">0</span> <span id="manaCap">/ 120</span></span></div>
+  </div>
+  <div id="radarWrap"><canvas id="radar" width="224" height="224"></canvas></div>
+  <div id="cross"></div><div id="steer"></div>
+  <div id="castle" class="glass">
+    <div class="row"><span class="lbl">Palace</span><span id="stage">Minaret · I</span></div>
+    <div class="bar"><i id="castleFill"></i></div>
+    <div class="row"><span class="lbl">Stored mana</span><span id="castleTxt">0 / 50</span></div>
+  </div>
+  <div id="keys"><b>Mouse / ← →</b> turn · <b>↑ ↓</b> climb<br><b>W</b> surge · <b>S</b> reverse · <b>A D</b> strafe<br><b>Click / Space</b> fireball · <b>Right-click / E</b> nova<br><b>Esc</b> pause · <b>M</b> mute</div>
+  <div class="touch">
+    <div class="col"><button id="btnBack" type="button">Back</button><button id="btnBoost" type="button">Surge</button></div>
+    <div class="col"><button id="btnNova" type="button">Nova</button><button id="btnFire" type="button">Fire</button></div>
+  </div>
+  <div id="toast"></div>
+  <div id="hurt"></div>
+</div>
+
+<section id="overlay">
+  <div class="card">
+    <div class="weave"></div>
+    <h1 id="ovTitle">Windloom</h1>
+    <p class="isle" id="isle">Loading…</p>
+    <p class="lede" id="ovText">Ride a flying carpet over a desert island of dunes, mesas and hidden oases. Every creature you slay drops golden mana. Carry it home to the beam of light above your palace and raise it through six stages to the Crescent Sanctum. Every game is a new island.</p>
+    <p id="stats" hidden></p>
+    <div class="ctl" id="ovCtl">
+      <div>
+        <h2>Keyboard and mouse</h2>
+        <dl>
+          <dt>Mouse / ← →</dt><dd>turn left and right</dd>
+          <dt>Mouse / ↑ ↓</dt><dd>climb and dive</dd>
+          <dt>W / Shift</dt><dd>surge forward</dd>
+          <dt>S</dt><dd>fly backwards</dd>
+          <dt>A / D</dt><dd>strafe left and right</dd>
+          <dt>Click / Space</dt><dd>fireball</dd>
+          <dt>Right-click / E</dt><dd>nova, costs mana</dd>
+          <dt>Esc / M</dt><dd>pause / mute</dd>
+        </dl>
+      </div>
+      <div>
+        <h2>Touch</h2>
+        <dl>
+          <dt>Drag</dt><dd>turn and climb</dd>
+          <dt>Fire</dt><dd>hold for fireballs</dd>
+          <dt>Nova</dt><dd>blast, costs mana</dd>
+          <dt>Surge / Back</dt><dd>hold to speed up or reverse</dd>
+        </dl>
+      </div>
+    </div>
+    <div class="beasts" id="ovBeasts">
+      <h2>Bestiary</h2>
+      <dl>
+        <dt>Wyvern</dt><dd>A lean jade reptile with bat wings and a barbed tail. Quick and fragile, spits red bolts, loses you behind hills.</dd>
+        <dt>Drake</dt><dd>A heavy rust-red brute with four legs, horns and a clubbed tail. Spots you from further away and spits fireballs. Appears once your Palace stands.</dd>
+        <dt>Kraken</dt><dd>Lurks under the sea. Surfaces to lob ink and grabs anyone who flies low over it. Can only be hit while surfaced.</dd>
+        <dt>Sandworm</dt><dd>Tunnels under the dunes. Watch for moving dust, then strike when it rears up and opens its four-jawed maw to spit acid.</dd>
+        <dt class="boss">Vharoth</dt><dd>The ash wyrm. Nests on the highest peak among obsidian spires. Breathes fire and hurls burning boulders. It hunts by sight: break line of sight behind a ridge and it searches where it last saw you before giving up. Hug the ground to slip past its peak unseen. Fireballs nearby give you away. It will not cross your palace's beam.</dd>
+      </dl>
+    </div>
+    <div class="actions">
+      <button class="go" id="go" type="button" disabled>Take flight</button>
+      <button class="go2" id="reroll" type="button" disabled>New island</button>
+    </div>
+    <p class="fine">Fly through the golden beam above your palace to bank mana and heal quickly. Away from it you mend slowly after a few seconds without taking damage. To replay an island, keep the page address: it ends with the island's seed. <span id="ver"></span> · <a href="https://github.com/jhohlbein/windloom" target="_blank" rel="noopener">Source on GitHub</a></p>
+  </div>
+</section>
+
+<script type="module" src="src/main.js"></script>
+</body>
+</html>
