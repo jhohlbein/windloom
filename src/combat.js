@@ -44,7 +44,7 @@ export function updateOrbs(dt) {
         if (o.pos.y < gy) { o.pos.y = gy; o.vel.set(0, 0, 0); }
       }
     }
-    if (!canTake && G.active && d < cm.magnetRadius && !fullHint) { fullHint = true; toast('You carry all you can. Bank it in the beam.', 2200); }
+    if (!canTake && G.active && d < cm.magnetRadius && !fullHint) { fullHint = true; toast('You carry all you can. Bank it in the beam.', 2200, true); }
     if (canTake && d < cm.pickupRadius) {
       G.carried = Math.min(cap, G.carried + o.val);
       burst(o.pos, 6, C.GOLD, 10, 1.4, 0.4); sfx('mana'); removeOrb(i); continue;
@@ -107,7 +107,7 @@ export function killEnemy(e) {
     G.dragon = null; G.dragonTimer = CFG.spawning.dragonRespawnSeconds;
     G.dragonSlain = true;
     toast('Vharoth falls. Its hoard scatters across the sand.' + (G.level < stageCount() ? (G.timed ? '\nComplete the palace to end the round early.' : '\nComplete the palace to make the Sanctum whole.') : ''), 4200);
-  } else toast(e.name + ' slain', 1400);
+  } else toast(e.name + ' slain', 1400, true);
 }
 export function hurtPlayer(d) {
   if (G.invuln > 0) return;
@@ -144,7 +144,7 @@ export function castFire() {
   const fb = CFG.spells.fireball;
   if (G.fireCd > 0 || G.spellExhausted) return;
   // Firing nonstop drains spell mana a little faster than it refills; once empty, wait until it reaches refireAt
-  if (G.spellMana < fb.manaCost) { G.spellExhausted = true; toast('Out of spell mana', 1000); return; }
+  if (G.spellMana < fb.manaCost) { G.spellExhausted = true; toast('Out of spell mana', 1000, true); return; }
   G.spellMana -= fb.manaCost; makeNoise();
   G.fireCd = Math.max(G.fireCd, -0.05) + fb.cooldownSeconds; // keep the overshoot so the rate does not depend on frame rate
   const dir = aimDir();
@@ -155,7 +155,7 @@ export function castFire() {
 export function castNova() {
   const nv = CFG.spells.nova;
   if (G.novaCd > 0) return;
-  if (G.spellMana < nv.manaCost) { toast('Nova needs ' + nv.manaCost + ' spell mana', 1400); G.novaCd = 0.6; return; }
+  if (G.spellMana < nv.manaCost) { toast('Nova needs ' + nv.manaCost + ' spell mana', 1400, true); G.novaCd = 0.6; return; }
   G.spellMana -= nv.manaCost; G.novaCd = nv.cooldownSeconds; makeNoise();
   addRing(G.playerPos, nv.radius, 0.55, 0x7defff); sfx('nova');
   burst(G.playerPos, 50, C.MANA, 50, 2.4, 0.8);

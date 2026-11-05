@@ -38,7 +38,7 @@
     <div class="bar"><i id="castleFill"></i></div>
     <div class="row"><span class="lbl">Stored mana</span><span id="castleTxt">0 / 50</span></div>
   </div>
-  <div id="keys"><b>Mouse / ← →</b> turn · <b>↑ ↓</b> climb<br><b>W</b> surge · <b>S</b> reverse · <b>A D</b> strafe<br><b>Click / Space</b> fireball · <b>Right-click / E</b> nova<br><b>Esc</b> pause · <b>M</b> mute</div>
+  <div id="keys"><b>Mouse / ← →</b> turn · <b>↑ ↓</b> climb<br><b>W</b> surge · <b>S</b> reverse · <b>A D</b> strafe<br><b>Click / Space</b> fireball · <b>Right-click / E</b> nova<br><b>Esc</b> pause · <b>M</b> mute · <b>F</b> full screen</div>
   <div class="touch">
     <div class="col"><button id="btnBack" type="button">Back</button><button id="btnBoost" type="button">Surge</button></div>
     <div class="col"><button id="btnNova" type="button">Nova</button><button id="btnFire" type="button">Fire</button></div>
@@ -65,7 +65,7 @@
           <dt>A / D</dt><dd>strafe left and right</dd>
           <dt>Click / Space</dt><dd>fireball</dd>
           <dt>Right-click / E</dt><dd>nova, costs spell mana</dd>
-          <dt>Esc / M</dt><dd>pause / mute</dd>
+          <dt>Esc / M / F</dt><dd>pause / mute / full screen</dd>
         </dl>
       </div>
       <div>
@@ -92,6 +92,17 @@
       <button class="go" id="go" type="button" disabled>Timed round · 4 min</button>
       <button class="go alt" id="goFree" type="button" disabled>Free flight</button>
       <button class="go2" id="reroll" type="button" disabled>New island</button>
+      <button class="go2" id="fullscreen" type="button">Full screen</button>
+      <button class="go2" id="settingsBtn" type="button" aria-expanded="false" aria-controls="settingsPanel">Settings</button>
+    </div>
+    <div class="settings" id="settingsPanel" hidden>
+      <h2>Settings</h2>
+      <fieldset>
+        <legend>Rider</legend>
+        <label><input type="radio" name="rider" value="sultan"> Turbaned rider</label>
+        <label><input type="radio" name="rider" value="princess"> Veiled princess</label>
+      </fieldset>
+      <p class="hint">Saved in this browser.</p>
     </div>
     <p class="fine">Fly through the golden beam above your palace to bank mana and heal quickly. Away from it you mend slowly after a few seconds without taking damage. To replay an island, keep the page address: it ends with the island's seed. <span id="ver"></span> · <a href="https://github.com/jhohlbein/windloom" target="_blank" rel="noopener">Source on GitHub</a></p>
   </div>

@@ -9,13 +9,14 @@ import { buildWorld } from './world.js';
 import { updatePalace } from './palace.js';
 import { emit, C, updateParticles, resizeParticles } from './particles.js';
 import { audioInit, toggleMute, updateAudio } from './audio.js';
-import { hud, toast, updateToast, updateHud, drawRadar, drawBars, resizeFx, stageLabel } from './hud.js';
+import { hud, toast, clearToasts, updateToast, updateHud, drawRadar, drawBars, resizeFx, stageLabel } from './hud.js';
 import { applyLevel, updateDeposit, stageCount } from './progress.js';
 import { updateShots, updateBolts, updateOrbs, updateRings, clearProjectiles } from './combat.js';
 import { populate, spawnTick, spawnDragon, updateEnemies, clearCreatures, unlocked } from './creatures/spawn.js';
-import { updatePlayer, updateCamera, placePlayerAtCastle } from './player.js';
-import { bindControls, releaseInput } from './controls.js';
+import { updatePlayer, updateCamera, placePlayerAtCastle, setRider } from './player.js';
+import { bindControls, releaseInput, lockPointer, unlockPointer, toggleFullscreen, isFullscreen } from './controls.js';
 import { resetRound, updateRound, scoreRound, bestFor, recordScore } from './round.js';
+import { settings, saveSetting } from './settings.js';
 
 const $ = id => document.getElementById(id);
 const overlay = $('overlay'), goBtn = $('go'), freeBtn = $('goFree'), rerollBtn = $('reroll'), ovTitle = $('ovTitle'), ovText = $('ovText'),
@@ -24,11 +25,12 @@ $('ver').textContent = 'Version ' + VERSION;
 const isleLabel = () => { const b = bestFor(); return 'Isle of ' + isleName(W.SEED) + ' · seed ' + W.SEED + (b ? ' · best ' + b.score : ''); };
 
 function showOverlay(mode) {
-  G.mode = mode; G.active = false;
+  G.mode = mode; G.active = false; unlockPointer();
   overlay.hidden = false; hud.hidden = (mode === 'title');
   ovStats.hidden = true; ovIsle.textContent = isleLabel();
   ovCtl.hidden = ovBeasts.hidden = (mode === 'results');
-  freeBtn.hidden = mode !== 'title';
+  freeBtn.hidden = settingsBtn.hidden = mode !== 'title';
+  if (mode !== 'title') settingsPanel.hidden = true;
   if (mode === 'title') { ovTitle.textContent = 'Windloom'; ovText.textContent = ovLede; goBtn.textContent = 'Timed round · ' + Math.round(CFG.round.durationSeconds / 60) + ' min'; rerollBtn.textContent = 'New island'; }
   else if (mode === 'pause') { ovTitle.textContent = 'Paused'; ovText.textContent = 'The creatures will wait. Your palace stands at ' + stageLabel(G.level) + ' of ' + stageCount() + ' stages.'; goBtn.textContent = 'Resume'; rerollBtn.textContent = 'New game on a new island'; }
   else if (mode === 'results' && !G.timed) {
@@ -67,14 +69,19 @@ function startGame(timed = G.timed) {
   clearCreatures(); clearProjectiles();
   applyLevel(1, false); placePlayerAtCastle();
   G.active = true; populate();
-  releaseInput(); overlay.hidden = true; hud.hidden = false; G.mode = 'play';
+  releaseInput(); overlay.hidden = true; hud.hidden = false; G.mode = 'play'; lockPointer();
+  clearToasts();
   toast('Hunt the creatures. Gather their gold. Carry it home to the beam.\n' +
     (timed ? 'You have ' + Math.round(CFG.round.durationSeconds / 60) + ' minutes.' : 'Free flight: no clock, take your time.'), 4200);
 }
-function resume() { releaseInput(); overlay.hidden = true; hud.hidden = false; G.mode = 'play'; G.active = true; }
+// Resuming and starting come from a click or key press, which browsers require before locking the pointer
+function resume() { releaseInput(); overlay.hidden = true; hud.hidden = false; G.mode = 'play'; G.active = true; lockPointer(); }
+let pausedAt = 0;
+function pause() { if (G.mode === 'play') { pausedAt = performance.now(); showOverlay('pause'); } }
 function togglePause() {
-  if (G.mode === 'play') showOverlay('pause');
-  else if (G.mode === 'pause') { audioInit(); resume(); }
+  if (G.mode === 'play') pause();
+  // Esc both releases the pointer lock (which pauses) and arrives as a key press; don't resume right away
+  else if (G.mode === 'pause' && performance.now() - pausedAt > 250) { audioInit(); resume(); }
 }
 
 goBtn.addEventListener('click', () => {
@@ -92,9 +99,27 @@ rerollBtn.addEventListener('click', () => {
 });
 bindControls({
   onPause: togglePause,
-  onMute: () => { const m = toggleMute(); if (G.active) toast(m ? 'Sound off' : 'Sound on', 900); },
-  onBlur: () => { releaseInput(); if (G.mode === 'play') showOverlay('pause'); }
+  onMute: () => { const m = toggleMute(); if (G.active) toast(m ? 'Sound off' : 'Sound on', 900, true); },
+  onBlur: () => { releaseInput(); pause(); },
+  onLockLost: pause
 });
+// Settings (start screen): choices are saved in this browser and applied at once
+const settingsBtn = $('settingsBtn'), settingsPanel = $('settingsPanel');
+settingsBtn.addEventListener('click', () => {
+  settingsPanel.hidden = !settingsPanel.hidden;
+  settingsBtn.setAttribute('aria-expanded', String(!settingsPanel.hidden));
+  if (!settingsPanel.hidden) settingsPanel.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+});
+for (const r of document.querySelectorAll('input[name="rider"]')) {
+  r.checked = r.value === settings.rider;
+  r.addEventListener('change', () => { if (r.checked) { saveSetting('rider', r.value); setRider(r.value); } });
+}
+setRider(settings.rider);
+const fsBtn = $('fullscreen');
+fsBtn.addEventListener('click', () => { toggleFullscreen(); });
+const fsLabel = () => { fsBtn.textContent = isFullscreen() ? 'Leave full screen' : 'Full screen'; };
+document.addEventListener('fullscreenchange', fsLabel); document.addEventListener('webkitfullscreenchange', fsLabel); window.addEventListener('resize', fsLabel);
+if (!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen)) fsBtn.hidden = true;
 
 function resize() {
   const w = window.innerWidth, h = window.innerHeight;

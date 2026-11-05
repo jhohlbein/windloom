@@ -23,10 +23,22 @@
     "lairMinDistanceFromPalace": 290,
     "lairSearchRadius": 440
   },
+  "controls": {
+    "pointerLock": true,
+    "lockedSensitivity": 1
+  },
+  "hud": {
+    "toastMinSeconds": 2.5,
+    "toastBaseSeconds": 1.5,
+    "toastSecondsPerChar": 0.055,
+    "toastMinShowSeconds": 1.8
+  },
   "camera": {
     "distance": 9,
     "height": 3.4,
     "lookAhead": 26,
+    "lookHeight": 5,
+    "follow": 10,
     "fov": 72,
     "fovSurgeExtra": 9
   },
@@ -50,7 +62,10 @@
     "invulnerableAfterHitSeconds": 0.6,
     "respawnInvulnerableSeconds": 3,
     "carryBase": 100,
-    "carryPerStage": 20
+    "carryPerStage": 20,
+    "groundClearance": 1.4,
+    "cornerClearance": 0.4,
+    "response": { "steer": 12, "pitch": 6, "speed": 3.5, "strafe": 7, "roll": 6 }
   },
   "spells": {
     "mana": {

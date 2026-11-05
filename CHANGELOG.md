@@ -4,6 +4,19 @@ All notable changes to Windloom are recorded here. The format follows [Keep a Ch
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-11-05
+
+### Added
+- Settings menu on the start screen. First option: the rider, either the turbaned rider or a veiled princess; the choice is saved in the browser.
+- Mouse capture (pointer lock): clicking into the game hides the cursor and keeps the mouse in the window; Esc releases it and pauses. Mouse movement steers a virtual stick (`controls` section).
+- Camera `lookHeight`: the view tilts up a little so the carpet sits lower on screen (about two-thirds down instead of near the centre).
+- Full screen: F key and a "Full screen" button on the start and pause screens.
+
+### Changed
+- Tester feedback: controls respond faster (steering, pitch, speed, strafe and camera follow; new `player.response` and `camera.follow`).
+- Ground collision checks all four corners of the tilted carpet, not just its centre, and the carpet can fly lower (`groundClearance` 1.4, was 2.6).
+- On-screen messages stay up according to their length; minor messages no longer cut off important ones (`hud` section).
+
 ## [0.2.1] - 2026-11-05
 
 ### Added

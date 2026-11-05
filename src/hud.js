@@ -13,10 +13,35 @@ const elHpLbl = $('hpLbl'), elHp = $('hpFill'), elSpLbl = $('spLbl'), elSp = $('
   elCastle = $('castleFill'), elCastleTxt = $('castleTxt'), elToast = $('toast'), elHurt = $('hurt'), elSteer = $('steer'), elClock = $('clock');
 const rctx = $('radar').getContext('2d');
 const NUMERALS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
-let toastTimer = 0;
-
-export function toast(msg, ms = 2400) { elToast.textContent = msg; elToast.classList.add('on'); toastTimer = ms / 1000; }
-export function updateToast(dt) { if (toastTimer > 0) { toastTimer -= dt; if (toastTimer <= 0) elToast.classList.remove('on'); } }
+// Messages stay up long enough to read (longer text, longer time; config "hud"). Minor ones ("Wyvern slain",
+// "Sound on") never replace an important message that is still showing; an important one replaces another
+// only after that has been up for toastMinShowSeconds, otherwise it waits in a short queue.
+let toastTimer = 0, toastShown = 0, toastMinor = true;
+const toastQueue = [];
+function showToast(msg, secs, minor) {
+  elToast.textContent = msg; elToast.classList.add('on');
+  toastTimer = secs; toastShown = 0; toastMinor = minor;
+}
+export function toast(msg, ms = 2400, minor = false) {
+  const H = CFG.hud, secs = minor ? Math.max(ms / 1000, 1.2) : Math.max(ms / 1000, H.toastMinSeconds, H.toastBaseSeconds + H.toastSecondsPerChar * msg.length);
+  const busy = toastTimer > 0 && !toastMinor;
+  if (minor && busy) return;
+  if (!minor && busy && toastShown < H.toastMinShowSeconds) {
+    if (toastQueue.length < 2 && !toastQueue.some(q => q.msg === msg) && elToast.textContent !== msg) toastQueue.push({ msg, secs });
+    return;
+  }
+  showToast(msg, secs, minor);
+}
+export function updateToast(dt) {
+  if (toastTimer <= 0) return;
+  toastTimer -= dt; toastShown += dt;
+  if (toastQueue.length && !toastMinor && toastShown >= CFG.hud.toastMinShowSeconds && toastTimer < 0.6) { const q = toastQueue.shift(); showToast(q.msg, q.secs, false); return; }
+  if (toastTimer <= 0) {
+    if (toastQueue.length) { const q = toastQueue.shift(); showToast(q.msg, q.secs, false); }
+    else elToast.classList.remove('on');
+  }
+}
+export function clearToasts() { toastQueue.length = 0; toastTimer = 0; elToast.classList.remove('on'); }
 export function flashHurt() { elHurt.style.opacity = '1'; setTimeout(() => { elHurt.style.opacity = '0'; }, 180); }
 export const stageLabel = L => CFG.palace.stageNames[L - 1] + ' · ' + NUMERALS[L - 1];
 

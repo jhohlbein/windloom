@@ -35,6 +35,23 @@ The **Value** column shows what `game-config.json` currently contains. Keep it i
 | `lairMinDistanceFromPalace` | 290 | The dragon's peak is at least this far from the palace. |
 | `lairSearchRadius` | 440 | The dragon's peak is searched within this distance of the centre. |
 
+## controls
+
+| Key | Value | Meaning |
+|---|---|---|
+| `pointerLock` | true | Clicking into the game captures the mouse: the cursor is hidden and cannot leave the window, so steering never gets stuck at the screen edge. Esc releases it and pauses. Set to `false` for the old free cursor. |
+| `lockedSensitivity` | 1 | With the mouse captured: how far the steering moves per pixel of mouse movement (higher = more sensitive). |
+
+## hud
+
+On-screen messages stay up long enough to read: `max(toastMinSeconds, toastBaseSeconds + toastSecondsPerChar × characters)`, or longer if the message asks for it. Minor messages (a creature slain, sound on/off, out of spell mana) never replace an important one that is still showing.
+
+| Key | Value | Meaning |
+|---|---|---|
+| `toastMinSeconds` | 2.5 | Shortest time an important message is shown. |
+| `toastBaseSeconds`, `toastSecondsPerChar` | 1.5, 0.055 | Reading time: a 60-character message stays about 4.8 s. |
+| `toastMinShowSeconds` | 1.8 | An important message is shown at least this long before the next one replaces it; the next one waits. |
+
 ## camera
 
 | Key | Value | Meaning |
@@ -42,6 +59,8 @@ The **Value** column shows what `game-config.json` currently contains. Keep it i
 | `distance` | 9 | How far behind the carpet the camera sits, in metres (was 13). |
 | `height` | 3.4 | How far above the carpet the camera sits (was 4.4). |
 | `lookAhead` | 26 | The camera looks at a point this far ahead of the carpet. |
+| `lookHeight` | 5 | ...and this far above it. Higher tilts the view up, so the carpet sits lower on screen (0 = carpet close to the centre). |
+| `follow` | 10 | How quickly the camera catches up with the carpet (higher = tighter, less lag; was 7). |
 | `fov`, `fovSurgeExtra` | 72, 9 | Field of view in degrees, and how much it widens at full surge. |
 
 ## sky
@@ -70,6 +89,9 @@ The sun rises over the course of a round: dawn at the start (low, warm, dim ligh
 | `invulnerableAfterHitSeconds` | 0.6 | Grace period after each hit. |
 | `respawnInvulnerableSeconds` | 3 | Grace period after falling and waking in the palace. |
 | `carryBase`, `carryPerStage` | 100, 20 | Mana you can carry: base + per stage × stage. |
+| `groundClearance` | 1.4 | Lowest the carpet's centre can fly above the ground (was a fixed 2.6). |
+| `cornerClearance` | 0.4 | Each corner of the tilted carpet stays at least this far above the ground beneath it, so it does not dip into slopes. |
+| `response` | steer 12, pitch 6, speed 3.5, strafe 7, roll 6 | How quickly the carpet follows the controls, per second (higher = snappier, less delay). Before: steer 8, pitch 3, speed 2, strafe 4, roll 4. |
 
 ## spells
 
