@@ -11,18 +11,20 @@ export const W = {
 
 // Game state
 export const G = {
-  mode: 'title',          // 'title' | 'play' | 'pause' | 'won'
+  mode: 'title',          // 'title' | 'play' | 'pause' | 'results'
   active: false,          // true while the player is flying
   keys: {},
   carried: 0, castleMana: 0, level: 1, hp: 100, maxHp: 100, invuln: 0,
-  kills: 0, playTime: 0, won: false, lastHurt: -99, winTimer: -1,
+  kills: 0, playTime: 0, lastHurt: -99,
+  timeLeft: 0, killsBy: {}, dragonSlain: false, endTimer: -1, endReason: '', // round (see round.js)
   yaw: 0, pitch: 0, roll: 0, speed: 0, strafe: 0, steerX: 0, steerY: 0,
   fireCd: 0, novaCd: 0, wallToast: 0,
+  spellMana: 100, spellExhausted: false, // fireball energy (config spells.mana), separate from carried mana
   playerPos: new THREE.Vector3(), playerVel: new THREE.Vector3(),
   fwd: new THREE.Vector3(0, 0, -1), rightV: new THREE.Vector3(1, 0, 0),
   input: { mouseX: 0, mouseY: 0, touchX: 0, touchY: 0, mouseFire: false, touchFire: false, touchBoost: false, touchBack: false, novaReq: false },
   enemies: [], orbs: [], shots: [], bolts: [], rings: [],
-  dragon: null, dragonTimer: 0, dragonSeen: false,
+  dragon: null, dragonTimer: 0, dragonSeen: false, surging: false,
   spawnTimer: 0,
   castleTopY: 24
 };

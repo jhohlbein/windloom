@@ -3,8 +3,9 @@ import { CFG } from './config.js';
 import { W } from './state.js';
 import { fbm, smooth, lerp, clamp, mulberry } from './util.js';
 
-const WS = CFG.world.scale, HS = CFG.world.heightScale;
-export const SIZE = Math.round(1800 * WS);
+// The island shape was designed for a nominal radius of 1800 * 0.43 = 774 m; islandRadius rescales it.
+const WS = CFG.world.islandRadius / (1800 * 0.43), HS = CFG.world.heightScale;
+export const SIZE = Math.round(2 * CFG.world.worldRadius);
 
 function terrace(h) { const s = CFG.world.terraceStep, f = h / s, i = Math.floor(f); return (i + smooth(0.55, 0.95, f - i)) * s; }
 
@@ -19,12 +20,15 @@ export function rawH(x, z) {
   const m = Math.max(0, 1 - d * d);
   const n = fbm(x * 0.0030 + OFF[0], z * 0.0030 + OFF[1]);
   const r = 1 - Math.abs(fbm(x * 0.0065 + OFF[2], z * 0.0065 + OFF[3]) * 2 - 1);
-  const mount = terrace(Math.pow(r, 3.2) * Math.max(0, n - 0.42) * 520);
+  const mount = terrace(Math.pow(r, 3.2) * Math.max(0, n - 0.42) * 520 * CFG.world.mountainScale);
   const base = (n - 0.40) * 140;
   let h = (base + mount) * m * HS - (1 - m) * 28;
   if (h > 0.5 && h < 34) {
-    const dd = (x * Math.cos(W.DUNE_ANG) + z * Math.sin(W.DUNE_ANG)) * 0.06 + fbm(x * 0.004 + OFF[6], z * 0.004 + OFF[7]) * 5;
-    h += Math.pow(1 - Math.abs(Math.sin(dd)), 2.2) * CFG.world.duneHeight * smooth(0.5, 5, h) * smooth(34, 18, h);
+    // sin has period 2*PI, so a crest every duneWavelength metres (x, z are unscaled here, hence * WS)
+    const freq = Math.PI * WS / CFG.world.duneWavelength;
+    const dd = (x * Math.cos(W.DUNE_ANG) + z * Math.sin(W.DUNE_ANG)) * freq + fbm(x * 0.004 + OFF[6], z * 0.004 + OFF[7]) * 5;
+    const field = 0.35 + 1.3 * fbm(x * 0.0025 + OFF[7], z * 0.0025 + OFF[6]); // dune fields come and go
+    h += Math.pow(1 - Math.abs(Math.sin(dd)), 2.2) * CFG.world.duneHeight * field * smooth(0.5, 5, h) * smooth(34, 18, h);
   }
   for (const o of W.OASES) {
     const od = Math.hypot(wx - o.x, wz - o.z);
@@ -36,6 +40,13 @@ export function terrainH(x, z) {
   const h = rawH(x, z);
   const t = smooth(CFG.world.palaceFlattenOuter, CFG.world.palaceFlattenInner, Math.hypot(x - W.CX, z - W.CZ));
   return h + (W.PH - h) * t;
+}
+// 0..1: how green the ground is here (grass and scrub patches on low, gentle land). Used for colour and palms.
+export function greenAt(x, z, h, slope) {
+  if (h < 1.2 || h > 28 || slope > 1.1) return 0;
+  const g = fbm(x * 0.0045 / WS + W.OFF[2], z * 0.0045 / WS + W.OFF[3]);
+  const t0 = 0.33 + (0.5 - CFG.world.greenCover) * 0.35; // this fbm has its median near 0.35, 90% below ~0.51
+  return smooth(t0, t0 + 0.06, g) * smooth(28, 18, h) * smooth(1.2, 3, h) * smooth(1.1, 0.7, slope);
 }
 export function groundH(x, z) { return Math.max(terrainH(x, z), 0); }
 

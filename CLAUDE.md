@@ -22,12 +22,13 @@ Windloom is a browser game (three.js r128, plain ES modules, no build step) insp
 - Geometry flagged with `shared()` (see `scene.js`) is reused and must not be disposed. `disposeTree()` respects the flag.
 - Creatures share one interface (see `creatures/common.js`): `kind, name, pos, vel, r, hp, maxHp, update(e, dt), targetable(), showBar(), hitTest(point, radius), barPos(out), radar, root`. Add new creature types by following that shape and registering them in `creatures/spawn.js`.
 - Wyverns, drakes and the dragon are built by one parametric model in `creatures/beasts.js`; appearance parameters live there, gameplay numbers in the config.
-- Coordinates: y is up, the island is centred on the origin, sea level is y = 0. Models face −z.
+- Coordinates: one unit is one metre (the carpet is about 5 m long); y is up, the island is centred on the origin, sea level is y = 0. Models face −z.
 
 ## Conventions
 
 - Version lives in `src/version.js`; keep it in step with `CHANGELOG.md` (Keep a Changelog, SemVer). Add changes under `[Unreleased]` as you go.
 - New tunable numbers go into `config/game-config.json` and get a line in `config/CONFIG.md`.
+- `config/CONFIG.md` shows the current value of every key in `config/game-config.json` (the "Value" column). Whenever a value is changed, or a key is added or removed, update both files in the same change.
 - New third-party code, fonts or assets get an entry in `ACKNOWLEDGEMENTS.md`. Do not use assets, names or logos from Bullfrog/EA's *Magic Carpet*.
 - Keep it dependency-free at runtime apart from three.js; no bundler unless the owner asks for one.
 - Feature ideas and the planned refactor are in `REFACTOR_PLAN.md`.

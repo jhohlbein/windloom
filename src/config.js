@@ -6,6 +6,8 @@ export async function loadConfig(url = 'config/game-config.json') {
   const res = await fetch(url, { cache: 'no-cache' });
   if (!res.ok) throw new Error(`could not load ${url} (HTTP ${res.status})`);
   Object.assign(CFG, await res.json());
+  // Derived: where the sandstorm turns the player back
+  CFG.world.boundRadius = CFG.world.worldRadius * CFG.world.boundFraction;
 }
 
 // Hit points for a creature at a palace stage: hp + hpBonus * floor(stage / hpBonusEveryStages)

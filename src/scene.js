@@ -31,7 +31,7 @@ const cloudTex = radialTex([[0, 'rgba(255,255,255,.9)'], [0.5, 'rgba(255,255,255
 export function addSprite(mat, scale) { const s = new THREE.Sprite(mat); s.scale.set(scale, scale, 1); return s; }
 export function glowMat(color) { return new THREE.SpriteMaterial({ map: glowTex, color, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false }); }
 export const mats = {
-  fire: glowMat(0xffa040), bolt: glowMat(0xff3d5a), mana: glowMat(0x62e6ff), gold: glowMat(0xffc94a),
+  fire: glowMat(0xffa040), bolt: glowMat(0xff3d5a), mana: glowMat(0x62e6ff), gold: glowMat(0xffb21f),
   ink: glowMat(0x9b6bff), acid: glowMat(0x9dff4a), ember: glowMat(0xff5a1a), eye: glowMat(0xff3a1a)
 };
 // Geometries flagged as shared are never disposed when a palace stage or island is rebuilt.
@@ -75,10 +75,40 @@ for (let i = 0; i < 40; i++) {
   const cw = 260 + Math.random() * 420; cs.scale.set(cw, cw * 0.24, 1);
   scene.add(cs); clouds.push(cs);
 }
-const water = new THREE.Mesh(new THREE.PlaneGeometry(9000, 9000), new THREE.MeshStandardMaterial({ color: 0x2aa6ad, transparent: true, opacity: 0.82, roughness: 0.2, metalness: 0.05 }));
+/* ---------- water: sky reflection + scrolling ripples ---------- */
+// The sky (with stars and sun) is rendered once into a cube map that the water reflects.
+// Terrain and creatures are not reflected; that would need a second full scene render every frame.
+const envTarget = new THREE.WebGLCubeRenderTarget(256, { generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter });
+{
+  const envScene = new THREE.Scene(), envSky = sky.clone();
+  envScene.add(envSky);
+  const cubeCam = new THREE.CubeCamera(1, 6000, envTarget);
+  cubeCam.update(renderer, envScene);
+}
+// Tileable ripple normal map, generated from a few sine waves with integer frequencies
+function rippleNormals(n = 256) {
+  const c = document.createElement('canvas'); c.width = c.height = n;
+  const g = c.getContext('2d'), img = g.createImageData(n, n), K = TAU / n;
+  const waves = [[3, 1, 0.0], [1, 4, 1.3], [5, -2, 2.1], [-2, 7, 0.7], [9, 5, 2.9], [-7, 11, 4.1]];
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    let dx = 0, dy = 0;
+    for (const [a, b, p] of waves) { const amp = 1 / Math.hypot(a, b), c0 = Math.cos((a * x + b * y) * K + p) * amp; dx += c0 * a; dy += c0 * b; }
+    const nx = -dx * 0.12, ny = -dy * 0.12, l = Math.hypot(nx, ny, 1), i = (y * n + x) * 4;
+    img.data[i] = (nx / l * 0.5 + 0.5) * 255; img.data[i + 1] = (ny / l * 0.5 + 0.5) * 255; img.data[i + 2] = (1 / l * 0.5 + 0.5) * 255; img.data[i + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(160, 160);
+  return t;
+}
+const waterNormals = rippleNormals();
+const water = new THREE.Mesh(new THREE.PlaneGeometry(9000, 9000), new THREE.MeshStandardMaterial({
+  color: 0x2aa6ad, transparent: true, opacity: 0.82, roughness: 0.06, metalness: 0.1,
+  envMap: envTarget.texture, envMapIntensity: 0.9, normalMap: waterNormals, normalScale: new THREE.Vector2(0.35, 0.35)
+}));
 water.rotation.x = -Math.PI / 2; scene.add(water);
 
 export function updateSky(dt) {
+  waterNormals.offset.x += dt * 0.012; waterNormals.offset.y += dt * 0.007;
   for (const c of clouds) { c.position.x += dt * 4; if (c.position.x > 2800) c.position.x = -2800; }
   sky.position.copy(camera.position);
 }

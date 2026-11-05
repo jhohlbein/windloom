@@ -1,16 +1,16 @@
 # Refactor and feature plan
 
-Ideas for the next versions, roughly in the order they build on each other. Nothing here is implemented yet.
+Ideas for the next versions, roughly in the order they build on each other. Part 1 is implemented; the rest are ideas.
 
-## 1. Five-minute rounds
+## 1. Timed rounds (done)
 
-Give each game a clear arc: a round lasts 5 minutes, after which the result is scored.
+Implemented in `src/round.js`, numbers in the config section `round`:
 
-- Add `round.durationSeconds` (300) to the config and a countdown on the HUD.
-- At zero, freeze play and show a results screen: palace stage reached, mana banked, creatures slain, whether Vharoth fell.
-- Decide what winning means: reaching the Crescent Sanctum before time runs out, or simply the highest score. A score could be banked mana plus bonuses per stage and per kill.
-- Open question: does the clock pause in the palace beam, or keep running to stop players from camping?
-- Store best results per seed in `localStorage` so an island can be replayed for a better score.
+- A round lasts 4 minutes (`round.durationSeconds` 240), with a countdown at the top of the HUD that turns red in the last 30 seconds.
+- The clock keeps running in the palace beam; it stops only while paused.
+- The round ends when time runs out, or early when the palace is complete and Vharoth is slain.
+- Score: points per creature slain by kind, per palace stage raised, for slaying Vharoth, and for finishing early plus points per second left.
+- A results screen shows the breakdown; the best score per seed is stored in `localStorage` and shown with the island name.
 
 ## 2. Enemies grow with the palace
 

@@ -22,8 +22,11 @@ export function applyLevel(L, announce) {
   if (announce && L > prev) {
     addRing(new THREE.Vector3(W.CX, W.PH + 10, W.CZ), 160, 1.1, 0xffd36b);
     burst(new THREE.Vector3(W.CX, W.PH + G.castleTopY, W.CZ), 70, C.GOLD, 40, 3, 1.2);
-    toast('Palace raised: ' + CFG.palace.stageNames[L - 1], 3200); sfx('level');
-    if (L >= stageCount() && !G.won) G.winTimer = 2.4;
+    // Name any creatures whose fromStage was just reached
+    const S = CFG.spawning, news = [S.sandworms, S.drakes, S.krakens, S.dragon]
+      .filter(r => r && r.announce && r.fromStage > prev && r.fromStage <= L).map(r => r.announce);
+    if (L >= stageCount() && !G.dragonSlain) news.push('Slay Vharoth to end the round early.');
+    toast(['Palace raised: ' + CFG.palace.stageNames[L - 1], ...news].join('\n'), news.length ? 5200 : 3200); sfx('level');
   }
 }
 

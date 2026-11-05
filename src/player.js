@@ -43,6 +43,7 @@ export function updatePlayer(dt) {
   G.yaw -= G.steerX * cp.turnRate * dt;
   G.pitch = lerp(G.pitch, G.steerY * cp.pitchMax, Math.min(1, dt * 3));
   const boost = keys.KeyW || keys.ShiftLeft || keys.ShiftRight || I.touchBoost, back = keys.KeyS || I.touchBack;
+  G.surging = boost && !back;
   const want = back ? -cp.baseSpeed * cp.reverseMultiplier : boost ? cp.baseSpeed * cp.surgeMultiplier : cp.baseSpeed;
   G.speed = lerp(G.speed, want, Math.min(1, dt * (back ? 1.6 : 2)));
   const st = ((keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0)) * cp.strafeSpeed;
@@ -70,6 +71,9 @@ export function updatePlayer(dt) {
   const tail = G.speed >= 0 ? -2.4 : 2.4;
   emit(P.x + G.fwd.x * tail, P.y + G.fwd.y * tail - 0.2, P.z + G.fwd.z * tail, (Math.random() - 0.5) * 3, (Math.random() - 0.5) * 3, (Math.random() - 0.5) * 3, C.MANA, 1.2, 0.6);
   if (G.playTime - G.lastHurt > cp.regenDelaySeconds && G.hp < G.maxHp) G.hp = Math.min(G.maxHp, G.hp + cp.regenPerSecond * dt);
+  const SM = CFG.spells.mana;
+  G.spellMana = Math.min(SM.max, G.spellMana + SM.regenPerSecond * dt);
+  if (G.spellExhausted && G.spellMana >= SM.refireAt) G.spellExhausted = false;
   G.fireCd -= dt; G.novaCd -= dt; G.invuln = Math.max(0, G.invuln - dt); G.wallToast -= dt;
   if (I.mouseFire || I.touchFire || keys.Space) castFire();
   if (I.novaReq) { I.novaReq = false; castNova(); }

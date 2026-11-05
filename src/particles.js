@@ -20,7 +20,7 @@ const points = new THREE.Points(pg, pMat); points.frustumCulled = false; scene.a
 let pHead = 0;
 
 export const C = {
-  MANA: [0.38, 0.9, 1], FIRE: [1, 0.6, 0.2], RED: [1, 0.25, 0.35], GOLD: [1, 0.8, 0.32], DUST: [0.9, 0.78, 0.55],
+  MANA: [0.38, 0.9, 1], FIRE: [1, 0.6, 0.2], RED: [1, 0.25, 0.35], GOLD: [1, 0.72, 0.16], DUST: [0.9, 0.78, 0.55],
   SPRAY: [0.8, 0.95, 1], INK: [0.6, 0.42, 1], ACID: [0.6, 1, 0.3], EMBER: [1, 0.4, 0.12]
 };
 export function emit(x, y, z, vx, vy, vz, c, size, life) {

@@ -4,7 +4,7 @@ import { CFG } from './config.js';
 import { W } from './state.js';
 import { TAU, clamp, smooth, mulberry, vnoise } from './util.js';
 import { scene, shared, addSprite, mats, disposeTree } from './scene.js';
-import { rawH, terrainH, SIZE } from './terrain.js';
+import { rawH, terrainH, greenAt, SIZE } from './terrain.js';
 import { castle } from './palace.js';
 
 const worldGroup = new THREE.Group(); scene.add(worldGroup);
@@ -70,7 +70,7 @@ export function buildWorld(seed) {
 
   // terrain mesh with vertex colours
   const cSand = new THREE.Color(0xf3d39a), cSand2 = new THREE.Color(0xe0b574), cWet = new THREE.Color(0xb48e60), cRock = new THREE.Color(0xb8663f), cRock2 = new THREE.Color(0x854531),
-    cTop = new THREE.Color(0xdcae7c), cGrass = new THREE.Color(0x7d9a46), cBed = new THREE.Color(0x1e6d78), cAsh = new THREE.Color(0x3a3040);
+    cTop = new THREE.Color(0xdcae7c), cGrass = new THREE.Color(0x7d9a46), cScrub = new THREE.Color(0x9aa457), cBed = new THREE.Color(0x1e6d78), cAsh = new THREE.Color(0x3a3040);
   const out = new THREE.Color();
   function colorAt(h, slope, x, z) {
     if (h < -0.8) out.copy(cBed);
@@ -80,6 +80,8 @@ export function buildWorld(seed) {
       if (h > 20 && slope < 0.35) out.lerp(cTop, 0.7);
       out.lerp(cRock, smooth(0.85, 1.4, slope));
       out.lerp(cRock2, smooth(1.4, 2.2, slope) * 0.6);
+      const gr = greenAt(x, z, h, slope);
+      if (gr > 0) out.lerp(vnoise(x * 0.03, z * 0.03) > 0.5 ? cGrass : cScrub, gr * 0.85);
     }
     for (const o of W.OASES) { const od = Math.hypot(x - o.x, z - o.z); if (h > -0.8 && od < o.r * 1.35) out.lerp(cGrass, smooth(o.r * 1.35, o.r * 0.8, od) * 0.9); }
     const cd = Math.hypot(x - W.CX, z - W.CZ); if (cd > 26 && cd < 46) out.lerp(cGrass, smooth(26, 30, cd) * smooth(46, 40, cd) * 0.8);
@@ -103,6 +105,12 @@ export function buildWorld(seed) {
   const palms = [];
   for (const o of W.OASES) for (let n = 0; n < 24; n++) { const a = rnd() * TAU, d = o.r * (0.5 + rnd() * 0.75), px = o.x + Math.cos(a) * d, pz = o.z + Math.sin(a) * d; if (terrainH(px, pz) > 0.6) palms.push([px, pz]); }
   for (let g = 0; g < 16; g++) { const ga = g / 16 * TAU + rnd() * 0.2, gd = 31 + rnd() * 10; palms.push([W.CX + Math.cos(ga) * gd, W.CZ + Math.sin(ga) * gd]); }
+  // palms in the green patches
+  for (let pt = 0; pt < 4000 && palms.length < cw.palmMax * 0.6; pt++) {
+    const px = (rnd() - 0.5) * SIZE * 0.95, pz = (rnd() - 0.5) * SIZE * 0.95, ph = terrainH(px, pz);
+    const sl = (Math.abs(terrainH(px + 6, pz) - ph) + Math.abs(terrainH(px, pz + 6) - ph)) / 6;
+    if (greenAt(px, pz, ph, sl) > 0.6 && Math.hypot(px - W.CX, pz - W.CZ) > 50 && rnd() < 0.35) palms.push([px, pz]);
+  }
   for (let pt = 0; pt < 2500 && palms.length < cw.palmMax; pt++) {
     const px = (rnd() - 0.5) * SIZE * 0.95, pz = (rnd() - 0.5) * SIZE * 0.95, ph = terrainH(px, pz);
     if (ph < 0.8 || ph > 7) continue;

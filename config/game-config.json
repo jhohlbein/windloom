@@ -1,18 +1,22 @@
 {
   "world": {
-    "scale": 0.62,
-    "heightScale": 0.78,
-    "boundRadius": 540,
+    "islandRadius": 480,
+    "worldRadius": 558,
+    "boundFraction": 0.95,
+    "heightScale": 0.5,
+    "mountainScale": 0.55,
     "ceiling": 320,
     "fogNear": 150,
     "fogFar": 950,
-    "terrainSegments": 170,
-    "duneHeight": 4.2,
+    "terrainSegments": 320,
+    "duneHeight": 7,
+    "duneWavelength": 60,
+    "greenCover": 0.3,
     "terraceStep": 12,
     "oasisCount": 3,
     "oasisRadiusMin": 34,
     "oasisRadiusMax": 50,
-    "palmMax": 360,
+    "palmMax": 520,
     "rockCount": 170,
     "palaceFlattenOuter": 70,
     "palaceFlattenInner": 34,
@@ -26,8 +30,8 @@
     "strafeSpeed": 32,
     "turnRate": 1.55,
     "pitchMax": 0.8,
-    "maxHp": 100,
-    "maxHpPerStage": 10,
+    "maxHp": 70,
+    "maxHpPerStage": 7,
     "regenPerSecond": 1.5,
     "regenDelaySeconds": 5,
     "invulnerableAfterHitSeconds": 0.6,
@@ -36,9 +40,15 @@
     "carryPerStage": 20
   },
   "spells": {
+    "mana": {
+      "max": 100,
+      "regenPerSecond": 8,
+      "refireAt": 25
+    },
     "fireball": {
-      "cooldownSeconds": 0.27,
-      "speed": 200,
+      "cooldownSeconds": 0.135,
+      "manaCost": 2,
+      "speed": 400,
       "lifetimeSeconds": 2.1,
       "damage": 1,
       "damagePerStage": 0.25,
@@ -54,6 +64,15 @@
       "damagePerStage": 0.5
     }
   },
+  "round": {
+    "durationSeconds": 240,
+    "warnSeconds": 30,
+    "pointsPerKill": { "wyvern": 10, "drake": 25, "worm": 30, "kraken": 40 },
+    "pointsPerStage": 100,
+    "dragonSlainBonus": 500,
+    "completionBonus": 1000,
+    "pointsPerSecondLeft": 10
+  },
   "palace": {
     "stageNames": ["Minaret", "Palace", "Garden Walls", "Golden Dome", "Lantern Ring", "Crescent Sanctum"],
     "stageThresholds": [0, 50, 130, 250, 420, 650],
@@ -66,15 +85,19 @@
   "mana": {
     "orbLifetimeSeconds": 120,
     "magnetRadius": 34,
-    "pickupRadius": 3.8
+    "pickupRadius": 3.8,
+    "startClusters": 8,
+    "startOrbsPerCluster": 3,
+    "startOrbValue": 2
   },
   "spawning": {
     "intervalSeconds": 2,
     "flyersAtStart": 6,
     "flyers": { "base": 4, "add": 2, "everyStages": 1, "max": 13 },
-    "krakens": { "base": 1, "add": 1, "everyStages": 2, "max": 3 },
-    "sandworms": { "base": 1, "add": 1, "everyStages": 2, "max": 3 },
-    "drakes": { "fromStage": 2, "chanceBase": 0.16, "chancePerStage": 0.05, "maxBase": 1, "maxAdd": 1, "maxEveryStages": 2 },
+    "krakens": { "fromStage": 4, "base": 2, "add": 2, "everyStages": 2, "max": 6, "announce": "Krakens stir in the deep water around the island." },
+    "sandworms": { "fromStage": 3, "base": 2, "add": 2, "everyStages": 2, "max": 6, "announce": "Sandworms wake beneath the dunes." },
+    "drakes": { "fromStage": 2, "chanceBase": 0.16, "chancePerStage": 0.05, "maxBase": 1, "maxAdd": 1, "maxEveryStages": 2, "announce": "Drakes join the wyverns in the sky." },
+    "dragon": { "fromStage": 5, "announce": "Vharoth wakes on the highest peak." },
     "dragonRespawnSeconds": 240
   },
   "creatures": {
@@ -173,5 +196,15 @@
       "drops": 36,
       "manaPerDrop": 5
     }
+  },
+  "audio": {
+    "masterVolume": 0.9,
+    "sfxVolume": 1,
+    "musicVolume": 0.35,
+    "windVolume": 0.09,
+    "tempoCalm": 88,
+    "tempoDanger": 124,
+    "dangerHoldSeconds": 6,
+    "melodyGlideSeconds": 0.25
   }
 }

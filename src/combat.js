@@ -8,7 +8,7 @@ import { terrainH, groundH } from './terrain.js';
 import { emit, burst, C } from './particles.js';
 import { sfx } from './audio.js';
 import { toast, flashHurt } from './hud.js';
-import { carryCap } from './progress.js';
+import { carryCap, stageCount } from './progress.js';
 import { removeEnemyObj } from './creatures/common.js';
 import { dragonAlert } from './creatures/dragon.js';
 import { placePlayerAtCastle } from './player.js';
@@ -16,7 +16,7 @@ import { placePlayerAtCastle } from './player.js';
 const tmp = new THREE.Vector3();
 
 /* ---------- mana orbs (only dropped by creatures) ---------- */
-const orbGeo = new THREE.IcosahedronGeometry(0.85, 0), orbMat = new THREE.MeshBasicMaterial({ color: 0xffe08a });
+const orbGeo = new THREE.IcosahedronGeometry(0.85, 0), orbMat = new THREE.MeshStandardMaterial({ color: 0xffc02a, emissive: 0xb07400, roughness: 0.25, metalness: 0.8, flatShading: true });
 export function spawnOrb(pos, val, vel, keep) {
   const g = new THREE.Group();
   const m = new THREE.Mesh(orbGeo, orbMat); g.add(m);
@@ -25,8 +25,10 @@ export function spawnOrb(pos, val, vel, keep) {
   G.orbs.push({ g, m, pos: g.position, vel: vel ? vel.clone() : new THREE.Vector3(), val, age: 0, keep: !!keep, ph: Math.random() * TAU });
 }
 function removeOrb(i) { scene.remove(G.orbs[i].g); G.orbs.splice(i, 1); }
+let fullHint = false; // shown once per full load
 export function updateOrbs(dt) {
   const cap = carryCap(), P = G.playerPos, cm = CFG.mana;
+  if (G.carried < cap) fullHint = false;
   for (let i = G.orbs.length - 1; i >= 0; i--) {
     const o = G.orbs[i]; o.age += dt;
     o.m.rotation.y += dt * 2; o.m.position.y = Math.sin(o.age * 3 + o.ph) * 0.5;
@@ -42,6 +44,7 @@ export function updateOrbs(dt) {
         if (o.pos.y < gy) { o.pos.y = gy; o.vel.set(0, 0, 0); }
       }
     }
+    if (!canTake && G.active && d < cm.magnetRadius && !fullHint) { fullHint = true; toast('You carry all you can. Bank it in the beam.', 2200); }
     if (canTake && d < cm.pickupRadius) {
       G.carried = Math.min(cap, G.carried + o.val);
       burst(o.pos, 6, C.GOLD, 10, 1.4, 0.4); sfx('mana'); removeOrb(i); continue;
@@ -93,16 +96,17 @@ export function killEnemy(e) {
   burst(e.pos, big ? 90 : 30, C.RED, big ? 40 : 22, 2.4, 0.8);
   if (e.kind === 'kraken') burst(e.pos, 40, C.INK, 26, 2.6, 0.9);
   if (e.kind === 'worm') burst(e.pos, 40, C.DUST, 26, 2.8, 1);
-  const spread = big ? 32 : 14;
+  const spread = big ? 16 : 14; // the dragon's hoard lands in a pile, not scattered beyond the magnet's reach
   for (let n = 0; n < e.dropN; n++) {
     const a = Math.random() * TAU, s = 8 + Math.random() * spread;
     spawnOrb(e.pos, e.dropV, new THREE.Vector3(Math.cos(a) * s, 6 + Math.random() * (big ? 18 : 10), Math.sin(a) * s), e.keepDrops);
   }
-  G.kills++; sfx('kill');
+  G.kills++; G.killsBy[e.kind] = (G.killsBy[e.kind] || 0) + 1; sfx('kill');
   if (big) {
     sfx('roar', 0.8); addRing(e.pos, 150, 1.3, 0xff6a1a);
     G.dragon = null; G.dragonTimer = CFG.spawning.dragonRespawnSeconds;
-    toast('Vharoth falls. Its hoard scatters across the sand.', 3800);
+    G.dragonSlain = true;
+    toast('Vharoth falls. Its hoard scatters across the sand.' + (G.level < stageCount() ? '\nComplete the palace to end the round early.' : ''), 4200);
   } else toast(e.name + ' slain', 1400);
 }
 export function hurtPlayer(d) {
@@ -138,7 +142,11 @@ function makeNoise() {
 }
 export function castFire() {
   const fb = CFG.spells.fireball;
-  if (G.fireCd > 0) return; G.fireCd = fb.cooldownSeconds; makeNoise();
+  if (G.fireCd > 0 || G.spellExhausted) return;
+  // Firing nonstop drains spell mana a little faster than it refills; once empty, wait until it reaches refireAt
+  if (G.spellMana < fb.manaCost) { G.spellExhausted = true; toast('Out of spell mana', 1000); return; }
+  G.spellMana -= fb.manaCost; makeNoise();
+  G.fireCd = Math.max(G.fireCd, -0.05) + fb.cooldownSeconds; // keep the overshoot so the rate does not depend on frame rate
   const dir = aimDir();
   const g = addSprite(mats.fire, 5.5); g.position.copy(G.playerPos).addScaledVector(G.fwd, 3.2); g.position.y -= 0.3; scene.add(g);
   G.shots.push({ g, pos: g.position, vel: dir.multiplyScalar(fb.speed).add(G.playerVel.clone().multiplyScalar(0.3)), life: fb.lifetimeSeconds, dmg: fb.damage + fb.damagePerStage * (G.level - 1) });
@@ -147,8 +155,8 @@ export function castFire() {
 export function castNova() {
   const nv = CFG.spells.nova;
   if (G.novaCd > 0) return;
-  if (G.carried < nv.manaCost) { toast('Nova needs ' + nv.manaCost + ' mana', 1400); G.novaCd = 0.6; return; }
-  G.carried -= nv.manaCost; G.novaCd = nv.cooldownSeconds; makeNoise();
+  if (G.spellMana < nv.manaCost) { toast('Nova needs ' + nv.manaCost + ' spell mana', 1400); G.novaCd = 0.6; return; }
+  G.spellMana -= nv.manaCost; G.novaCd = nv.cooldownSeconds; makeNoise();
   addRing(G.playerPos, nv.radius, 0.55, 0x7defff); sfx('nova');
   burst(G.playerPos, 50, C.MANA, 50, 2.4, 0.8);
   G.enemies.slice().forEach(e => { if (e.targetable() && e.pos.distanceTo(G.playerPos) < nv.radius + e.r) damageEnemy(e, nv.damage + nv.damagePerStage * (G.level - 1)); });

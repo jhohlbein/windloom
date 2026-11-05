@@ -9,6 +9,7 @@ import { createFlyer } from './flyers.js';
 import { createKraken } from './kraken.js';
 import { createWorm } from './sandworm.js';
 import { createDragon } from './dragon.js';
+import { spawnOrb } from '../combat.js';
 
 const far = (x, z, d) => !G.active || Math.hypot(x - G.playerPos.x, z - G.playerPos.z) >= d;
 
@@ -39,18 +40,45 @@ export function spawnWorm() {
     G.enemies.push(createWorm(new THREE.Vector3(x, h, z))); return;
   }
 }
-export function spawnDragon() { G.dragon = createDragon(); G.enemies.push(G.dragon); }
+// There is only ever one Vharoth
+export function spawnDragon() { if (G.dragon || countKind('dragon')) return; G.dragon = createDragon(); G.enemies.push(G.dragon); }
+
+// A creature group (spawning.krakens, sandworms, drakes, dragon) is active from its fromStage on
+export const unlocked = (rule, stage = G.level) => stage >= (rule.fromStage || 1);
 
 export function populate() {
-  for (let i = 0; i < CFG.spawning.flyersAtStart; i++) spawnFlyer();
-  spawnKraken(); spawnWorm(); spawnDragon();
+  const S = CFG.spawning;
+  for (let i = 0; i < S.flyersAtStart; i++) spawnFlyer();
+  if (unlocked(S.krakens)) spawnKraken();
+  if (unlocked(S.sandworms)) spawnWorm();
+  if (unlocked(S.dragon)) spawnDragon();
+  scatterMana();
 }
-// Called every spawning.intervalSeconds: top up whichever group is below its target
+// Starting mana: small clusters of orbs lying on land, away from the palace. They never expire.
+function scatterMana() {
+  const M = CFG.mana, R = CFG.world.islandRadius;
+  for (let c = 0, tries = 0; c < M.startClusters && tries < 400; tries++) {
+    const a = Math.random() * TAU, r = Math.sqrt(Math.random()) * R * 0.9, x = Math.cos(a) * r, z = Math.sin(a) * r;
+    if (terrainH(x, z) < 2 || Math.hypot(x - W.CX, z - W.CZ) < 80) continue;
+    for (let n = 0; n < M.startOrbsPerCluster; n++) {
+      const ox = x + (Math.random() - 0.5) * 12, oz = z + (Math.random() - 0.5) * 12;
+      spawnOrb(new THREE.Vector3(ox, groundH(ox, oz) + 2.4, oz), M.startOrbValue, null, true);
+    }
+    c++;
+  }
+}
+// Called every spawning.intervalSeconds: add one creature to the group that is furthest below its target
+// (as a fraction), so a newly unlocked group fills up quickly instead of waiting for the flyers
 export function spawnTick() {
   const S = CFG.spawning, L = G.level;
-  if (countKind('wyvern') + countKind('drake') < targetFor(S.flyers, L)) { spawnFlyer(); return; }
-  if (countKind('kraken') < targetFor(S.krakens, L)) { spawnKraken(); return; }
-  if (countKind('worm') < targetFor(S.sandworms, L)) { spawnWorm(); }
+  const groups = [
+    { n: countKind('wyvern') + countKind('drake'), target: targetFor(S.flyers, L), spawn: spawnFlyer },
+    { n: countKind('worm'), target: unlocked(S.sandworms) ? targetFor(S.sandworms, L) : 0, spawn: spawnWorm },
+    { n: countKind('kraken'), target: unlocked(S.krakens) ? targetFor(S.krakens, L) : 0, spawn: spawnKraken }
+  ].filter(g => g.n < g.target);
+  if (!groups.length) return;
+  groups.sort((a, b) => a.n / a.target - b.n / b.target);
+  groups[0].spawn();
 }
 export function updateEnemies(dt) {
   for (let i = G.enemies.length - 1; i >= 0; i--) {

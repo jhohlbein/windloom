@@ -5,11 +5,12 @@ import { G, W } from './state.js';
 import { camera } from './scene.js';
 import { clamp, smooth, TAU } from './util.js';
 import { carryCap } from './progress.js';
+import { formatClock } from './round.js';
 
 const $ = id => document.getElementById(id);
 export const hud = $('hud');
-const elHpLbl = $('hpLbl'), elHp = $('hpFill'), elMana = $('manaNum'), elCap = $('manaCap'), elStage = $('stage'),
-  elCastle = $('castleFill'), elCastleTxt = $('castleTxt'), elToast = $('toast'), elHurt = $('hurt'), elSteer = $('steer');
+const elHpLbl = $('hpLbl'), elHp = $('hpFill'), elSpLbl = $('spLbl'), elSp = $('spFill'), elMana = $('manaNum'), elCap = $('manaCap'), elStage = $('stage'),
+  elCastle = $('castleFill'), elCastleTxt = $('castleTxt'), elToast = $('toast'), elHurt = $('hurt'), elSteer = $('steer'), elClock = $('clock');
 const rctx = $('radar').getContext('2d');
 const NUMERALS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
 let toastTimer = 0;
@@ -24,16 +25,21 @@ function setText(el, key, v) { if (cache[key] !== v) { cache[key] = v; el.textCo
 export function updateHud() {
   const hpPct = clamp(G.hp / G.maxHp, 0, 1);
   elHp.style.width = (hpPct * 100).toFixed(1) + '%';
-  elHp.style.background = hpPct > 0.5 ? '#5fe0d6' : hpPct > 0.25 ? '#ffcf63' : '#ff4d6d';
   setText(elHpLbl, 'hl', G.hp < G.maxHp && G.playTime - G.lastHurt > CFG.player.regenDelaySeconds ? 'Vitality · mending' : 'Vitality');
+  elSp.style.width = (clamp(G.spellMana / CFG.spells.mana.max, 0, 1) * 100).toFixed(1) + '%';
+  elSp.classList.toggle('out', G.spellExhausted);
+  setText(elSpLbl, 'sl', G.spellExhausted ? 'Spell mana · recovering' : 'Spell mana');
   setText(elMana, 'm', String(Math.floor(G.carried)));
-  setText(elCap, 'c', '/ ' + carryCap());
+  setText(elCap, 'c', G.carried >= carryCap() ? '/ ' + carryCap() + ' full' : '/ ' + carryCap());
+  elMana.classList.toggle('full', G.carried >= carryCap());
   setText(elStage, 's', stageLabel(G.level));
   const T = CFG.palace.stageThresholds, last = T.length;
   const lo = T[G.level - 1], hi = G.level < last ? T[G.level] : T[last - 1];
   const frac = G.level >= last ? 1 : clamp((G.castleMana - lo) / (hi - lo), 0, 1);
   elCastle.style.width = (frac * 100).toFixed(1) + '%';
   setText(elCastleTxt, 'ct', G.level >= last ? 'Complete' : Math.floor(G.castleMana) + ' / ' + hi);
+  setText(elClock, 'clk', formatClock(G.timeLeft));
+  elClock.classList.toggle('warn', G.timeLeft <= CFG.round.warnSeconds);
   elSteer.style.transform = 'translate(' + (G.steerX * 70).toFixed(1) + 'px,' + (-G.steerY * 70).toFixed(1) + 'px)';
 }
 
@@ -109,7 +115,7 @@ export function drawBars() {
   fctx.globalAlpha = 1;
   const D = G.dragon;
   if (D && D.st !== 'roost') {
-    const wide = fxW >= 720, bw = wide ? Math.min(440, fxW - 460) : fxW - 32, bx = Math.round((fxW - bw) / 2), by = wide ? 44 : 156;
+    const wide = fxW >= 720, bw = wide ? Math.min(440, fxW - 460) : fxW - 32, bx = Math.round((fxW - bw) / 2), by = wide ? 72 : 156;
     const df = clamp(D.hp / D.maxHp, 0, 1), dg = clamp(D.ghost / D.maxHp, 0, 1);
     fctx.font = "700 13px Syne, 'Helvetica Neue', Arial, sans-serif"; spacing('2px');
     fctx.fillStyle = '#ff4d6d'; fctx.fillText('VHAROTH, THE ASH WYRM', fxW / 2, by - 6);

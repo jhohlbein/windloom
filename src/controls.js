@@ -21,13 +21,24 @@ export function bindControls({ onPause, onMute, onBlur }) {
 
   // Mouse: offset from screen centre steers (dead zone in the middle). Touch: drag from where the finger lands.
   let steerTouch = null;
+  // Mouse buttons are read from the e.buttons bitmask on every pointer event. Browsers send pointerdown only for
+  // the first button pressed and pointerup only when the last one is released; a second button (e.g. right-click
+  // for nova while holding fire) arrives as pointermove. Reading e.button alone left fire stuck on.
+  let prevButtons = 0;
+  const mouseButtons = e => {
+    if (e.pointerType !== 'mouse') return;
+    const b = e.buttons, pressed = b & ~prevButtons; prevButtons = b;
+    if (!(b & 1)) I.mouseFire = false;
+    if (!G.active || e.target !== canvas) return;
+    if (pressed & 1) I.mouseFire = true;
+    if (pressed & 2) I.novaReq = true;
+  };
+  window.addEventListener('pointerdown', mouseButtons);
+  window.addEventListener('pointerup', mouseButtons);
   canvas.addEventListener('pointerdown', e => {
     audioInit();
     if (!G.active) return;
-    if (e.pointerType === 'mouse') {
-      if (e.button === 0) I.mouseFire = true;
-      else if (e.button === 2) I.novaReq = true;
-    } else {
+    if (e.pointerType !== 'mouse') {
       steerTouch = { id: e.pointerId, x: e.clientX, y: e.clientY };
       try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* optional */ }
     }
@@ -38,14 +49,14 @@ export function bindControls({ onPause, onMute, onBlur }) {
     }
   });
   const endTouch = e => {
-    if (e.pointerType === 'mouse') { if (e.button === 0) I.mouseFire = false; return; }
+    if (e.pointerType === 'mouse') return;
     if (steerTouch && steerTouch.id === e.pointerId) { steerTouch = null; I.touchX = 0; I.touchY = 0; }
   };
   canvas.addEventListener('pointerup', endTouch);
   canvas.addEventListener('pointercancel', endTouch);
-  window.addEventListener('pointerup', e => { if (e.pointerType === 'mouse' && e.button === 0) I.mouseFire = false; });
   window.addEventListener('pointermove', e => {
     if (e.pointerType !== 'mouse') return;
+    if (e.buttons !== prevButtons) mouseButtons(e);
     const w = window.innerWidth, h = window.innerHeight, s = Math.min(w, h) * 0.36, dz = 0.07;
     const shape = v => { const a = Math.abs(v); return a < dz ? 0 : Math.sign(v) * (a - dz) / (1 - dz); };
     I.mouseX = shape(clamp((e.clientX - w / 2) / s, -1, 1));
@@ -66,6 +77,6 @@ export function bindControls({ onPause, onMute, onBlur }) {
 
 export function releaseInput() {
   const I = G.input;
-  I.mouseFire = I.touchFire = I.touchBoost = I.touchBack = false; I.mouseX = I.mouseY = 0;
+  I.mouseFire = I.touchFire = I.touchBoost = I.touchBack = false; I.mouseX = I.mouseY = 0; I.novaReq = false;
   for (const k in G.keys) delete G.keys[k];
 }

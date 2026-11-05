@@ -23,9 +23,15 @@
       <div class="lbl" id="hpLbl">Vitality</div>
       <div class="bar" style="margin-top:5px"><i id="hpFill"></i></div>
     </div>
+    <div>
+      <div class="lbl" id="spLbl">Spell mana</div>
+      <div class="bar" style="margin-top:5px"><i id="spFill"></i></div>
+    </div>
     <div class="row"><span class="lbl">Mana carried</span><span><span id="manaNum">0</span> <span id="manaCap">/ 120</span></span></div>
   </div>
   <div id="radarWrap"><canvas id="radar" width="224" height="224"></canvas></div>
+  <div id="fps">– fps</div>
+  <div id="clock" class="glass">4:00</div>
   <div id="cross"></div><div id="steer"></div>
   <div id="castle" class="glass">
     <div class="row"><span class="lbl">Palace</span><span id="stage">Minaret · I</span></div>
@@ -46,7 +52,7 @@
     <div class="weave"></div>
     <h1 id="ovTitle">Windloom</h1>
     <p class="isle" id="isle">Loading…</p>
-    <p class="lede" id="ovText">Ride a flying carpet over a desert island of dunes, mesas and hidden oases. Every creature you slay drops golden mana. Carry it home to the beam of light above your palace and raise it through six stages to the Crescent Sanctum. Every game is a new island.</p>
+    <p class="lede" id="ovText">Ride a flying carpet over a desert island of dunes, mesas and hidden oases. Every creature you slay drops golden mana. Carry it home to the beam of light above your palace and raise it through six stages to the Crescent Sanctum. A round lasts four minutes: score points for every creature, every stage and for slaying the dragon Vharoth, and finish early with the palace complete and Vharoth slain for a big bonus. Every game is a new island.</p>
     <p id="stats" hidden></p>
     <div class="ctl" id="ovCtl">
       <div>
@@ -58,7 +64,7 @@
           <dt>S</dt><dd>fly backwards</dd>
           <dt>A / D</dt><dd>strafe left and right</dd>
           <dt>Click / Space</dt><dd>fireball</dd>
-          <dt>Right-click / E</dt><dd>nova, costs mana</dd>
+          <dt>Right-click / E</dt><dd>nova, costs spell mana</dd>
           <dt>Esc / M</dt><dd>pause / mute</dd>
         </dl>
       </div>
@@ -67,7 +73,7 @@
         <dl>
           <dt>Drag</dt><dd>turn and climb</dd>
           <dt>Fire</dt><dd>hold for fireballs</dd>
-          <dt>Nova</dt><dd>blast, costs mana</dd>
+          <dt>Nova</dt><dd>blast, costs spell mana</dd>
           <dt>Surge / Back</dt><dd>hold to speed up or reverse</dd>
         </dl>
       </div>

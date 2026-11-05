@@ -4,6 +4,34 @@ All notable changes to Windloom are recorded here. The format follows [Keep a Ch
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-05
+
+### Added
+- Start screen shows the time of the latest file change next to the version, so you can tell which build you loaded.
+- Sandworms appear from palace stage 3, krakens from stage 4 and Vharoth from stage 5 (`fromStage` in the config). When a stage unlocks a creature, a line under "Palace raised" announces it.
+- Starting mana: clusters of orbs lying on the island at the start of a game.
+- Water reflects the sky and has moving ripples with sun glints.
+- Synthesised sound: "shoosh" fireball, wind that follows your speed with a whoosh when surging, and generated background music in maqam Hijaz (drone, darbuka, ney) that speeds up and adds an oud ostinato under attack. Volumes and tempos in the new `audio` config section.
+- Timed rounds of 4 minutes with a countdown on the HUD. The round ends early when the palace is complete and Vharoth is slain. A results screen shows the score (creatures slain, stages, Vharoth, completion and time bonus); the best score per island seed is kept in the browser.
+- Spell mana: a blue bar under vitality. Fireball and nova cost spell mana, which refills at 8 per second; nova no longer spends carried mana; holding fire drains it slowly, and once empty you must wait until it partly refills.
+- FPS counter under the radar (frames per second and the slowest frame of the last half second).
+
+### Fixed
+- Fire could stay on after releasing the left mouse button if the right button was pressed in between; right-click nova during fire did not cast. Mouse buttons are now read from the full button state.
+
+### Changed
+- When your carry is full, the HUD says "full" and a hint tells you to bank it; orbs only fly to you while you have room. Vharoth's hoard now lands in a tighter pile.
+- World size is now set in metres: `world.scale` is replaced by `islandRadius` and `worldRadius`, and `boundRadius` is derived as `worldRadius × boundFraction` (0.95). Island seeds shift very slightly (scale 0.62 became a 480 m radius).
+- Fireball speed 200 → 400, `heightScale` 0.78 → 0.5.
+- Player vitality 30% lower (`maxHp` 100 → 70, `maxHpPerStage` 10 → 7).
+- Twice as many krakens and sandworms (base, add and max doubled), e.g. 4 sandworms when they first appear.
+- Mana orbs, their glow and their particles are a deeper gold.
+- Fireballs fire twice as fast (`cooldownSeconds` 0.27 → 0.135). The vitality bar is always red.
+- Reaching the Crescent Sanctum no longer opens a "keep flying" screen; the round goes on until time runs out or Vharoth is slain too.
+- Flatter island with larger dune fields and green grass and scrub patches with palms (new `mountainScale`, `duneWavelength`, `greenCover`; `duneHeight` 4.2 → 7, `palmMax` 360 → 520).
+- Music: calmer, legato flute melody that glides between notes and breathes per phrase.
+- Finer terrain mesh: `terrainSegments` 170 → 320 (about 3.5 m per cell).
+
 ## [0.1.0] - 2026-11-05
 
 First version in the repository. The game was prototyped as a single HTML file and is now split into modules.
