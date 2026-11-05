@@ -72,6 +72,7 @@ export function sfx(name, v = 1) {
     case 'boom': tone(140, 38, 0.6, 'square', 0.13 * v); noise(600, 80, 0.7, 0.6, 0.25 * v); break;
     case 'flap': if (throttle(name, 250)) noise(500, 180, 0.3, 0.9, 0.18 * v, 0.06); break;
     case 'roar': tone(115, 42, 1.5, 'sawtooth', 0.22 * v); tone(72, 30, 1.7, 'square', 0.14 * v); tone(170, 60, 1.0, 'sawtooth', 0.08 * v); break;
+    case 'bow': noise(2600, 900, 0.18, 2, 0.18 * v, 0.004); tone(196, 147, 0.12, 'triangle', 0.05 * v); break;
     case 'whoosh': noise(350, 1800, 0.7, 0.9, 0.35 * v * CFG.audio.windVolume / 0.18, 0.25); break;
   }
 }

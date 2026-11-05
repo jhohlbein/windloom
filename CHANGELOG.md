@@ -4,6 +4,19 @@ All notable changes to Windloom are recorded here. The format follows [Keep a Ch
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-11-05
+
+### Added
+- Skeleton archers: fragile bowmen that roam the open land in groups of 2–4, four groups at the start and one more per palace stage. When one sees you or is hit, the whole group turns to fight. They shoot dropping arrows. Config `creatures.skeleton` and `spawning.skeletons`; 8 points each in a timed round.
+
+### Changed
+- The dragon's lair burns with a dark red, flickering fire (flames and cinders) instead of a large orange glow that looked like a second sun.
+- Sandworms reworked: warm grey with darker bands for contrast against the sand, a body of overlapping balls and a round head with an open toothed maw instead of cylinders.
+
+### Fixed
+- Sandworms had no collision: the carpet flew through them. Head and body are now solid.
+- The palace had no collision: the carpet flew through towers, walls and domes. Each stage now has collision shapes; from above the carpet rides on roofs, from the side it slides along walls.
+
 ## [0.2.2] - 2026-11-05
 
 ### Added

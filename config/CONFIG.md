@@ -134,7 +134,7 @@ A timed game is a round. The clock keeps running everywhere, including in the pa
 |---|---|---|
 | `durationSeconds` | 240 | Length of a round (4 minutes). |
 | `warnSeconds` | 30 | The clock turns red below this. |
-| `pointsPerKill` | wyvern 10, drake 25, worm 30, kraken 40 | Points per creature slain (Vharoth scores through `dragonSlainBonus`). |
+| `pointsPerKill` | skeleton 8, wyvern 10, drake 25, worm 30, kraken 40 | Points per creature slain (Vharoth scores through `dragonSlainBonus`). |
 | `pointsPerStage` | 100 | Points per palace stage above the first (500 for the Crescent Sanctum). |
 | `dragonSlainBonus` | 500 | Points for slaying Vharoth. |
 | `completionBonus`, `pointsPerSecondLeft` | 1000, 10 | Bonus for ending the round early (palace complete and Vharoth slain), plus points for every second left on the clock. |
@@ -167,6 +167,7 @@ A timed game is a round. The clock keeps running everywhere, including in the pa
 | `intervalSeconds` | 2 | How often the game tops up creature numbers (one creature per check). |
 | `flyersAtStart` | 6 | Wyverns/drakes present when a game starts. |
 | `flyers` | base 4, add 2, everyStages 1, max 13 | Population target (see scaling above). |
+| `skeletons` | fromStage 1, groupsAtStart 4, groupsPerStage 1, groupSizeMin 2, groupSizeMax 4 | Skeleton archers roam in groups of 2–4: four groups at the start and one more per palace stage (nine at stage 6). A group counts as long as one member lives; lost groups are replaced. |
 | `krakens` | fromStage 4, base 2, add 2, everyStages 2, max 6 | Population target (see scaling above), from palace stage `fromStage` on. |
 | `sandworms` | fromStage 3, base 2, add 2, everyStages 2, max 6 | Population target (see scaling above), from palace stage `fromStage` on. |
 | `krakens.announce`, `sandworms.announce`, `drakes.announce`, `dragon.announce` | see JSON | Line shown under "Palace raised" when the stage that unlocks this creature is reached. Leave empty for no message. |
@@ -185,6 +186,20 @@ Common keys (values are listed per creature in the tables below):
 | `hp`, `hpBonus`, `hpBonusEveryStages` | Toughness (see scaling above). |
 | `hitRadius` | Size of the target for your fireballs. |
 | `drops`, `manaPerDrop` | Number of mana orbs dropped on death and mana per orb. |
+
+**skeleton** (archer on foot)
+
+| Key | Value | Meaning |
+|---|---|---|
+| `scale` | 1.7 | Model size (about 3.5 m tall). |
+| `hitRadius` | 2.6 | Size of the target for your fireballs. |
+| `hp`, `hpBonus`, `hpBonusEveryStages` | 2, 1, 3 | Toughness: 2 hit points at first, one fireball or two. |
+| `walkSpeed`, `roamRadius` | 4, 70 | Walking speed; each group roams within this radius of where it appeared. |
+| `groupAlertSeconds` | 6 | When one member sees you or is hit, the whole group turns to fight for this long (renewed while any member still sees you). |
+| `sightRange` | 170 | Distance at which it spots you (needs line of sight). |
+| `fireIntervalSeconds`, `fireRange` | 2.6, 160 | Time between arrows and maximum shooting distance. |
+| `arrowDamage`, `arrowSpeed` | 6, 110 | Its arrows, which drop slightly and are aimed where you are heading. |
+| `drops`, `manaPerDrop` | 2, 3 | Mana orbs dropped on death and mana per orb. |
 
 **wyvern / drake**
 

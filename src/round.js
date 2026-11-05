@@ -30,7 +30,7 @@ export function formatClock(s) {
   return m + ':' + (r < 10 ? '0' : '') + r;
 }
 
-const KIND_LABEL = { wyvern: 'Wyverns', drake: 'Drakes', worm: 'Sandworms', kraken: 'Krakens' };
+const KIND_LABEL = { skeleton: 'Skeleton archers', wyvern: 'Wyverns', drake: 'Drakes', worm: 'Sandworms', kraken: 'Krakens' };
 export function scoreRound() {
   const S = CFG.round, lines = [];
   for (const kind of Object.keys(KIND_LABEL)) {

@@ -5,9 +5,9 @@ import { G, W } from './state.js';
 import { renderer, scene, camera, updateSky, resizeRenderer, setDaylight } from './scene.js';
 import { R } from './util.js';
 import { isleName } from './terrain.js';
-import { buildWorld } from './world.js';
+import { buildWorld, updateLair } from './world.js';
 import { updatePalace } from './palace.js';
-import { emit, C, updateParticles, resizeParticles } from './particles.js';
+import { updateParticles, resizeParticles } from './particles.js';
 import { audioInit, toggleMute, updateAudio } from './audio.js';
 import { hud, toast, clearToasts, updateToast, updateHud, drawRadar, drawBars, resizeFx, stageLabel } from './hud.js';
 import { applyLevel, updateDeposit, stageCount } from './progress.js';
@@ -127,7 +127,7 @@ function resize() {
 }
 window.addEventListener('resize', resize); resize();
 
-let last = performance.now(), hudTimer = 0, lairEmber = 0;
+let last = performance.now(), hudTimer = 0;
 // FPS counter: frames counted over half a second, plus the slowest frame in that window
 const elFps = $('fps');
 let fpsFrames = 0, fpsStart = last, fpsWorst = 0;
@@ -158,8 +158,7 @@ function frame(now) {
       }
       if (updateRound(dt)) showOverlay('results');
     }
-    lairEmber -= dt;
-    while (lairEmber < 0) { lairEmber += 0.06; emit(W.LX + (R() - 0.5) * 18, W.LH + 3, W.LZ + (R() - 0.5) * 18, (R() - 0.5) * 3, 8 + R() * 10, (R() - 0.5) * 3, C.EMBER, 3, 2.4); }
+    updateLair(dt);
     updatePalace(dt, now);
     updateParticles(dt);
   }

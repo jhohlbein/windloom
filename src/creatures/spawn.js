@@ -9,6 +9,7 @@ import { createFlyer } from './flyers.js';
 import { createKraken } from './kraken.js';
 import { createWorm } from './sandworm.js';
 import { createDragon } from './dragon.js';
+import { createSkeleton, createSkeletonGroup } from './skeleton.js';
 import { spawnOrb } from '../combat.js';
 
 const far = (x, z, d) => !G.active || Math.hypot(x - G.playerPos.x, z - G.playerPos.z) >= d;
@@ -40,6 +41,26 @@ export function spawnWorm() {
     G.enemies.push(createWorm(new THREE.Vector3(x, h, z))); return;
   }
 }
+// Skeleton archers: a group of groupSizeMin..groupSizeMax on open, gentle land away from the palace (outside its
+// ward) and the dragon's peak. Number of groups: groupsAtStart + groupsPerStage per palace stage above the first.
+const skeletonGroups = () => new Set(G.enemies.filter(e => e.kind === 'skeleton').map(e => e.group)).size;
+const skeletonGroupTarget = L => { const S = CFG.spawning.skeletons; return unlocked(S, L) ? S.groupsAtStart + S.groupsPerStage * (L - 1) : 0; };
+export function spawnSkeletonGroup() {
+  const S = CFG.spawning.skeletons;
+  for (let t = 0; t < 80; t++) {
+    const a = Math.random() * TAU, r = Math.sqrt(Math.random()) * CFG.world.islandRadius * 0.9, x = Math.cos(a) * r, z = Math.sin(a) * r, h = terrainH(x, z);
+    if (h < 2 || h > 40) continue;
+    if ((Math.abs(terrainH(x + 6, z) - h) + Math.abs(terrainH(x, z + 6) - h)) / 6 > 0.7) continue;
+    if (Math.hypot(x - W.CX, z - W.CZ) < CFG.palace.wardRadius + 20 || Math.hypot(x - W.LX, z - W.LZ) < 60 || !far(x, z, 130)) continue;
+    const group = createSkeletonGroup(new THREE.Vector3(x, h, z));
+    const n = S.groupSizeMin + Math.floor(Math.random() * (S.groupSizeMax - S.groupSizeMin + 1));
+    for (let i = 0; i < n; i++) {
+      const oa = i / n * TAU + Math.random() * 0.5, od = 2.5 + Math.random() * 3.5, px = x + Math.cos(oa) * od, pz = z + Math.sin(oa) * od;
+      G.enemies.push(createSkeleton(new THREE.Vector3(px, groundH(px, pz), pz), group));
+    }
+    return;
+  }
+}
 // There is only ever one Vharoth
 export function spawnDragon() { if (G.dragon || countKind('dragon')) return; G.dragon = createDragon(); G.enemies.push(G.dragon); }
 
@@ -49,6 +70,7 @@ export const unlocked = (rule, stage = G.level) => stage >= (rule.fromStage || 1
 export function populate() {
   const S = CFG.spawning;
   for (let i = 0; i < S.flyersAtStart; i++) spawnFlyer();
+  for (let i = 0; i < skeletonGroupTarget(G.level); i++) spawnSkeletonGroup();
   if (unlocked(S.krakens)) spawnKraken();
   if (unlocked(S.sandworms)) spawnWorm();
   if (unlocked(S.dragon)) spawnDragon();
@@ -74,7 +96,8 @@ export function spawnTick() {
   const groups = [
     { n: countKind('wyvern') + countKind('drake'), target: targetFor(S.flyers, L), spawn: spawnFlyer },
     { n: countKind('worm'), target: unlocked(S.sandworms) ? targetFor(S.sandworms, L) : 0, spawn: spawnWorm },
-    { n: countKind('kraken'), target: unlocked(S.krakens) ? targetFor(S.krakens, L) : 0, spawn: spawnKraken }
+    { n: countKind('kraken'), target: unlocked(S.krakens) ? targetFor(S.krakens, L) : 0, spawn: spawnKraken },
+    { n: skeletonGroups(), target: skeletonGroupTarget(L), spawn: spawnSkeletonGroup }
   ].filter(g => g.n < g.target);
   if (!groups.length) return;
   groups.sort((a, b) => a.n / a.target - b.n / b.target);

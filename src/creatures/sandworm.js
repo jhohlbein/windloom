@@ -11,25 +11,32 @@ import { lobAtPlayer, hurtPlayer } from '../combat.js';
 import { baseEnemy, setHp, trackMat } from './common.js';
 
 const WSEG = 14, WSP = 2.3, WTRAIL = Math.ceil(WSEG * WSP / 0.6) + 14;
-const cylGeo = new THREE.CylinderGeometry(1, 1, 1, 14), ringGeo = new THREE.TorusGeometry(1, 0.17, 6, 18);
-const headGeo = (() => { const g = new THREE.CylinderGeometry(1, 1.08, 1, 16); g.rotateX(Math.PI / 2); return g; })();
+// Round build: the body is a chain of overlapping balls; the head is a ball open at the front (+z) for the maw
+const ballGeo = new THREE.SphereGeometry(1, 14, 10), ringGeo = new THREE.TorusGeometry(1, 0.17, 6, 18);
+const HEAD_OPEN = Math.PI * 0.78; // the ball is closed up to this angle from its back
+const headGeo = (() => { const g = new THREE.SphereGeometry(1, 18, 14, 0, Math.PI * 2, 0, HEAD_OPEN); g.rotateX(-Math.PI / 2); return g; })();
+const throatGeo = (() => { const g = new THREE.SphereGeometry(0.96, 14, 10); return g; })();
 const petalGeo = (() => { const g = new THREE.ConeGeometry(0.9, 3.6, 5); g.rotateX(Math.PI / 2); g.translate(0, 0, 1.8); return g; })();
 const toothGeo = new THREE.ConeGeometry(0.2, 0.9, 5), mouthGeo = new THREE.CircleGeometry(2.3, 18);
 const toothM = new THREE.MeshStandardMaterial({ color: 0xf3ead2, roughness: 0.6, flatShading: true }), mouthM = new THREE.MeshBasicMaterial({ color: 0x2a0606 });
-const Y_AX = new THREE.Vector3(0, 1, 0), Z_AX = new THREE.Vector3(0, 0, 1);
-const tA = new THREE.Vector3(), tD = new THREE.Vector3(), tM = new THREE.Vector3();
+const throatM = new THREE.MeshBasicMaterial({ color: 0x1c0707, side: THREE.BackSide });
+const HEAD_R = 2.9, MOUTH_Z = Math.cos(Math.PI - HEAD_OPEN) * HEAD_R, MOUTH_R = Math.sin(Math.PI - HEAD_OPEN) * HEAD_R;
+const Y_AX = new THREE.Vector3(0, 1, 0);
+const tA = new THREE.Vector3(), tM = new THREE.Vector3();
 
 export function createWorm(pos) {
   const K = CFG.creatures.sandworm, e = baseEnemy('worm', 'Sandworm');
-  const mA = trackMat(e, new THREE.MeshStandardMaterial({ color: 0xcfa66c, roughness: 0.85, flatShading: true }));
-  const mB = trackMat(e, new THREE.MeshStandardMaterial({ color: 0x6f4d30, roughness: 0.9, flatShading: true }));
+  // warm grey with darker bands: stands out against the sand
+  const mA = trackMat(e, new THREE.MeshStandardMaterial({ color: 0x8a8178, roughness: 0.85, flatShading: true }));
+  const mB = trackMat(e, new THREE.MeshStandardMaterial({ color: 0x4d4741, roughness: 0.9, flatShading: true }));
   const root = new THREE.Group();
   const head = new THREE.Group(); root.add(head);
-  const hc = new THREE.Mesh(headGeo, mA); hc.scale.set(2.9, 2.9, 3); head.add(hc);
-  const rim = new THREE.Mesh(ringGeo, mB); rim.scale.setScalar(2.95); rim.position.z = 1.5; head.add(rim);
-  const mouth = new THREE.Mesh(mouthGeo, mouthM); mouth.position.z = 1.3; head.add(mouth);
+  const hc = new THREE.Mesh(headGeo, mA); hc.scale.setScalar(HEAD_R); head.add(hc);
+  const throat = new THREE.Mesh(throatGeo, throatM); throat.scale.setScalar(HEAD_R); head.add(throat);
+  const rim = new THREE.Mesh(ringGeo, mB); rim.scale.setScalar(MOUTH_R); rim.position.z = MOUTH_Z; head.add(rim);
+  const mouth = new THREE.Mesh(mouthGeo, mouthM); mouth.scale.setScalar(0.7); mouth.position.z = MOUTH_Z - 1.2; head.add(mouth);
   const dv = new THREE.Vector3();
-  for (const ring of [[2.1, 1.25, 16], [1.3, 0.7, 10]]) {
+  for (const ring of [[MOUTH_R * 0.92, MOUTH_Z - 0.15, 16], [MOUTH_R * 0.55, MOUTH_Z - 0.8, 10]]) {
     for (let i = 0; i < ring[2]; i++) {
       const a = i / ring[2] * TAU, tooth = new THREE.Mesh(toothGeo, toothM);
       tooth.position.set(Math.cos(a) * ring[0], Math.sin(a) * ring[0], ring[1]);
@@ -40,7 +47,7 @@ export function createWorm(pos) {
   e.petals = [];
   for (let pi = 0; pi < 4; pi++) {
     const hinge = new THREE.Group(); hinge.rotation.z = pi * Math.PI / 2 + Math.PI / 4; head.add(hinge);
-    const piv = new THREE.Group(); piv.position.set(2.5, 0, 1.5); hinge.add(piv);
+    const piv = new THREE.Group(); piv.position.set(MOUTH_R, 0, MOUTH_Z); hinge.add(piv);
     const pm = new THREE.Mesh(petalGeo, mA); pm.scale.set(0.5, 1.9, 1.15); piv.add(pm);
     for (let tt = 0; tt < 3; tt++) { const pt = new THREE.Mesh(toothGeo, toothM); pt.position.set(-0.3, (tt - 1) * 0.7, 1.4 + tt * 0.5); pt.rotation.z = Math.PI / 2; pt.scale.setScalar(0.9); piv.add(pt); }
     e.petals.push(piv);
@@ -48,9 +55,9 @@ export function createWorm(pos) {
   e.segs = [];
   for (let k = 0; k < WSEG; k++) {
     const r = lerp(2.7, 1.2, k / (WSEG - 1));
-    const cy = new THREE.Mesh(cylGeo, mA); root.add(cy);
-    const rg = new THREE.Mesh(ringGeo, mB); rg.scale.setScalar(r * 1.1); root.add(rg);
-    e.segs.push({ c: cy, ring: rg, r, p: new THREE.Vector3() });
+    const ball = new THREE.Mesh(ballGeo, mA); ball.scale.setScalar(r * 1.1); root.add(ball);
+    const joint = new THREE.Mesh(ballGeo, mB); joint.scale.setScalar(r * 0.95); root.add(joint); // darker ball between two segments
+    e.segs.push({ ball, joint, r, p: new THREE.Vector3() });
   }
   scene.add(root);
   Object.assign(e, { K, root, head, pos: head.position, r: K.hitRadius, open: 0 });
@@ -73,11 +80,22 @@ export function createWorm(pos) {
     return false;
   };
   e.barPos = o => { o.copy(e.pos); o.y += 7; return o; };
+  // Solid body: pushes the carpet (a sphere of radius pr at P) out of the head and every segment above ground
+  e.collide = (P, pr) => {
+    pushOut(P, e.pos, HEAD_R + pr);
+    for (const s of e.segs) if (s.p.y + s.r > groundH(s.p.x, s.p.z)) pushOut(P, s.p, s.r * 1.1 + pr);
+  };
   e.radar = { c: '#e0a457', s: 4 };
   placeWorm(e);
   return e;
 }
 
+function pushOut(P, c, R) {
+  tA.copy(P).sub(c); const d = tA.length();
+  if (d >= R) return;
+  if (d < 1e-4) tA.set(0, 1, 0); else tA.multiplyScalar(1 / d);
+  P.addScaledVector(tA, R - d);
+}
 // The body follows the recorded path of the head; sway bends only the front segments
 function placeWorm(e) {
   const a = e.anchor, hp = e.head.position; hp.copy(a).add(e.sway);
@@ -92,13 +110,9 @@ function placeWorm(e) {
   }
   for (; k < WSEG; k++) e.segs[k].p.copy(prev);
   for (let s = 0; s < WSEG; s++) {
-    const seg = e.segs[s], A = s === 0 ? hp : e.segs[s - 1].p, Bp = seg.p;
-    tD.copy(A).sub(Bp); const len = tD.length();
-    if (len < 1e-3) tD.set(0, 1, 0); else tD.multiplyScalar(1 / len);
-    seg.c.position.copy(A).add(Bp).multiplyScalar(0.5);
-    seg.c.quaternion.setFromUnitVectors(Y_AX, tD);
-    seg.c.scale.set(seg.r, Math.max(len, WSP) * 1.15, seg.r);
-    seg.ring.position.copy(Bp); seg.ring.quaternion.setFromUnitVectors(Z_AX, tD);
+    const seg = e.segs[s], A = s === 0 ? hp : e.segs[s - 1].p;
+    seg.ball.position.copy(seg.p);
+    seg.joint.position.copy(A).add(seg.p).multiplyScalar(0.5);
   }
   if (e.st === 'up') e.head.lookAt(G.playerPos);
   else { tA.copy(hp).sub(e.segs[0].p); if (tA.lengthSq() < 1e-4) tA.set(Math.cos(e.heading), 0, Math.sin(e.heading)); e.head.lookAt(tA.add(hp)); }

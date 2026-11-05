@@ -20,7 +20,7 @@ Windloom is a browser game (three.js r128, plain ES modules, no build step) insp
 - `three` is resolved by the import map in `index.html` (jsDelivr, pinned to 0.128.0). Import it as `import * as THREE from 'three'`.
 - Modules import each other in cycles (e.g. `combat` ↔ `creatures/dragon`, `combat` ↔ `player`). This is fine because cross-module calls happen at runtime, not at import time. Do not call imported functions at module top level.
 - Geometry flagged with `shared()` (see `scene.js`) is reused and must not be disposed. `disposeTree()` respects the flag.
-- Creatures share one interface (see `creatures/common.js`): `kind, name, pos, vel, r, hp, maxHp, update(e, dt), targetable(), showBar(), hitTest(point, radius), barPos(out), radar, root`. Add new creature types by following that shape and registering them in `creatures/spawn.js`.
+- Creatures share one interface (see `creatures/common.js`): `kind, name, pos, vel, r, hp, maxHp, update(e, dt), targetable(), showBar(), hitTest(point, radius), barPos(out), radar, root`, plus an optional `collide(P, radius)` that pushes the carpet out of a solid body (sandworms use it). Add new creature types by following that shape and registering them in `creatures/spawn.js`.
 - Wyverns, drakes and the dragon are built by one parametric model in `creatures/beasts.js`; appearance parameters live there, gameplay numbers in the config.
 - Coordinates: one unit is one metre (the carpet is about 5 m long); y is up, the island is centred on the origin, sea level is y = 0. Models face −z.
 

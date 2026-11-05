@@ -3,7 +3,8 @@ import * as THREE from 'three';
 import { CFG } from './config.js';
 import { W } from './state.js';
 import { TAU, clamp, smooth, mulberry, vnoise } from './util.js';
-import { scene, shared, addSprite, mats, disposeTree } from './scene.js';
+import { scene, shared, addSprite, glowMat, disposeTree } from './scene.js';
+import { emit, C } from './particles.js';
 import { rawH, terrainH, greenAt, SIZE } from './terrain.js';
 import { castle } from './palace.js';
 
@@ -153,5 +154,25 @@ export function buildWorld(seed) {
     const spire = new THREE.Mesh(new THREE.ConeGeometry(os * 0.45, os * 3.4, 5), obsMat);
     spire.position.set(ox, oh + os * 1.3, oz); spire.rotation.set((rnd() - 0.5) * 0.5, rnd() * TAU, (rnd() - 0.5) * 0.5); worldGroup.add(spire);
   }
-  const lg = addSprite(mats.ember, 80); lg.position.set(W.LX, W.LH + 6, W.LZ); worldGroup.add(lg);
+  // a dark red, flickering glow low on the summit (the fire itself is particles, see updateLair)
+  lairGlow = addSprite(lairGlowMat, 34); lairGlow.position.set(W.LX, W.LH + 4, W.LZ); worldGroup.add(lairGlow);
+}
+
+// The dragon's fire on its peak: flickering deep-red glow, licking flames, and cinders drifting up.
+// Kept dark and red so it is not mistaken for the sun.
+const lairGlowMat = glowMat(0x8a1606);
+let lairGlow = null, lairT = 0, flameAcc = 0;
+const rr = () => Math.random() - 0.5;
+export function updateLair(dt) {
+  if (!lairGlow) return;
+  lairT += dt;
+  const fl = 0.75 + 0.15 * Math.sin(lairT * 9.1) + 0.1 * Math.sin(lairT * 23.7 + 1.3);
+  lairGlow.scale.setScalar(30 * fl); lairGlowMat.opacity = 0.55 + 0.35 * fl;
+  flameAcc += dt;
+  while (flameAcc > 0.015) {
+    flameAcc -= 0.015;
+    const x = W.LX + rr() * 12, z = W.LZ + rr() * 12, y = W.LH + 1 + Math.random() * 2;
+    emit(x, y, z, rr() * 2, 8 + Math.random() * 9, rr() * 2, Math.random() < 0.5 ? C.FLAME : C.FLAME2, 6 + Math.random() * 4, 0.6 + Math.random() * 0.5);
+    if (Math.random() < 0.25) emit(x, y + 3, z, rr() * 4, 10 + Math.random() * 10, rr() * 4, C.CINDER, 2, 2.2);
+  }
 }

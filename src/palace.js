@@ -5,7 +5,12 @@ import { G } from './state.js';
 import { TAU } from './util.js';
 
 export const castle = new THREE.Group(); scene.add(castle);
-export const palace = { spin: [], beam: null };
+export const palace = { spin: [], beam: null, colliders: [] };
+// Collision shapes in palace-local coordinates, all standing on the plinth (y = 0 up to top):
+// { cyl: true, x, z, r, top } or { cyl: false, x, z, hx, hz, top }. Rebuilt with every stage.
+const col = palace.colliders;
+const colCyl = (x, z, r, top) => col.push({ cyl: true, x, z, r, top });
+const colBox = (x, z, hx, hz, top) => col.push({ cyl: false, x, z, hx, hz, top });
 
 const plaster = new THREE.MeshStandardMaterial({ color: 0xf4e7d0, roughness: 0.85, flatShading: true });
 const plaster2 = new THREE.MeshStandardMaterial({ color: 0xdcc29a, roughness: 0.9, flatShading: true });
@@ -22,7 +27,7 @@ const merlonGeo = shared((() => { const g = new THREE.ConeGeometry(0.62, 1.4, 4)
 
 function clearCastle() {
   while (castle.children.length) { const c = castle.children[0]; castle.remove(c); disposeTree(c); }
-  palace.spin = [];
+  palace.spin = []; col.length = 0;
 }
 function cm(g, mat, x, y, z, sx, sy, sz) {
   const m = new THREE.Mesh(g, mat); m.position.set(x, y, z);
@@ -46,12 +51,16 @@ function minaret(x, z, h, r, dm) {
   cm(geo.cyl, tileM, x, y + 0.7, z, r * 1.55, 0.6, r * 1.55); y += 1.1;
   cm(geo.cyl, plaster, x, y + h * 0.09, z, r * 0.72, h * 0.18, r * 0.72); y += h * 0.18;
   cm(geo.cyl, tileM, x, y + 0.15, z, r * 0.8, 0.3, r * 0.8); y += 0.3;
-  return onion(x, y, z, r * 0.85, dm);
+  const tip = onion(x, y, z, r * 0.85, dm);
+  colCyl(x, z, r * 1.4, y); colCyl(x, z, r * 0.9, tip - 1); // shaft and balcony, then the dome
+  return tip;
 }
 function kiosk(x, y, z, s, dm) {
   for (let i = 0; i < 4; i++) { const dx = (i & 1 ? 1 : -1) * 0.7 * s, dz = (i & 2 ? 1 : -1) * 0.7 * s; cm(geo.cyl, plaster, x + dx, y + 0.8 * s, z + dz, 0.12 * s, 1.6 * s, 0.12 * s); }
   cm(geo.box, plaster2, x, y + 1.7 * s, z, 1.9 * s, 0.25 * s, 1.9 * s);
-  return onion(x, y + 1.82 * s, z, 0.8 * s, dm);
+  const tip = onion(x, y + 1.82 * s, z, 0.8 * s, dm);
+  colBox(x, z, 0.95 * s, 0.95 * s, y + 1.85 * s); colCyl(x, z, 0.9 * s, tip - 0.5 * s);
+  return tip;
 }
 // A row of dark pointed arches on one face of a square block (face 0:+z 1:-z 2:+x 3:-x)
 function arcade(cx, cy, cz, half, n, w, h, face, skipMid) {
@@ -71,6 +80,7 @@ export function buildCastle(L) {
   clearCastle();
   cm(geo.oct, plaster2, 0, 0, 0, 27, 2, 27);
   cm(geo.oct, tileM, 0, 0.6, 0, 27.3, 0.3, 27.3);
+  colCyl(0, 0, 27, 1); // plinth
   let top = 0; const merlons = [];
   if (L === 1) {
     top = minaret(0, 0, 32, 2.0, tealM);
@@ -85,6 +95,8 @@ export function buildCastle(L) {
     cm(geo.cyl, plaster, 0, 1 + H + 1.6, 0, dr, 3.2, dr);
     cm(geo.cyl, tileM, 0, 1 + H + 3.0, 0, dr + 0.1, 0.4, dr + 0.1);
     top = onion(0, 1 + H + 3.2, 0, dr * 0.95, L >= 4 ? goldM : tealM);
+    colBox(0, 0, half, half, 1 + H + 1.4); colCyl(0, 0, dr, 1 + H + 3.2); // main block with merlons, drum
+    colCyl(0, 0, dr * 1.05, 1 + H + 3.2 + dr * 0.95 * 1.2); colCyl(0, 0, dr * 0.5, top - 1); // dome body and tip
     [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(c => kiosk(c[0] * (half - 1.2), 1 + H, c[1] * (half - 1.2), 1.1, goldM));
     if (L === 2) top = Math.max(top, minaret(15, -15, 30, 1.7, tealM));
   }
@@ -100,6 +112,9 @@ export function buildCastle(L) {
       merlons.push([s, 1 + wallH + 0.7, Wd], [s, 1 + wallH + 0.7, -Wd], [-Wd, 1 + wallH + 0.7, s]);
       if (Math.abs(s) > 4.5) merlons.push([Wd, 1 + wallH + 0.7, s]);
     }
+    const wt = 1 + wallH + 1.4; // walls including merlons
+    colBox(0, Wd, Wd, th / 2, wt); colBox(0, -Wd, Wd, th / 2, wt); colBox(Wd, 0, th / 2, Wd, wt); colBox(-Wd, 0, th / 2, Wd, wt);
+    colBox(Wd, 0, 1.6, 4.1, 12.5); // gatehouse with its dome
     // gatehouse on the east side
     cm(geo.box, plaster2, Wd, 1 + 4.5, 0, 3, 9, 8);
     cm(geo.box, tileM, Wd, 1 + 8.2, 0, 3.15, 0.5, 8.15);
@@ -110,7 +125,8 @@ export function buildCastle(L) {
       else {
         cm(geo.cyl, plaster, c[0] * Wd, 1 + 5, c[1] * Wd, 2.6, 10, 2.6);
         cm(geo.cyl, tileM, c[0] * Wd, 1 + 9.2, c[1] * Wd, 2.7, 0.5, 2.7);
-        onion(c[0] * Wd, 11, c[1] * Wd, 2.0, goldM);
+        const tip = onion(c[0] * Wd, 11, c[1] * Wd, 2.0, goldM);
+        colCyl(c[0] * Wd, c[1] * Wd, 2.7, 11); colCyl(c[0] * Wd, c[1] * Wd, 2.0, tip - 1);
       }
     });
   }

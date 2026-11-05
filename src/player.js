@@ -8,6 +8,7 @@ import { terrainH, groundH } from './terrain.js';
 import { emit, C } from './particles.js';
 import { toast } from './hud.js';
 import { castFire, castNova } from './combat.js';
+import { castle, palace } from './palace.js';
 
 const player = new THREE.Group(); player.rotation.order = 'YXZ'; scene.add(player);
 
@@ -82,6 +83,34 @@ function groundFloor(P) {
   return floor;
 }
 
+// Palace and creature collision. The carpet is treated as a sphere of radius PR. Coming from above, it rides on roofs and
+// domes; from the side, it is pushed out of walls and towers and slides along them.
+const PR = 2.6;
+function collidePalace(P, prevY) {
+  const cx = castle.position.x, cy = castle.position.y, cz = castle.position.z, clear = CFG.player.groundClearance;
+  for (let pass = 0; pass < 2; pass++) { // two passes settle corners where shapes meet
+    for (const c of palace.colliders) {
+      const top = cy + c.top + clear;
+      if (P.y >= top) continue;
+      const lx = P.x - cx - c.x, lz = P.z - cz - c.z;
+      let nx, nz, depth;
+      if (c.cyl) {
+        const d = Math.hypot(lx, lz); depth = c.r + PR - d; if (depth <= 0) continue;
+        nx = d > 1e-4 ? lx / d : 1; nz = d > 1e-4 ? lz / d : 0;
+      } else {
+        const qx = clamp(lx, -c.hx, c.hx), qz = clamp(lz, -c.hz, c.hz), dx = lx - qx, dz = lz - qz, d = Math.hypot(dx, dz);
+        if (d > 1e-4) { depth = PR - d; if (depth <= 0) continue; nx = dx / d; nz = dz / d; }
+        else { // centre inside the box: leave by the nearest face
+          const ex = c.hx - Math.abs(lx), ez = c.hz - Math.abs(lz);
+          if (ex < ez) { nx = Math.sign(lx) || 1; nz = 0; depth = ex + PR; } else { nx = 0; nz = Math.sign(lz) || 1; depth = ez + PR; }
+        }
+      }
+      if (prevY >= top - 1.5) P.y = top; // was above it (or nearly): settle on top
+      else { P.x += nx * depth; P.z += nz * depth; } // hit it from the side: slide along it
+    }
+  }
+}
+
 export function updatePlayer(dt) {
   const cp = CFG.player, I = G.input, keys = G.keys, P = G.playerPos;
   const kx = (keys.ArrowRight ? 1 : 0) - (keys.ArrowLeft ? 1 : 0);
@@ -102,7 +131,10 @@ export function updatePlayer(dt) {
   G.fwd.set(-Math.sin(G.yaw) * cpi, Math.sin(G.pitch), -Math.cos(G.yaw) * cpi);
   G.rightV.set(Math.cos(G.yaw), 0, -Math.sin(G.yaw));
   G.playerVel.copy(G.fwd).multiplyScalar(G.speed).addScaledVector(G.rightV, G.strafe);
+  const prevY = P.y;
   P.addScaledVector(G.playerVel, dt);
+  collidePalace(P, prevY);
+  for (const e of G.enemies) if (e.collide) e.collide(P, PR); // solid creatures (sandworms)
   const gy = groundFloor(P);
   let skim = P.y - gy;
   if (skim < 0) { P.y = gy; skim = 0; }

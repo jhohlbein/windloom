@@ -95,7 +95,7 @@
   "round": {
     "durationSeconds": 240,
     "warnSeconds": 30,
-    "pointsPerKill": { "wyvern": 10, "drake": 25, "worm": 30, "kraken": 40 },
+    "pointsPerKill": { "skeleton": 8, "wyvern": 10, "drake": 25, "worm": 30, "kraken": 40 },
     "pointsPerStage": 100,
     "dragonSlainBonus": 500,
     "completionBonus": 1000,
@@ -122,6 +122,7 @@
     "intervalSeconds": 2,
     "flyersAtStart": 6,
     "flyers": { "base": 4, "add": 2, "everyStages": 1, "max": 13 },
+    "skeletons": { "fromStage": 1, "groupsAtStart": 4, "groupsPerStage": 1, "groupSizeMin": 2, "groupSizeMax": 4 },
     "krakens": { "fromStage": 4, "base": 2, "add": 2, "everyStages": 2, "max": 6, "announce": "Krakens stir in the deep water around the island." },
     "sandworms": { "fromStage": 3, "base": 2, "add": 2, "everyStages": 2, "max": 6, "announce": "Sandworms wake beneath the dunes." },
     "drakes": { "fromStage": 2, "chanceBase": 0.16, "chancePerStage": 0.05, "maxBase": 1, "maxAdd": 1, "maxEveryStages": 2, "announce": "Drakes join the wyverns in the sky." },
@@ -129,6 +130,23 @@
     "dragonRespawnSeconds": 240
   },
   "creatures": {
+    "skeleton": {
+      "scale": 1.7,
+      "hitRadius": 2.6,
+      "hp": 2,
+      "hpBonus": 1,
+      "hpBonusEveryStages": 3,
+      "walkSpeed": 4,
+      "roamRadius": 70,
+      "groupAlertSeconds": 6,
+      "sightRange": 170,
+      "fireIntervalSeconds": 2.6,
+      "fireRange": 160,
+      "arrowDamage": 6,
+      "arrowSpeed": 110,
+      "drops": 2,
+      "manaPerDrop": 3
+    },
     "wyvern": {
       "scale": 0.55,
       "hitRadius": 5.4,
