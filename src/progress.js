@@ -25,7 +25,7 @@ export function applyLevel(L, announce) {
     // Name any creatures whose fromStage was just reached
     const S = CFG.spawning, news = [S.sandworms, S.drakes, S.krakens, S.dragon]
       .filter(r => r && r.announce && r.fromStage > prev && r.fromStage <= L).map(r => r.announce);
-    if (L >= stageCount() && !G.dragonSlain) news.push('Slay Vharoth to end the round early.');
+    if (L >= stageCount() && !G.dragonSlain) news.push(G.timed ? 'Slay Vharoth to end the round early.' : 'Slay Vharoth to make the Sanctum whole.');
     toast(['Palace raised: ' + CFG.palace.stageNames[L - 1], ...news].join('\n'), news.length ? 5200 : 3200); sfx('level');
   }
 }

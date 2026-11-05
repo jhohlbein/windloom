@@ -2,19 +2,26 @@
 import { CFG } from './config.js';
 import { G, W } from './state.js';
 
-export function resetRound() {
-  G.timeLeft = CFG.round.durationSeconds;
-  G.killsBy = {}; G.dragonSlain = false; G.endTimer = -1; G.endReason = '';
+// timed: the standard 4-minute round. Untimed (free flight): no clock, no score, play as long as you like.
+export function resetRound(timed) {
+  G.timed = timed; G.timeLeft = CFG.round.durationSeconds;
+  G.killsBy = {}; G.dragonSlain = false; G.endTimer = -1; G.endReason = ''; G.finished = false;
 }
 // Complete = palace at its last stage and Vharoth slain
 export const roundComplete = () => G.dragonSlain && G.level >= CFG.palace.stageThresholds.length;
 
 // Returns 'time' or 'complete' once the round is over, otherwise ''. The clock runs everywhere, beam included.
+// In free flight only 'complete' can happen, once; afterwards you keep flying.
 export function updateRound(dt) {
-  if (G.endTimer > 0) { G.endTimer -= dt; return G.endTimer <= 0 ? G.endReason : ''; }
-  G.timeLeft = Math.max(0, G.timeLeft - dt);
+  if (G.endTimer > 0) {
+    G.endTimer -= dt;
+    if (G.endTimer > 0) return '';
+    G.endTimer = -1; G.finished = true; return G.endReason;
+  }
+  if (G.finished) return '';
+  if (G.timed) G.timeLeft = Math.max(0, G.timeLeft - dt);
   if (roundComplete()) { G.endReason = 'complete'; G.endTimer = 2.4; return ''; } // a moment to see the finale
-  if (G.timeLeft <= 0) return (G.endReason = 'time');
+  if (G.timed && G.timeLeft <= 0) { G.finished = true; return (G.endReason = 'time'); }
   return '';
 }
 

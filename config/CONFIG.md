@@ -20,20 +20,39 @@ The **Value** column shows what `game-config.json` currently contains. Keep it i
 | `heightScale` | 0.5 | Multiplier on all land heights (base terrain and mountains). |
 | `mountainScale` | 0.55 | Extra multiplier on the mountains only (1 = original). Lower gives a flatter island; the dragon's peak gets lower too. |
 | `boundFraction` | 0.95 | The sandstorm turns the player back at `worldRadius × boundFraction` (530 m now). Creature spawning and the kraken's swim limit use the same distance. |
-| `ceiling` | 320 | Highest altitude the carpet can reach. |
+| `ceiling` | 50 | Highest altitude the carpet can reach (metres above sea level). Over terrain taller than this, the carpet can still skim the ground. |
 | `fogNear`, `fogFar` | 150, 950 | Haze starts / is complete at these distances. |
 | `terrainSegments` | 320 | Mesh resolution of the island (higher = finer and slower to generate). |
 | `duneHeight` | 7 | Height of dune ridges on low sand (varies by dune field, up to about 1.6× this). |
 | `duneWavelength` | 60 | Distance between dune crests in metres. |
-| `greenCover` | 0.3 | Roughly the share of low, gentle land covered by green grass and scrub patches (0–1). Palms grow in them. |
+| `greenCover` | 0.4 | Roughly the share of low, gentle land covered by green grass and scrub patches (0–1). Palms grow in them. |
 | `terraceStep` | 12 | Height of each step on terraced mesas. |
 | `oasisCount` | 3 | Number of inland oases. |
 | `oasisRadiusMin`, `oasisRadiusMax` | 34, 50 | Size range of oases. |
 | `palmMax` | 520 | Upper limit on palm trees. |
-| `rockCount` | 170 | Number of sandstone boulders. |
+| `rockCount` | 50 | Number of sandstone boulders. |
 | `palaceFlattenOuter`, `palaceFlattenInner` | 70, 34 | The ground is flattened for the palace inside the inner radius and blended out to the outer radius. |
 | `lairMinDistanceFromPalace` | 290 | The dragon's peak is at least this far from the palace. |
 | `lairSearchRadius` | 440 | The dragon's peak is searched within this distance of the centre. |
+
+## camera
+
+| Key | Value | Meaning |
+|---|---|---|
+| `distance` | 9 | How far behind the carpet the camera sits, in metres (was 13). |
+| `height` | 3.4 | How far above the carpet the camera sits (was 4.4). |
+| `lookAhead` | 26 | The camera looks at a point this far ahead of the carpet. |
+| `fov`, `fovSurgeExtra` | 72, 9 | Field of view in degrees, and how much it widens at full surge. |
+
+## sky
+
+The sun rises over the course of a round: dawn at the start (low, warm, dim light), late morning at the end (high, white, bright light). The sky goes from peach to light blue.
+
+| Key | Value | Meaning |
+|---|---|---|
+| `startElevationDeg`, `endElevationDeg` | 3, 50 | Height of the sun above the horizon at the start and end of a round, in degrees. |
+| `titlePhase` | 0.3 | Time of day on the title screen (0 = sunrise, 1 = end of a round). |
+| `freeFlightDayMinutes` | 15 | In free flight (no timer) the sun takes this long to rise from dawn to late morning, then stays. |
 
 ## player
 
@@ -85,7 +104,9 @@ The **Value** column shows what `game-config.json` currently contains. Keep it i
 
 ## round
 
-A game is a timed round. The clock keeps running everywhere, including in the palace beam; it stops only while paused. The round ends when time runs out, or early when the palace reaches its last stage **and** Vharoth is slain. The best score per island seed is kept in the browser (`localStorage`).
+There are two modes, chosen on the start screen. **Timed round** is described below. **Free flight** has no clock and no score; when the palace is complete and Vharoth is slain, a short screen says so and you can keep flying.
+
+A timed game is a round. The clock keeps running everywhere, including in the palace beam; it stops only while paused. The round ends when time runs out, or early when the palace reaches its last stage **and** Vharoth is slain. The best score per island seed is kept in the browser (`localStorage`).
 
 | Key | Value | Meaning |
 |---|---|---|
@@ -112,7 +133,7 @@ A game is a timed round. The clock keeps running everywhere, including in the pa
 
 | Key | Value | Meaning |
 |---|---|---|
-| `orbLifetimeSeconds` | 120 | Mana dropped by ordinary creatures disappears after this long. The dragon's hoard never disappears. |
+| `orbLifetimeSeconds` | 250 | Mana dropped by ordinary creatures disappears after this long. The dragon's hoard never disappears. |
 | `magnetRadius` | 34 | Orbs fly towards you inside this distance. |
 | `pickupRadius` | 3.8 | Orbs are collected inside this distance. |
 | `startClusters`, `startOrbsPerCluster`, `startOrbValue` | 8, 3, 2 | Mana lying on the island at the start of a game: this many clusters of orbs, each orb worth this much (48 in total). They are placed on land away from the palace and never disappear. |

@@ -2,7 +2,7 @@
 import { CFG } from './config.js';
 import { VERSION } from './version.js';
 import { G, W } from './state.js';
-import { renderer, scene, camera, updateSky, resizeRenderer } from './scene.js';
+import { renderer, scene, camera, updateSky, resizeRenderer, setDaylight } from './scene.js';
 import { R } from './util.js';
 import { isleName } from './terrain.js';
 import { buildWorld } from './world.js';
@@ -18,7 +18,7 @@ import { bindControls, releaseInput } from './controls.js';
 import { resetRound, updateRound, scoreRound, bestFor, recordScore } from './round.js';
 
 const $ = id => document.getElementById(id);
-const overlay = $('overlay'), goBtn = $('go'), rerollBtn = $('reroll'), ovTitle = $('ovTitle'), ovText = $('ovText'),
+const overlay = $('overlay'), goBtn = $('go'), freeBtn = $('goFree'), rerollBtn = $('reroll'), ovTitle = $('ovTitle'), ovText = $('ovText'),
   ovStats = $('stats'), ovIsle = $('isle'), ovCtl = $('ovCtl'), ovBeasts = $('ovBeasts'), ovLede = ovText.textContent;
 $('ver').textContent = 'Version ' + VERSION;
 const isleLabel = () => { const b = bestFor(); return 'Isle of ' + isleName(W.SEED) + ' · seed ' + W.SEED + (b ? ' · best ' + b.score : ''); };
@@ -28,8 +28,17 @@ function showOverlay(mode) {
   overlay.hidden = false; hud.hidden = (mode === 'title');
   ovStats.hidden = true; ovIsle.textContent = isleLabel();
   ovCtl.hidden = ovBeasts.hidden = (mode === 'results');
-  if (mode === 'title') { ovTitle.textContent = 'Windloom'; ovText.textContent = ovLede; goBtn.textContent = 'Take flight'; rerollBtn.textContent = 'New island'; }
+  freeBtn.hidden = mode !== 'title';
+  if (mode === 'title') { ovTitle.textContent = 'Windloom'; ovText.textContent = ovLede; goBtn.textContent = 'Timed round · ' + Math.round(CFG.round.durationSeconds / 60) + ' min'; rerollBtn.textContent = 'New island'; }
   else if (mode === 'pause') { ovTitle.textContent = 'Paused'; ovText.textContent = 'The creatures will wait. Your palace stands at ' + stageLabel(G.level) + ' of ' + stageCount() + ' stages.'; goBtn.textContent = 'Resume'; rerollBtn.textContent = 'New game on a new island'; }
+  else if (mode === 'results' && !G.timed) {
+    // free flight: the Sanctum is whole; no score, keep flying if you like
+    const m = Math.floor(G.playTime / 60), s = Math.floor(G.playTime % 60);
+    ovTitle.textContent = 'The Sanctum is whole';
+    ovText.textContent = 'Vharoth is slain and every stage of the palace stands. You can keep flying as long as you like.';
+    ovStats.textContent = 'Creatures slain ' + G.kills + '\nTime aloft ' + m + ':' + (s < 10 ? '0' : '') + s; ovStats.hidden = false;
+    goBtn.textContent = 'Keep flying'; rerollBtn.textContent = 'New island';
+  }
   else if (mode === 'results') {
     const done = G.endReason === 'complete', sc = scoreRound(), prev = bestFor(), isBest = recordScore(sc.total);
     ovTitle.textContent = done ? 'The Sanctum is whole' : 'Time is up';
@@ -51,15 +60,16 @@ function newIsland(seed) {
   populate(); rememberSeed();
   ovIsle.textContent = isleLabel();
 }
-function startGame() {
+function startGame(timed = G.timed) {
   Object.assign(G, { carried: 0, castleMana: 0, level: 1, maxHp: CFG.player.maxHp, hp: CFG.player.maxHp, kills: 0, playTime: 0, lastHurt: -99, dragonSeen: false, dragonTimer: 0 });
-  G.invuln = 2; resetRound();
+  G.invuln = 2; resetRound(timed);
   G.spellMana = CFG.spells.mana.max; G.spellExhausted = false;
   clearCreatures(); clearProjectiles();
   applyLevel(1, false); placePlayerAtCastle();
   G.active = true; populate();
   releaseInput(); overlay.hidden = true; hud.hidden = false; G.mode = 'play';
-  toast('Hunt the creatures. Gather their gold. Carry it home to the beam.\nYou have ' + Math.round(CFG.round.durationSeconds / 60) + ' minutes.', 4200);
+  toast('Hunt the creatures. Gather their gold. Carry it home to the beam.\n' +
+    (timed ? 'You have ' + Math.round(CFG.round.durationSeconds / 60) + ' minutes.' : 'Free flight: no clock, take your time.'), 4200);
 }
 function resume() { releaseInput(); overlay.hidden = true; hud.hidden = false; G.mode = 'play'; G.active = true; }
 function togglePause() {
@@ -69,10 +79,11 @@ function togglePause() {
 
 goBtn.addEventListener('click', () => {
   audioInit();
-  if (G.mode === 'title') startGame();
+  if (G.mode === 'title') startGame(true);
   else if (G.mode === 'pause') resume();
-  else if (G.mode === 'results') startGame();
+  else if (G.mode === 'results') { if (G.timed) startGame(); else resume(); }
 });
+freeBtn.addEventListener('click', () => { audioInit(); if (G.mode === 'title') startGame(false); });
 rerollBtn.addEventListener('click', () => {
   audioInit();
   const wasTitle = G.mode === 'title';
@@ -129,6 +140,8 @@ function frame(now) {
   }
   updateCamera(dt, G.mode === 'title');
   updateSky(dt);
+  setDaylight(G.mode === 'title' ? CFG.sky.titlePhase
+    : G.timed ? 1 - G.timeLeft / CFG.round.durationSeconds : G.playTime / (CFG.sky.freeFlightDayMinutes * 60), dt);
   updateToast(dt);
   updateAudio(dt);
   hudTimer -= dt;
@@ -141,7 +154,7 @@ function frame(now) {
 const hashSeed = /^#s(\d{1,10})$/.exec(location.hash || '');
 newIsland(hashSeed ? parseInt(hashSeed[1], 10) : undefined);
 showOverlay('title');
-goBtn.disabled = false; rerollBtn.disabled = false;
+goBtn.disabled = false; freeBtn.disabled = false; rerollBtn.disabled = false;
 requestAnimationFrame(frame);
 
 // Handy in the browser console while tuning

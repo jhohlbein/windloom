@@ -106,7 +106,7 @@ export function killEnemy(e) {
     sfx('roar', 0.8); addRing(e.pos, 150, 1.3, 0xff6a1a);
     G.dragon = null; G.dragonTimer = CFG.spawning.dragonRespawnSeconds;
     G.dragonSlain = true;
-    toast('Vharoth falls. Its hoard scatters across the sand.' + (G.level < stageCount() ? '\nComplete the palace to end the round early.' : ''), 4200);
+    toast('Vharoth falls. Its hoard scatters across the sand.' + (G.level < stageCount() ? (G.timed ? '\nComplete the palace to end the round early.' : '\nComplete the palace to make the Sanctum whole.') : ''), 4200);
   } else toast(e.name + ' slain', 1400);
 }
 export function hurtPlayer(d) {

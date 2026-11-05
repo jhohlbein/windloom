@@ -57,7 +57,8 @@ export function updatePlayer(dt) {
   const gy = groundH(P.x, P.z) + 2.6;
   let skim = P.y - gy;
   if (skim < 0) { P.y = gy; skim = 0; }
-  if (P.y > CFG.world.ceiling) P.y = CFG.world.ceiling;
+  const top = Math.max(CFG.world.ceiling, gy); // never push the carpet into a peak taller than the ceiling
+  if (P.y > top) P.y = top;
   const r = Math.hypot(P.x, P.z), B = CFG.world.boundRadius;
   if (r > B) {
     P.x *= B / r; P.z *= B / r;
@@ -91,14 +92,15 @@ export function updateCamera(dt, title) {
     camera.lookAt(W.CX, W.PH + 24, W.CZ); camera.fov = 64; camera.updateProjectionMatrix(); camSmoothed = false; return;
   }
   const P = G.playerPos;
-  const want = tA.copy(P).addScaledVector(G.fwd, -13); want.y += 4.4;
+  const K = CFG.camera;
+  const want = tA.copy(P).addScaledVector(G.fwd, -K.distance); want.y += K.height;
   const gy = groundH(want.x, want.z) + 3; if (want.y < gy) want.y = gy;
-  const look = tB.copy(P).addScaledVector(G.fwd, 26);
+  const look = tB.copy(P).addScaledVector(G.fwd, K.lookAhead);
   if (!camSmoothed) { camera.position.copy(want); camLook.copy(look); camSmoothed = true; }
   const k = 1 - Math.exp(-dt * 7);
   camera.position.lerp(want, k); camLook.lerp(look, k);
   camera.lookAt(camLook);
   const base = CFG.player.baseSpeed;
-  const fov = 72 + clamp((G.speed - base) / (base * 0.85), 0, 1) * 9;
+  const fov = K.fov + clamp((G.speed - base) / (base * 0.85), 0, 1) * K.fovSurgeExtra;
   if (Math.abs(camera.fov - fov) > 0.05) { camera.fov = lerp(camera.fov, fov, Math.min(1, dt * 3)); camera.updateProjectionMatrix(); }
 }

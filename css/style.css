@@ -90,9 +90,13 @@ h1{margin:0;font:800 clamp(3.4rem,14vw,8rem)/.86 var(--font-display);letter-spac
 .actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
 .go{font:800 17px/1 var(--font-display);letter-spacing:.02em;background:var(--sky);color:var(--ink);border:0;padding:16px 30px;cursor:pointer;border-radius:2px}
 .go:hover{background:#95efe8}
+.go.alt{background:var(--gold)}
+.go.alt:hover{background:#ffe09a}
 .go2{font:700 14px/1 var(--font-display);letter-spacing:.02em;background:transparent;color:var(--paper);border:1px solid rgba(247,238,221,.4);padding:15px 22px;cursor:pointer;border-radius:2px}
 .go2:hover{border-color:var(--gold);color:var(--gold)}
 .go:focus-visible,.go2:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.go:disabled,.go2:disabled{opacity:.45;cursor:not-allowed}
 .fine{margin:0;color:var(--mute);font-size:11px;line-height:1.6}
 .fine a{color:var(--sky)}
+button.update{font:inherit;color:var(--gold);background:none;border:0;padding:0;text-decoration:underline;cursor:pointer}
 #stats{margin:0;font-size:13px;color:var(--gold);font-variant-numeric:tabular-nums;white-space:pre;overflow-x:auto;line-height:1.7}

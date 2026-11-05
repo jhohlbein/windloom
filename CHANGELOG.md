@@ -4,6 +4,22 @@ All notable changes to Windloom are recorded here. The format follows [Keep a Ch
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-11-05
+
+### Added
+- `tools/serve.py`: local dev server with caching turned off, so the browser never mixes a new page with old cached modules.
+- Two modes on the start screen: "Timed round" (the 4-minute scored game) and "Free flight" (no clock, no score, sunrise over 15 minutes, keep flying after the Sanctum is whole).
+- The start screen checks whether a newer version is on the server and offers an "update now" button that replaces the browser's cached files and reloads.
+
+### Changed
+- Camera position is configurable (`camera` section) and sits closer to the carpet: 9 m behind and 3.4 m above (was 13 and 4.4).
+- The sun rises over the round: dawn light at the start, bright late-morning light at the end (`sky` section). Sky is light blue instead of pink, water a darker blue.
+- `greenCover` 0.3 → 0.4, `rockCount` 170 → 50, `ceiling` 320 → 50 (test), `orbLifetimeSeconds` 120 → 250.
+
+### Fixed
+- After an update the browser could keep running old game code even after a hard reload, because the game modules were loaded with a dynamic import. They are now imported statically (the config loads with a top-level await).
+- With a low `ceiling`, the carpet could be pushed into peaks taller than the ceiling.
+
 ## [0.2.0] - 2026-11-05
 
 ### Added

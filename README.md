@@ -6,7 +6,7 @@ A browser flying game in the spirit of Bullfrog's *Magic Carpet* (1994). Ride a 
 
 Every game generates a new island. The page address ends with the island's seed (`#s123456789`); open that link to replay the same island.
 
-Version 0.2.0. See [CHANGELOG.md](CHANGELOG.md).
+Version 0.2.1. See [CHANGELOG.md](CHANGELOG.md).
 
 ## Controls
 
@@ -41,7 +41,7 @@ The game uses JavaScript modules and loads its config with `fetch`, which browse
 
 ```bash
 cd windloom
-python3 -m http.server 8000
+python3 tools/serve.py        # or: python3 -m http.server 8000 (may serve stale cached modules after edits)
 # then open http://localhost:8000
 ```
 

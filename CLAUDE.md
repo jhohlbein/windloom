@@ -8,14 +8,14 @@ Windloom is a browser game (three.js r128, plain ES modules, no build step) insp
 
 ## Run and check
 
-- Serve locally: `python3 -m http.server 8000` in the repo root, open http://localhost:8000. Opening `index.html` from disk does not work (modules and `fetch` are blocked on `file://`).
+- Serve locally: `python3 tools/serve.py` in the repo root (like `python3 -m http.server 8000` but with caching off, so edited modules are always reloaded), open http://localhost:8000. Opening `index.html` from disk does not work (modules and `fetch` are blocked on `file://`).
 - There is no test suite yet. After a change: load the page, check the browser console for errors, start a game, fly, shoot, bank mana in the beam until the palace rises a stage, pause, and try "New island".
 - Headless check (if Playwright is available): load the page, click `#go`, and read `window.windloom.G` (state), `window.windloom.W` (island) and `window.windloom.CFG`.
 - A specific island can be reproduced with `#s<seed>` in the URL.
 
 ## Architecture
 
-- `src/main.js` loads `config/game-config.json` into `CFG`, then dynamically imports `src/game.js`. Every other module can therefore read `CFG` at import time.
+- `src/config.js` loads `config/game-config.json` into `CFG` with a top-level `await`, so every module that imports it can read `CFG` at import time. `src/main.js` imports `game.js` statically; do not switch back to a dynamic `import()`, because browsers keep dynamically imported modules cached even on a hard reload.
 - Shared mutable state lives on two objects in `src/state.js`: `G` (game state, player, entity arrays) and `W` (current island layout: seed, palace centre `CX/CZ/PH`, dragon lair `LX/LZ/LH`, oases). ES module exports cannot be reassigned, so never `export let` state; put it on `G` or `W`.
 - `three` is resolved by the import map in `index.html` (jsDelivr, pinned to 0.128.0). Import it as `import * as THREE from 'three'`.
 - Modules import each other in cycles (e.g. `combat` ↔ `creatures/dragon`, `combat` ↔ `player`). This is fine because cross-module calls happen at runtime, not at import time. Do not call imported functions at module top level.

@@ -38,6 +38,7 @@ export function updateHud() {
   const frac = G.level >= last ? 1 : clamp((G.castleMana - lo) / (hi - lo), 0, 1);
   elCastle.style.width = (frac * 100).toFixed(1) + '%';
   setText(elCastleTxt, 'ct', G.level >= last ? 'Complete' : Math.floor(G.castleMana) + ' / ' + hi);
+  elClock.hidden = !G.timed;
   setText(elClock, 'clk', formatClock(G.timeLeft));
   elClock.classList.toggle('warn', G.timeLeft <= CFG.round.warnSeconds);
   elSteer.style.transform = 'translate(' + (G.steerX * 70).toFixed(1) + 'px,' + (-G.steerY * 70).toFixed(1) + 'px)';

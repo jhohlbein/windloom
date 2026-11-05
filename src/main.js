@@ -1,22 +1,12 @@
-// Entry point: load the tuning file first, then the game modules (which read CFG at import time).
-import { loadConfig } from './config.js';
+// Entry point. All game code is imported statically; config.js loads the tuning file with a top-level await
+// before any module that reads CFG runs. (No dynamic import: browsers keep dynamically imported modules in
+// the cache even on a hard reload, which left old game code running after updates.)
+// Errors: config.js reports start-up errors; a file that fails to download (e.g. the 3D library from the CDN)
+// stops the whole module graph before any code runs, which the script tag's onerror in index.html reports.
+import { VERSION } from './version.js';
+import './game.js';
 
-try {
-  await loadConfig();
-  await import('./game.js');
-  showBuildTime();
-} catch (err) {
-  console.error(err);
-  const text = document.getElementById('ovText');
-  const isle = document.getElementById('isle');
-  if (isle) isle.textContent = 'Could not start';
-  if (text) {
-    text.textContent = 'Windloom could not start: ' + err.message + '. ' +
-      (location.protocol === 'file:'
-        ? 'Browsers block modules and config files opened straight from disk. Start a local web server in the project folder (see README) and open http://localhost:8000.'
-        : 'Check your connection (the 3D library loads from a CDN) and reload the page.');
-  }
-}
+showBuildTime().then(checkForUpdate);
 
 // Show when the newest loaded file was last changed (the Last-Modified header of the page, config and every
 // module). The files are fetched with the normal cache policy, so this reflects what the browser actually
@@ -37,4 +27,27 @@ async function showBuildTime() {
       el.textContent += ` · changed ${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
     }
   } catch (err) { console.warn('build time unavailable', err); }
+}
+
+// Compare the version this page is running with the one on the server. Browsers may keep serving cached modules
+// for a while after an update (GitHub Pages allows 10 minutes), so offer an update button when they differ.
+async function checkForUpdate() {
+  const el = document.getElementById('ver');
+  if (!el) return;
+  try {
+    const m = /VERSION\s*=\s*'([^']+)'/.exec(await (await fetch('src/version.js', { cache: 'no-store' })).text());
+    if (!m || m[1] === VERSION) return;
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'update'; btn.textContent = 'Version ' + m[1] + ' is available, update now';
+    btn.addEventListener('click', updateNow);
+    el.append(' · ', btn);
+  } catch (err) { /* offline or blocked: nothing to offer */ }
+}
+// Refetch every file this page loaded with cache: 'reload', which replaces the browser's cached copies, then reload
+async function updateNow(e) {
+  e.target.disabled = true; e.target.textContent = 'Updating…';
+  const urls = [location.pathname, ...performance.getEntriesByType('resource')
+    .map(r => r.name).filter(n => n.startsWith(location.origin) && /\.(js|json|css)(\?|$)/.test(n))];
+  await Promise.all(urls.map(u => fetch(u, { cache: 'reload' }).catch(() => null)));
+  location.reload();
 }

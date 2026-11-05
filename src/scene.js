@@ -12,11 +12,13 @@ scene.background = FOG;
 scene.fog = new THREE.Fog(FOG, CFG.world.fogNear, CFG.world.fogFar);
 export const camera = new THREE.PerspectiveCamera(72, 1, 0.5, 6500);
 
+// Sun direction, light colours and sky colours are set by setDaylight() (sunrise over the round)
 const sunDir = new THREE.Vector3(-0.8, 0.30, -0.55).normalize();
 const sun = new THREE.DirectionalLight(0xffd6a0, 1.35);
 sun.position.copy(sunDir).multiplyScalar(500);
 scene.add(sun);
-scene.add(new THREE.HemisphereLight(0xc8a8e0, 0x8a6a48, 0.95));
+const hemi = new THREE.HemisphereLight(0xc8a8e0, 0x8a6a48, 0.95);
+scene.add(hemi);
 
 /* ---------- textures, shared materials and geometry ---------- */
 function radialTex(stops) {
@@ -55,6 +57,7 @@ export const sky = new THREE.Mesh(new THREE.SphereGeometry(5200, 32, 16), new TH
   fragmentShader: 'uniform vec3 top;uniform vec3 mid;uniform vec3 hor;varying vec3 vP;void main(){float h=clamp(vP.y,-1.0,1.0);vec3 c=mix(hor,mid,smoothstep(0.0,0.22,h));c=mix(c,top,smoothstep(0.14,0.75,h));c=mix(hor*0.92,c,smoothstep(-0.12,0.02,h));gl_FragColor=vec4(c,1.0);}'
 }));
 sky.frustumCulled = false; sky.renderOrder = -10; scene.add(sky);
+let pts, sunSprite;
 {
   const n = 420, p = new Float32Array(n * 3);
   for (let i = 0; i < n; i++) {
@@ -62,28 +65,28 @@ sky.frustumCulled = false; sky.renderOrder = -10; scene.add(sky);
     p[i * 3] = Math.cos(a) * r * 4800; p[i * 3 + 1] = y * 4800; p[i * 3 + 2] = Math.sin(a) * r * 4800;
   }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(p, 3));
-  const pts = new THREE.Points(g, new THREE.PointsMaterial({ color: 0xffffff, size: 1.6, sizeAttenuation: false, transparent: true, opacity: 0.75, fog: false, depthWrite: false }));
+  pts = new THREE.Points(g, new THREE.PointsMaterial({ color: 0xffffff, size: 1.6, sizeAttenuation: false, transparent: true, opacity: 0.75, fog: false, depthWrite: false }));
   pts.frustumCulled = false; pts.renderOrder = -9; sky.add(pts);
-  const sunSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0xffc88a, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false, fog: false }));
+  sunSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0xffc88a, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false, fog: false }));
   sunSprite.scale.set(1700, 1700, 1); sunSprite.position.copy(sunDir).multiplyScalar(4300); sunSprite.renderOrder = -8; sky.add(sunSprite);
 }
 const clouds = [];
 for (let i = 0; i < 40; i++) {
-  const cm = new THREE.SpriteMaterial({ map: cloudTex, color: i % 3 ? 0xf6c09a : 0xe0a8c0, transparent: true, opacity: 0.28 + Math.random() * 0.22, depthWrite: false, fog: false });
+  const cm = new THREE.SpriteMaterial({ map: cloudTex, color: 0xffffff, transparent: true, opacity: 0.28 + Math.random() * 0.22, depthWrite: false, fog: false });
   const cs = new THREE.Sprite(cm); const ca = Math.random() * TAU, cr = 500 + Math.random() * 2200;
   cs.position.set(Math.cos(ca) * cr, 230 + Math.random() * 180, Math.sin(ca) * cr);
   const cw = 260 + Math.random() * 420; cs.scale.set(cw, cw * 0.24, 1);
-  scene.add(cs); clouds.push(cs);
+  cs.userData.tint = i % 3 ? 0 : 1; scene.add(cs); clouds.push(cs);
 }
 /* ---------- water: sky reflection + scrolling ripples ---------- */
-// The sky (with stars and sun) is rendered once into a cube map that the water reflects.
-// Terrain and creatures are not reflected; that would need a second full scene render every frame.
+// The sky (with stars and sun) is rendered into a cube map that the water reflects; refreshed every few
+// seconds as the sun rises. Terrain and creatures are not reflected (that would need a second full render).
 const envTarget = new THREE.WebGLCubeRenderTarget(256, { generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter });
-{
-  const envScene = new THREE.Scene(), envSky = sky.clone();
-  envScene.add(envSky);
-  const cubeCam = new THREE.CubeCamera(1, 6000, envTarget);
+const envScene = new THREE.Scene(), cubeCam = new THREE.CubeCamera(1, 6000, envTarget);
+function refreshReflection() {
+  envScene.add(sky); sky.position.set(0, 0, 0);   // borrow the sky for a moment
   cubeCam.update(renderer, envScene);
+  scene.add(sky);
 }
 // Tileable ripple normal map, generated from a few sine waves with integer frequencies
 function rippleNormals(n = 256) {
@@ -102,10 +105,52 @@ function rippleNormals(n = 256) {
 }
 const waterNormals = rippleNormals();
 const water = new THREE.Mesh(new THREE.PlaneGeometry(9000, 9000), new THREE.MeshStandardMaterial({
-  color: 0x2aa6ad, transparent: true, opacity: 0.82, roughness: 0.06, metalness: 0.1,
-  envMap: envTarget.texture, envMapIntensity: 0.9, normalMap: waterNormals, normalScale: new THREE.Vector2(0.35, 0.35)
+  color: 0x135a85, transparent: true, opacity: 0.85, roughness: 0.06, metalness: 0.1,
+  envMap: envTarget.texture, envMapIntensity: 0.5, normalMap: waterNormals, normalScale: new THREE.Vector2(0.35, 0.35)
 }));
 water.rotation.x = -Math.PI / 2; scene.add(water);
+
+/* ---------- daylight: sunrise over the round ---------- */
+// Colour keyframes at phase 0 (dawn), 0.35 (early morning) and 1 (late morning)
+const STOPS = [0, 0.35, 1];
+const KEYS = {
+  top: [0x24346e, 0x2f5fae, 0x2d6cc8],     // sky at the zenith
+  mid: [0xd9a184, 0x9cc2e4, 0x8ec5ee],     // sky part-way up
+  hor: [0xf0c39a, 0xdcdfe0, 0xcfe5f4],     // horizon and fog
+  sun: [0xffa860, 0xffdcae, 0xfff4e6],     // sunlight
+  sunGlow: [0xff9a50, 0xffd9a0, 0xfff0d8], // sun disc in the sky
+  hemiSky: [0xc9a894, 0xb5cbe0, 0xc4dcf2],
+  cloud: [0xf5c3a0, 0xf4ece6, 0xffffff],
+  cloud2: [0xe8b4b0, 0xe6e6ee, 0xf4f8ff]
+};
+const KC = {}; for (const k in KEYS) KC[k] = KEYS[k].map(c => new THREE.Color(c));
+const tmpC = new THREE.Color();
+function keyColor(k, t, out) {
+  const s = t <= STOPS[1] ? 0 : 1, f = (t - STOPS[s]) / (STOPS[s + 1] - STOPS[s]);
+  return out.copy(KC[k][s]).lerp(KC[k][s + 1], Math.min(1, Math.max(0, f)));
+}
+let lastPhase = -1, envAge = 99;
+// phase: 0 = sunrise, 1 = end of the round
+export function setDaylight(phase, dt = 0) {
+  envAge += dt;
+  phase = Math.min(1, Math.max(0, phase));
+  if (Math.abs(phase - lastPhase) < 0.002) return;
+  const S = CFG.sky, el = (S.startElevationDeg + (S.endElevationDeg - S.startElevationDeg) * Math.sqrt(phase)) * Math.PI / 180;
+  const az = Math.atan2(-0.55, -0.8);
+  sunDir.set(Math.cos(el) * Math.cos(az), Math.sin(el), Math.cos(el) * Math.sin(az));
+  sun.position.copy(sunDir).multiplyScalar(500);
+  sunSprite.position.copy(sunDir).multiplyScalar(4300);
+  keyColor('sun', phase, sun.color); sun.intensity = 0.7 + 0.45 * phase;
+  keyColor('sunGlow', phase, sunSprite.material.color);
+  keyColor('hemiSky', phase, hemi.color); hemi.intensity = 0.65 + 0.15 * phase;
+  const U = sky.material.uniforms;
+  keyColor('top', phase, U.top.value); keyColor('mid', phase, U.mid.value); keyColor('hor', phase, FOG);
+  scene.fog.color.copy(FOG);
+  pts.material.opacity = 0.7 * Math.max(0, 1 - phase / 0.3);
+  for (const c of clouds) keyColor(c.userData.tint ? 'cloud2' : 'cloud', phase, c.material.color);
+  lastPhase = phase;
+  if (envAge > 2) { envAge = 0; refreshReflection(); }
+}
 
 export function updateSky(dt) {
   waterNormals.offset.x += dt * 0.012; waterNormals.offset.y += dt * 0.007;

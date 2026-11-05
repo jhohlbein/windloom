@@ -16,7 +16,7 @@ export const G = {
   keys: {},
   carried: 0, castleMana: 0, level: 1, hp: 100, maxHp: 100, invuln: 0,
   kills: 0, playTime: 0, lastHurt: -99,
-  timeLeft: 0, killsBy: {}, dragonSlain: false, endTimer: -1, endReason: '', // round (see round.js)
+  timed: true, timeLeft: 0, killsBy: {}, dragonSlain: false, endTimer: -1, endReason: '', finished: false, // round (see round.js)
   yaw: 0, pitch: 0, roll: 0, speed: 0, strafe: 0, steerX: 0, steerY: 0,
   fireCd: 0, novaCd: 0, wallToast: 0,
   spellMana: 100, spellExhausted: false, // fireball energy (config spells.mana), separate from carried mana

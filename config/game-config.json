@@ -5,23 +5,36 @@
     "boundFraction": 0.95,
     "heightScale": 0.5,
     "mountainScale": 0.55,
-    "ceiling": 320,
+    "ceiling": 50,
     "fogNear": 150,
     "fogFar": 950,
     "terrainSegments": 320,
     "duneHeight": 7,
     "duneWavelength": 60,
-    "greenCover": 0.3,
+    "greenCover": 0.4,
     "terraceStep": 12,
     "oasisCount": 3,
     "oasisRadiusMin": 34,
     "oasisRadiusMax": 50,
     "palmMax": 520,
-    "rockCount": 170,
+    "rockCount": 50,
     "palaceFlattenOuter": 70,
     "palaceFlattenInner": 34,
     "lairMinDistanceFromPalace": 290,
     "lairSearchRadius": 440
+  },
+  "camera": {
+    "distance": 9,
+    "height": 3.4,
+    "lookAhead": 26,
+    "fov": 72,
+    "fovSurgeExtra": 9
+  },
+  "sky": {
+    "startElevationDeg": 3,
+    "endElevationDeg": 50,
+    "titlePhase": 0.3,
+    "freeFlightDayMinutes": 15
   },
   "player": {
     "baseSpeed": 44,
@@ -83,7 +96,7 @@
     "wardRadius": 110
   },
   "mana": {
-    "orbLifetimeSeconds": 120,
+    "orbLifetimeSeconds": 250,
     "magnetRadius": 34,
     "pickupRadius": 3.8,
     "startClusters": 8,
