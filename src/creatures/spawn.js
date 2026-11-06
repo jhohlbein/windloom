@@ -76,10 +76,16 @@ const POPULATIONS = [
   { rule: 'krakens', count: () => countKind('kraken'), spawn: spawnKraken }
 ];
 
+// Target for a population on this island: rules with perLand scale with the island's land (W.LAND = its
+// landCover / the mean), so small islands are not crowded with land creatures; at least one once unlocked
+function target(rule, stage) {
+  const t = targetFor(rule, stage);
+  return t && rule.perLand ? Math.max(1, Math.round(t * W.LAND)) : t;
+}
 // A new game starts with every population at its target for the current stage
 export function populate() {
   const S = CFG.spawning;
-  for (const p of POPULATIONS) for (let i = targetFor(S[p.rule], G.level); i > 0; i--) p.spawn();
+  for (const p of POPULATIONS) for (let i = target(S[p.rule], G.level); i > 0; i--) p.spawn();
   if (unlocked(S.dragon)) spawnDragon();
   scatterMana();
 }
@@ -100,7 +106,7 @@ function scatterMana() {
 // (as a fraction), so a newly unlocked type fills up quickly instead of waiting behind the others
 export function spawnTick() {
   const S = CFG.spawning, L = G.level;
-  const short = POPULATIONS.map(p => ({ p, n: p.count(), target: targetFor(S[p.rule], L) })).filter(g => g.n < g.target);
+  const short = POPULATIONS.map(p => ({ p, n: p.count(), target: target(S[p.rule], L) })).filter(g => g.n < g.target);
   if (!short.length) return;
   short.sort((a, b) => a.n / a.target - b.n / b.target);
   short[0].p.spawn();

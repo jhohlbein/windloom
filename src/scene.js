@@ -104,14 +104,33 @@ export function disposeTree(root) {
 }
 
 /* ---------- sky ---------- */
+// Gradient from horizon to zenith, plus the sun drawn per pixel: a crisp disc of sky.sunDiscDegrees radius that
+// warms a little towards its rim, a tight glow around it and a faint, wide warm glow over that part of the sky
+// (strengths scaled by sky.sunGlow). Drawn in the shader so it stays sharp at any size and is reflected by the sea.
 export const sky = new THREE.Mesh(new THREE.SphereGeometry(5200, 32, 16), new THREE.ShaderMaterial({
   side: THREE.BackSide, depthWrite: false, fog: false,
-  uniforms: { top: { value: new THREE.Color(0x1a1446) }, mid: { value: new THREE.Color(0xa8577a) }, hor: { value: FOG } },
+  uniforms: {
+    top: { value: new THREE.Color(0x1a1446) }, mid: { value: new THREE.Color(0xa8577a) }, hor: { value: FOG },
+    sunD: { value: sunDir }, sunC: { value: new THREE.Color(0xffc88a) },
+    sunR: { value: (CFG.sky.sunDiscDegrees || 1.6) * Math.PI / 180 }, sunG: { value: CFG.sky.sunGlow ?? 1 }
+  },
   vertexShader: 'varying vec3 vP;void main(){vP=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
-  fragmentShader: 'uniform vec3 top;uniform vec3 mid;uniform vec3 hor;varying vec3 vP;void main(){float h=clamp(vP.y,-1.0,1.0);vec3 c=mix(hor,mid,smoothstep(0.0,0.22,h));c=mix(c,top,smoothstep(0.14,0.75,h));c=mix(hor*0.92,c,smoothstep(-0.12,0.02,h));gl_FragColor=vec4(c,1.0);}'
+  fragmentShader: `uniform vec3 top;uniform vec3 mid;uniform vec3 hor;uniform vec3 sunD;uniform vec3 sunC;uniform float sunR;uniform float sunG;varying vec3 vP;
+    void main(){
+      vec3 p=normalize(vP);float h=clamp(p.y,-1.0,1.0);
+      vec3 c=mix(hor,mid,smoothstep(0.0,0.22,h));c=mix(c,top,smoothstep(0.14,0.75,h));
+      float a=acos(clamp(dot(p,sunD),-1.0,1.0));               // angle from the sun's centre
+      float above=smoothstep(-0.02,0.01,h);                      // nothing of the sun below the horizon
+      c+=sunC*sunG*above*(0.16*exp(-a*2.2)+0.45*exp(-a/(sunR*1.4)));
+      float disc=1.0-smoothstep(sunR*0.82,sunR,a);
+      vec3 core=mix(vec3(1.0,0.98,0.93),sunC,0.12+0.18*smoothstep(0.4*sunR,sunR,a));
+      c=mix(c,core,disc*above);
+      c=mix(hor*0.92,c,smoothstep(-0.12,0.02,h));
+      gl_FragColor=vec4(c,1.0);
+    }`
 }));
 sky.frustumCulled = false; sky.renderOrder = -10; scene.add(sky);
-let pts, sunSprite;
+let pts;
 {
   const n = 420, p = new Float32Array(n * 3);
   for (let i = 0; i < n; i++) {
@@ -121,8 +140,6 @@ let pts, sunSprite;
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(p, 3));
   pts = new THREE.Points(g, new THREE.PointsMaterial({ color: 0xffffff, size: 1.6, sizeAttenuation: false, transparent: true, opacity: 0.75, fog: false, depthWrite: false }));
   pts.frustumCulled = false; pts.renderOrder = -9; sky.add(pts);
-  sunSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0xffc88a, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false, fog: false }));
-  sunSprite.scale.set(1700, 1700, 1); sunSprite.position.copy(sunDir).multiplyScalar(4300); sunSprite.renderOrder = -8; sky.add(sunSprite);
 }
 const clouds = [];
 for (let i = 0; i < 40; i++) {
@@ -212,9 +229,8 @@ export function setDaylight(phase, dt = 0) {
   const az = Math.atan2(-0.55, -0.8);
   sunDir.set(Math.cos(el) * Math.cos(az), Math.sin(el), Math.cos(el) * Math.sin(az));
   sun.position.copy(sunDir).multiplyScalar(500);
-  sunSprite.position.copy(sunDir).multiplyScalar(4300);
   keyColor('sun', phase, sun.color); sun.intensity = 0.7 + 0.45 * phase;
-  keyColor('sunGlow', phase, sunSprite.material.color);
+  keyColor('sunGlow', phase, sky.material.uniforms.sunC.value);  // the sky shader reads sunDir directly
   keyColor('hemiSky', phase, hemi.color); hemi.intensity = 0.65 + 0.15 * phase;
   const U = sky.material.uniforms;
   keyColor('top', phase, U.top.value); keyColor('mid', phase, U.mid.value); keyColor('hor', phase, FOG);

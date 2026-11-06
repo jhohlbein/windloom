@@ -10,6 +10,7 @@ The **Value** column shows what `game-config.json` currently contains. Keep it i
 
 - **Hit points:** `hp + hpBonus × floor(stage / hpBonusEveryStages)`. Example: kraken `12 + 2 × floor(stage / 2)` gives 12 at stage 1, 14 at stages 2–3, 16 at 4–5.
 - **Population targets** (every creature in `spawning` except the dragon): none before `fromStage`, then `min(base + floor(add × (stage − fromStage)), max)`. `add` may be a fraction: 0.5 adds one creature every second stage. Example: sandworms `fromStage 3, base 2, add 0.5, max 3` give 2 at stages 3–4 and 3 from stage 5.
+- **perLand:** a rule with `"perLand": true` (skeletons, sandworms) multiplies that target by the island's land relative to the mean (`landCover` drawn for this island ÷ `world.landCover`, so 0.55–1.45), rounded, and at least 1 once unlocked. Example: 4 skeleton groups become 2 on a small island and 6 on a large one.
 
 ## world
 
@@ -17,6 +18,7 @@ The **Value** column shows what `game-config.json` currently contains. Keep it i
 |---|---|---|
 | `islandRadius` | 480 | Nominal radius of the island in metres (the coastline is noisy, so it varies by about ±25%). Smaller packs creatures closer together. |
 | `worldRadius` | 558 | Radius of the whole playable world including sea, in metres. The terrain mesh is a square of twice this size. Keep it at or above `islandRadius`. |
+| `landCover` | 0.17 | Share of the island oval (0–1) that is land above the sea; the rest is shallows and bays. Each island's sea level is set so it gets exactly its share. Before this was a setting, islands ranged from 6% to 30% by chance. Land creatures, palms and rocks scale with it (see `spawning`), so a small island is not crowded. |
 | `lowlandScale` | 0.5 | Height of the rolling lowland hills (multiplier; 1 = the original, hillier island). Does not affect the mountains or dunes. |
 | `mountainHeight` | 100 | Height of the island's tallest peak in metres (before terracing). Every island is scaled so its highest mountain reaches this; the dragon's lair sits on it. Lower peaks scale with it. |
 | `mountainCover` | 0.06 | Share of the island (0–1) where mountains may rise: the highest-lying 6% of the land. Mountains follow ridges inside it. At 0.06 an island typically has 1–3 mountains (up to 6), and the lower ones are smaller than the main peak. Lower = fewer, more isolated mountains. |
@@ -31,8 +33,8 @@ The **Value** column shows what `game-config.json` currently contains. Keep it i
 | `terraceStep` | 6 | Height of each step on terraced mountains, in metres. |
 | `oasisCount` | 3 | Number of inland oases. |
 | `oasisRadiusMin`, `oasisRadiusMax` | 34, 50 | Size range of oases. |
-| `palmMax` | 520 | Upper limit on palm trees. |
-| `rockCount` | 50 | Number of sandstone boulders. |
+| `palmMax` | 520 | Upper limit on palm trees (scaled by the island's land, relative to `landCover`). |
+| `rockCount` | 50 | Number of sandstone boulders (scaled by the island's land, like `palmMax`). |
 | `palaceFlattenOuter`, `palaceFlattenInner` | 70, 34 | The ground is flattened for the palace inside the inner radius and blended out to the outer radius. |
 | `lairMinDistanceFromPalace` | 290 | The dragon's peak is at least this far from the palace. |
 | `lairSearchRadius` | 440 | The dragon's peak is searched within this distance of the centre. |
@@ -43,6 +45,7 @@ For the landscape settings listed here, the value above is the **mean**; each is
 
 | Key | Value | Meaning |
 |---|---|---|
+| `landCover` | spread 0.45 | Factor between 0.55 and 1.45 (about 9–25% of the oval): from a few small isles to one large island. Named "small" or "large" on the start screen. |
 | `lowlandScale` | spread 0.25 | Each island: mean × a factor between 0.75 and 1.25. |
 | `mountainHeight` | spread 0.3 | Factor between 0.7 and 1.3 (tallest peak 70–130 m). |
 | `mountainCover` | spread 0.35 | Factor between 0.65 and 1.35. |
@@ -100,6 +103,8 @@ The sun rises over the course of a round: dawn at the start (low, warm, dim ligh
 | `startElevationDeg`, `endElevationDeg` | 3, 50 | Height of the sun above the horizon at the start and end of a round, in degrees. |
 | `titlePhase` | 0.3 | Time of day on the title screen (0 = sunrise, 1 = end of a round). |
 | `freeFlightDayMinutes` | 15 | In free flight (no timer) the sun takes this long to rise from dawn to late morning, then stays. |
+| `sunDiscDegrees` | 1.6 | Radius of the sun disc in the sky, in degrees (the real sun is about 0.27). |
+| `sunGlow` | 1 | Strength of the glow around the sun and of the warm light it casts over that part of the sky; 0 leaves only the disc. |
 
 ## player
 
@@ -197,8 +202,8 @@ A timed game is a round. The clock keeps running everywhere, including in the pa
 | `intervalSeconds` | 2 | How often the game tops up creature numbers (one creature, or one skeleton group, per check; the type furthest below its target goes first). A new game starts with every type at its target. |
 | `wyverns` | fromStage 1, base 5, add 0.5, max 7 | Population target (see scaling above): 5 at stage 1, 7 from stage 5. |
 | `drakes` | fromStage 2, base 1, add 0.5, max 3 | 1 at stages 2–3, 2 at 4–5, 3 at stage 6. |
-| `skeletons` | fromStage 1, base 4, add 0.5, max 6, groupSizeMin 2, groupSizeMax 4 | Skeleton archers roam in groups of 2–4; the target counts groups (4 at stage 1, 6 from stage 5). A group counts as long as one member lives; lost groups are replaced. |
-| `sandworms` | fromStage 3, base 2, add 0.5, max 3 | 2 at stages 3–4, 3 from stage 5. |
+| `skeletons` | fromStage 1, perLand, base 4, add 0.5, max 6, groupSizeMin 2, groupSizeMax 4 | Skeleton archers roam in groups of 2–4; the target counts groups (4 at stage 1, 6 from stage 5). A group counts as long as one member lives; lost groups are replaced. |
+| `sandworms` | fromStage 3, perLand, base 2, add 0.5, max 3 | 2 at stages 3–4, 3 from stage 5. |
 | `krakens` | fromStage 4, base 2, add 0.5, max 3 | 2 at stages 4–5, 3 at stage 6. |
 | `dragon.fromStage`, `dragon.respawnSeconds` | 5, 240 | There is only ever one Vharoth. It wakes at this stage and returns this long after being slain. |
 | `drakes.announce`, `sandworms.announce`, `krakens.announce`, `dragon.announce` | see JSON | Line shown under "Palace raised" when the stage that unlocks this creature is reached. Any rule can have one; leave it out for no message. |

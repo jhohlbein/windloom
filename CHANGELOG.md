@@ -4,6 +4,15 @@ All notable changes to Windloom are recorded here. The format follows [Keep a Ch
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-11-06
+
+### Added
+- `world.landCover` sets how much of each island is land; each island draws its own share (spread 0.45), from a few small isles to one large island, and the start screen calls it "small" or "large". Until now the amount of land was down to the luck of the noise (from 6 % to 24 % of the map, so some seeds had almost none).
+- Spawn rules can scale with the island's land (`perLand`); skeletons and sandworms do, so small islands are no longer crowded with land creatures. Palms and rocks scale the same way.
+
+### Changed
+- The sun is a small, crisp disc drawn by the sky itself, with a tight glow and a faint warm light over that part of the sky, instead of one large glowing blob. The sea reflects it as a glitter path. Its size and glow are set by `sky.sunDiscDegrees` and `sky.sunGlow` in the config.
+
 ## [0.3.2] - 2026-11-06
 
 ### Changed

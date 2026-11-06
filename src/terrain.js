@@ -21,15 +21,25 @@ function fields(x, z) {
   fn = fbm(x * 0.0030 + OFF[0], z * 0.0030 + OFF[1]);
   fr = Math.pow(1 - Math.abs(fbm(x * 0.0065 + OFF[2], z * 0.0065 + OFF[3]) * 2 - 1), 3.2);
 }
-// Mountains rise where n is in the top mountainCover share of the island, along the ridges of r. Called once per
-// island (before any height is read): finds that threshold (W.MT) and the factor (W.MK) that makes this island's
-// tallest peak mountainHeight metres, so both settings mean the same on every seed.
-export function calibrateMountains() {
-  const ns = [], cand = [], R = CFG.world.worldRadius;
+// Lowland at height 0 needs (n - W.ST) * 140 * lowlandScale * m > (1 - m) * 28, i.e. n above a "land key" that
+// rises towards the coast (where m falls to 0)
+const LAND_DROP = 28 / 140;
+// Called once per island, before any height is read, so that the settings mean the same on every seed:
+// - Sea level: the threshold W.ST on n is picked so that landCover of the island oval (where m > 0) is land.
+//   Without it the amount of land was down to the luck of the noise (from 6 to 22 % of the map).
+// - Mountains rise where n is in the top mountainCover share of the island, along the ridges of r: finds that
+//   threshold (W.MT) and the factor (W.MK) that makes this island's tallest peak mountainHeight metres.
+export function calibrateTerrain() {
+  const ns = [], cand = [], keys = [], R = CFG.world.worldRadius, ls = W.P.lowlandScale;
   for (let X = -R; X <= R; X += 12) for (let Z = -R; Z <= R; Z += 12) {
-    fields(X / WS, Z / WS); if (fm < 0.05) continue;
+    fields(X / WS, Z / WS);
+    if (fm > 1e-3) keys.push(fn - (1 - fm) * LAND_DROP / (ls * fm));
+    if (fm < 0.05) continue;
     ns.push(fn); cand.push(fn, fr, fm);
   }
+  keys.sort((a, b) => a - b);
+  W.ST = keys.length && W.P.landCover !== undefined ? keys[Math.floor(clamp(1 - W.P.landCover, 0, 1) * (keys.length - 1))] : 0.4;
+  W.LAND = W.P.landCover !== undefined ? W.P.landCover / CFG.world.landCover : 1;
   ns.sort((a, b) => a - b);
   W.MT = ns.length ? ns[Math.floor(clamp(1 - W.P.mountainCover, 0, 1) * (ns.length - 1))] : 1;
   let peak = 0;
@@ -44,7 +54,7 @@ export function rawH(x, z) {
   x /= WS; z /= WS;
   fields(x, z); const m = fm, n = fn;
   const mount = terrace(fr * Math.max(0, n - W.MT) * W.MK * m);
-  const base = (n - 0.40) * 140 * W.P.lowlandScale * m;
+  const base = (n - W.ST) * 140 * W.P.lowlandScale * m;
   let h = base + mount - (1 - m) * 28;
   if (h > 0.5 && h < 34) {
     // sin has period 2*PI, so a crest every duneWavelength metres (x, z are unscaled here, hence * WS)

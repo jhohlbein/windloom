@@ -3,6 +3,7 @@
     "islandRadius": 480,
     "worldRadius": 558,
     "boundFraction": 0.95,
+    "landCover": 0.17,
     "lowlandScale": 0.5,
     "mountainHeight": 100,
     "mountainCover": 0.06,
@@ -25,6 +26,7 @@
     "lairMinDistanceFromPalace": 290,
     "lairSearchRadius": 440,
     "variation": {
+      "landCover": { "spread": 0.45 },
       "lowlandScale": { "spread": 0.25 },
       "mountainHeight": { "spread": 0.3 },
       "mountainCover": { "spread": 0.35 },
@@ -64,7 +66,9 @@
     "startElevationDeg": 3,
     "endElevationDeg": 50,
     "titlePhase": 0.3,
-    "freeFlightDayMinutes": 15
+    "freeFlightDayMinutes": 15,
+    "sunDiscDegrees": 1.6,
+    "sunGlow": 1
   },
   "player": {
     "baseSpeed": 44,
@@ -143,8 +147,8 @@
     "intervalSeconds": 2,
     "wyverns": { "fromStage": 1, "base": 5, "add": 0.5, "max": 7 },
     "drakes": { "fromStage": 2, "base": 1, "add": 0.5, "max": 3, "announce": "Drakes join the wyverns in the sky." },
-    "skeletons": { "fromStage": 1, "base": 4, "add": 0.5, "max": 6, "groupSizeMin": 2, "groupSizeMax": 4 },
-    "sandworms": { "fromStage": 3, "base": 2, "add": 0.5, "max": 3, "announce": "Sandworms wake beneath the dunes." },
+    "skeletons": { "fromStage": 1, "perLand": true, "base": 4, "add": 0.5, "max": 6, "groupSizeMin": 2, "groupSizeMax": 4 },
+    "sandworms": { "fromStage": 3, "perLand": true, "base": 2, "add": 0.5, "max": 3, "announce": "Sandworms wake beneath the dunes." },
     "krakens": { "fromStage": 4, "base": 2, "add": 0.5, "max": 3, "announce": "Krakens stir in the deep water around the island." },
     "dragon": { "fromStage": 5, "respawnSeconds": 240, "announce": "Vharoth wakes on the highest peak." }
   },

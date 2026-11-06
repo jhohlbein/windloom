@@ -7,7 +7,8 @@ export const W = {
   SEED: 0, OFF: [0, 0, 0, 0, 0, 0, 0, 0], ISL_ANG: 0, ISL_EX: 0, DUNE_ANG: 0, OASES: [],
   CX: 0, CZ: 0, PH: 18,   // palace centre and plateau height
   LX: 0, LZ: 0, LH: 12,   // dragon lair
-  MT: 1, MK: 0,           // mountain threshold and height factor (terrain.js calibrateMountains)
+  MT: 1, MK: 0,           // mountain threshold and height factor (terrain.js calibrateTerrain)
+  ST: 0.4, LAND: 1,       // sea-level threshold on the elevation noise, and this island's land relative to the mean
   P: {}                   // this island's landscape settings, drawn from the seed (see islandParams in world.js)
 };
 
