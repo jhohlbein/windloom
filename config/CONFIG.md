@@ -17,16 +17,18 @@ The **Value** column shows what `game-config.json` currently contains. Keep it i
 |---|---|---|
 | `islandRadius` | 480 | Nominal radius of the island in metres (the coastline is noisy, so it varies by about ±25%). Smaller packs creatures closer together. |
 | `worldRadius` | 558 | Radius of the whole playable world including sea, in metres. The terrain mesh is a square of twice this size. Keep it at or above `islandRadius`. |
-| `heightScale` | 0.5 | Multiplier on all land heights (base terrain and mountains). |
-| `mountainScale` | 0.55 | Extra multiplier on the mountains only (1 = original). Lower gives a flatter island; the dragon's peak gets lower too. |
+| `lowlandScale` | 0.5 | Height of the rolling lowland hills (multiplier; 1 = the original, hillier island). Does not affect the mountains or dunes. |
+| `mountainHeight` | 100 | Height of the island's tallest peak in metres (before terracing). Every island is scaled so its highest mountain reaches this; the dragon's lair sits on it. Lower peaks scale with it. |
+| `mountainCover` | 0.06 | Share of the island (0–1) where mountains may rise: the highest-lying 6% of the land. Mountains follow ridges inside it. At 0.06 an island typically has 1–3 mountains (up to 6), and the lower ones are smaller than the main peak. Lower = fewer, more isolated mountains. |
 | `boundFraction` | 0.95 | The sandstorm turns the player back at `worldRadius × boundFraction` (530 m now). Creature spawning and the kraken's swim limit use the same distance. |
-| `ceiling` | 50 | Highest altitude the carpet can reach (metres above sea level). Over terrain taller than this, the carpet can still skim the ground. |
+| `ceiling` | 50 | Highest altitude the carpet can reach (metres above sea level). Mountains taller than this are walls: the carpet slides along their slopes and cannot cross them. |
 | `fogNear`, `fogFar` | 150, 950 | Haze starts / is complete at these distances. |
 | `terrainSegments` | 320 | Mesh resolution of the island (higher = finer and slower to generate). |
 | `duneHeight` | 7 | Height of dune ridges on low sand (varies by dune field, up to about 1.6× this). |
-| `duneWavelength` | 60 | Distance between dune crests in metres. |
+| `duneWavelength` | 60 | Distance between dune crests in metres. Longer gives gentler slopes. |
+| `duneSharpness` | 0.2 | Shape of the crests: 0 = smooth rounded swells, 1 = sharp wind-cut ridges (the old look). |
 | `greenCover` | 0.4 | Roughly the share of low, gentle land covered by green grass and scrub patches (0–1). Palms grow in them. |
-| `terraceStep` | 12 | Height of each step on terraced mesas. |
+| `terraceStep` | 6 | Height of each step on terraced mountains, in metres. |
 | `oasisCount` | 3 | Number of inland oases. |
 | `oasisRadiusMin`, `oasisRadiusMax` | 34, 50 | Size range of oases. |
 | `palmMax` | 520 | Upper limit on palm trees. |
@@ -41,8 +43,9 @@ For the landscape settings listed here, the value above is the **mean**; each is
 
 | Key | Value | Meaning |
 |---|---|---|
-| `heightScale` | spread 0.25 | Each island: mean × a factor between 0.75 and 1.25. |
-| `mountainScale` | spread 0.35 | Factor between 0.65 and 1.35. |
+| `lowlandScale` | spread 0.25 | Each island: mean × a factor between 0.75 and 1.25. |
+| `mountainHeight` | spread 0.3 | Factor between 0.7 and 1.3 (tallest peak 70–130 m). |
+| `mountainCover` | spread 0.35 | Factor between 0.65 and 1.35. |
 | `duneHeight` | spread 0.35 | Factor between 0.65 and 1.35. |
 | `duneWavelength` | spread 0.25 | Factor between 0.75 and 1.25. |
 | `greenCover` | min 0.25, max 0.55 | Any value in this range (the mean above is not used). |
@@ -65,6 +68,7 @@ Kinds: `{ "spread": s }` = mean × (1 ± s), uniform; `{ "min": a, "max": b }` =
 |---|---|---|
 | `pointerLock` | true | Clicking into the game captures the mouse: the cursor is hidden and cannot leave the window, so steering never gets stuck at the screen edge. Esc releases it and pauses. Set to `false` for the old free cursor. |
 | `lockedSensitivity` | 1 | With the mouse captured: how far the steering moves per pixel of mouse movement (higher = more sensitive). |
+| `tilt` | steerDegrees 25, pitchDegrees 20, deadzoneDegrees 2, invertPitch false | Phones (Settings → Tilt to steer): tilting the phone this many degrees left/right gives full turn, tipping it this many degrees towards/away from you gives full climb/dive, measured from how it was held at start or resume. Smaller tilts inside the dead zone are ignored. `invertPitch` swaps climb and dive (by default tipping the top towards you climbs, like pulling back on a stick). |
 
 ## hud
 

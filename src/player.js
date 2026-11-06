@@ -134,6 +134,7 @@ export function placePlayerAtCastle() {
 // corner of the (tilted) carpet keeps cornerClearance above the ground beneath that corner.
 const CORNERS = [[-1.7, 2.5], [1.7, 2.5], [-1.7, -2.5], [1.7, -2.5]].map(([x, z]) => new THREE.Vector3(x, 0, z));
 const cEuler = new THREE.Euler(0, 0, 0, 'YXZ'), cTmp = new THREE.Vector3();
+const cPrev = new THREE.Vector3();
 function groundFloor(P) {
   const cp = CFG.player;
   let floor = groundH(P.x, P.z) + cp.groundClearance;
@@ -177,7 +178,7 @@ export function updatePlayer(dt) {
   const cp = CFG.player, I = G.input, keys = G.keys, P = G.playerPos;
   const kx = (keys.ArrowRight ? 1 : 0) - (keys.ArrowLeft ? 1 : 0);
   const ky = (keys.ArrowUp ? 0.7 : 0) - (keys.ArrowDown ? 0.7 : 0);
-  const sx = clamp(I.mouseX + I.touchX + kx, -1, 1), sy = clamp(I.mouseY + I.touchY + ky, -1, 1);
+  const sx = clamp(I.mouseX + I.touchX + I.tiltX + kx, -1, 1), sy = clamp(I.mouseY + I.touchY + I.tiltY + ky, -1, 1);
   const RS = cp.response; // how quickly steering, pitch, speed, strafe and roll follow the controls (per second)
   G.steerX = lerp(G.steerX, sx, Math.min(1, dt * RS.steer)); G.steerY = lerp(G.steerY, sy, Math.min(1, dt * RS.steer));
   G.yaw -= G.steerX * cp.turnRate * dt;
@@ -198,10 +199,19 @@ export function updatePlayer(dt) {
   G.fwd.set(-Math.sin(G.yaw) * cpi, Math.sin(G.pitch), -Math.cos(G.yaw) * cpi);
   G.rightV.set(Math.cos(G.yaw), 0, -Math.sin(G.yaw));
   G.playerVel.copy(G.fwd).multiplyScalar(G.speed).addScaledVector(G.rightV, G.strafe);
-  const prevY = P.y;
+  const prevX = P.x, prevY = P.y, prevZ = P.z;
   P.addScaledVector(G.playerVel, dt);
   collidePalace(P, prevY);
   for (const e of G.enemies) if (e.collide) e.collide(P, PR); // solid creatures (sandworms)
+  // Mountains taller than the ceiling are walls: where the ground would rise above the ceiling, the move is
+  // undone along that axis, so the carpet slides along the slope instead of climbing it. (If it somehow is
+  // already above such ground, it may still move anywhere that is not higher.)
+  const wall = Math.max(CFG.world.ceiling, groundFloor(cPrev.set(prevX, prevY, prevZ)));
+  if (groundFloor(P) > wall) {
+    const nx = P.x, nz = P.z;
+    P.x = prevX;
+    if (groundFloor(P) > wall) { P.x = nx; P.z = prevZ; if (groundFloor(P) > wall) P.x = prevX; }
+  }
   const gy = groundFloor(P);
   let skim = P.y - gy;
   if (skim < 0) { P.y = gy; skim = 0; }

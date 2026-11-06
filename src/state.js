@@ -7,6 +7,7 @@ export const W = {
   SEED: 0, OFF: [0, 0, 0, 0, 0, 0, 0, 0], ISL_ANG: 0, ISL_EX: 0, DUNE_ANG: 0, OASES: [],
   CX: 0, CZ: 0, PH: 18,   // palace centre and plateau height
   LX: 0, LZ: 0, LH: 12,   // dragon lair
+  MT: 1, MK: 0,           // mountain threshold and height factor (terrain.js calibrateMountains)
   P: {}                   // this island's landscape settings, drawn from the seed (see islandParams in world.js)
 };
 
@@ -23,7 +24,7 @@ export const G = {
   spellMana: 100, spellExhausted: false, // fireball energy (config spells.mana), separate from carried mana
   playerPos: new THREE.Vector3(), playerVel: new THREE.Vector3(),
   fwd: new THREE.Vector3(0, 0, -1), rightV: new THREE.Vector3(1, 0, 0),
-  input: { mouseX: 0, mouseY: 0, touchX: 0, touchY: 0, mouseFire: false, touchFire: false, touchBoost: false, touchBack: false, novaReq: false },
+  input: { mouseX: 0, mouseY: 0, touchX: 0, touchY: 0, mouseFire: false, touchFire: false, touchBoost: false, touchBack: false, tiltX: 0, tiltY: 0, novaReq: false },
   enemies: [], orbs: [], shots: [], bolts: [], rings: [],
   dragon: null, dragonTimer: 0, dragonSeen: false, surging: false, surgeT: 0, surgeCd: 0,
   spawnTimer: 0, upgradeHint: 0, // last stage for which the 'enough mana' message was shown

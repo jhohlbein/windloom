@@ -103,6 +103,45 @@ export function bindControls({ onPause, onMute, onBlur, onLockLost }) {
   bindHold('btnBack', () => { I.touchBack = true; }, () => { I.touchBack = false; });
 }
 
+/* ---------- tilt steering (phones) ---------- */
+// Tilting the phone left/right steers, tipping it towards/away from you climbs/dives, relative to how it was
+// held when the game started or resumed. The device angles are turned into the direction of "up" in screen
+// coordinates, which works in portrait and landscape and has no jumps when the phone is held near upright.
+// iOS asks for permission, which must be requested from a tap (see requestTilt).
+let tiltOn = false, tiltZero = null, tiltBound = false;
+const D2R = Math.PI / 180;
+export const tiltAvailable = () => typeof window.DeviceOrientationEvent !== 'undefined' && matchMedia('(pointer:coarse)').matches;
+export function recentreTilt() { tiltZero = null; }
+function onOrientation(e) {
+  const I = G.input;
+  if (!tiltOn || e.beta == null || e.gamma == null) { I.tiltX = I.tiltY = 0; return; }
+  const b = e.beta * D2R, g = e.gamma * D2R;
+  const x = -Math.cos(b) * Math.sin(g), y = Math.sin(b), z = Math.cos(b) * Math.cos(g); // "up" in device axes
+  const ang = ((screen.orientation && screen.orientation.angle) ?? window.orientation ?? 0) % 360;
+  let sx = x, sy = y; // ... and in screen axes (x right, y up)
+  if (ang === 90) { sx = -y; sy = x; } else if (ang === 270 || ang === -90) { sx = y; sy = -x; } else if (ang === 180 || ang === -180) { sx = -x; sy = -y; }
+  const roll = Math.asin(clamp(-sx, -1, 1)); // right edge down = +roll
+  // top edge up = +pitch; undefined when the phone is rolled onto its side, so keep the last value then
+  const pitch = Math.hypot(sy, z) > 0.35 ? Math.atan2(sy, z) : (tiltZero ? tiltZero.last : 0);
+  if (!tiltZero) tiltZero = { roll, pitch };
+  tiltZero.last = pitch;
+  const T = CFG.controls.tilt, dz = T.deadzoneDegrees * D2R;
+  const axis = (v, max) => { const a = Math.abs(v); return a < dz ? 0 : clamp(Math.sign(v) * (a - dz) / (max * D2R - dz), -1, 1); };
+  let dp = pitch - tiltZero.pitch; if (dp > Math.PI) dp -= 2 * Math.PI; if (dp < -Math.PI) dp += 2 * Math.PI;
+  I.tiltX = axis(roll - tiltZero.roll, T.steerDegrees);
+  I.tiltY = axis(dp, T.pitchDegrees) * (T.invertPitch ? -1 : 1);
+}
+// Switches tilt steering on or off. Call from a tap: on iOS that is the only moment permission can be asked.
+export function requestTilt(on) {
+  tiltOn = false; G.input.tiltX = G.input.tiltY = 0; recentreTilt();
+  if (!on || !tiltAvailable()) return;
+  const start = () => { tiltOn = true; if (!tiltBound) { tiltBound = true; window.addEventListener('deviceorientation', onOrientation); } };
+  const DOE = window.DeviceOrientationEvent;
+  if (DOE && typeof DOE.requestPermission === 'function') {
+    try { DOE.requestPermission().then(r => { if (r === 'granted') start(); }).catch(() => { }); } catch (e) { /* not from a tap */ }
+  } else start();
+}
+
 export function releaseInput() {
   const I = G.input;
   I.mouseFire = I.touchFire = I.touchBoost = I.touchBack = false; I.mouseX = I.mouseY = 0; I.novaReq = false; vx = vy = 0;

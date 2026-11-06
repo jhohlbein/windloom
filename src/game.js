@@ -15,12 +15,12 @@ import { applyLevel, updateDeposit, stageCount, upgradeHint } from './progress.j
 import { updateShots, updateBolts, updateOrbs, updateRings, clearProjectiles } from './combat.js';
 import { populate, spawnTick, spawnDragon, updateEnemies, clearCreatures, unlocked } from './creatures/spawn.js';
 import { updatePlayer, updateCamera, placePlayerAtCastle, setRider } from './player.js';
-import { bindControls, releaseInput, lockPointer, unlockPointer, toggleFullscreen, isFullscreen } from './controls.js';
+import { bindControls, releaseInput, lockPointer, unlockPointer, toggleFullscreen, isFullscreen, requestTilt, recentreTilt, tiltAvailable } from './controls.js';
 import { resetRound, updateRound, scoreRound, bestFor, recordScore } from './round.js';
 import { settings, saveSetting } from './settings.js';
 
 const $ = id => document.getElementById(id);
-const overlay = $('overlay'), goBtn = $('go'), freeBtn = $('goFree'), rerollBtn = $('reroll'), ovTitle = $('ovTitle'), ovText = $('ovText'),
+const overlay = $('overlay'), goBtn = $('go'), timedBtn = $('goTimed'), freeBtn = $('goFree'), rerollBtn = $('reroll'), ovTitle = $('ovTitle'), ovText = $('ovText'),
   ovStats = $('stats'), ovIsle = $('isle'), ovCtl = $('ovCtl'), ovBeasts = $('ovBeasts'), ovLede = ovText.textContent;
 $('ver').textContent = 'Version ' + VERSION;
 const isleLabel = () => { const b = bestFor(), tr = islandTraits(); return 'Isle of ' + isleName(W.SEED) + (tr.length ? ' · ' + tr.join(', ') : '') + ' · seed ' + W.SEED + (b ? ' · best ' + b.score : ''); };
@@ -30,17 +30,15 @@ function showOverlay(mode) {
   overlay.hidden = false; hud.hidden = (mode === 'title');
   ovStats.hidden = true; ovIsle.textContent = isleLabel();
   ovCtl.hidden = ovBeasts.hidden = (mode === 'results');
-  freeBtn.hidden = settingsBtn.hidden = mode !== 'title';
-  if (mode !== 'title') settingsPanel.hidden = true;
-  if (mode === 'title') { ovTitle.textContent = 'Windloom'; ovText.textContent = ovLede; goBtn.textContent = 'Timed round · ' + Math.round(CFG.round.durationSeconds / 60) + ' min'; rerollBtn.textContent = 'New island'; }
-  else if (mode === 'pause') { ovTitle.textContent = 'Paused'; ovText.textContent = 'The creatures will wait. Your palace stands at ' + stageLabel(G.level) + ' of ' + stageCount() + ' stages.'; goBtn.textContent = 'Resume'; rerollBtn.textContent = 'New game on a new island'; }
+  settingsPanel.hidden = true; settingsBtn.setAttribute('aria-expanded', 'false'); // Settings: on every screen, closed at first
+  if (mode === 'title') { ovTitle.textContent = 'Windloom'; ovText.textContent = ovLede; }
+  else if (mode === 'pause') { ovTitle.textContent = 'Paused'; ovText.textContent = 'The creatures will wait. Your palace stands at ' + stageLabel(G.level) + ' of ' + stageCount() + ' stages.'; }
   else if (mode === 'results' && !G.timed) {
     // free flight: the Sanctum is whole; no score, keep flying if you like
     const m = Math.floor(G.playTime / 60), s = Math.floor(G.playTime % 60);
     ovTitle.textContent = 'The Sanctum is whole';
     ovText.textContent = 'Vharoth is slain and every stage of the palace stands. You can keep flying as long as you like.';
     ovStats.textContent = 'Creatures slain ' + G.kills + '\nTime aloft ' + m + ':' + (s < 10 ? '0' : '') + s; ovStats.hidden = false;
-    goBtn.textContent = 'Keep flying'; rerollBtn.textContent = 'New island';
   }
   else if (mode === 'results') {
     const done = G.endReason === 'complete', sc = scoreRound(), prev = bestFor(), isBest = recordScore(sc.total);
@@ -51,8 +49,16 @@ function showOverlay(mode) {
     const rows = [...sc.lines, ['Score', sc.total]], w = Math.max(...rows.map(r => r[0].length)) + 2;
     ovStats.textContent = rows.map(r => r[0].padEnd(w, ' ') + String(r[1]).padStart(5, ' ')).join('\n') + '\n\n' + (isBest ? (prev ? 'New best on this island (was ' + prev.score + ')' : 'First score on this island') : 'Best on this island ' + prev.score);
     ovStats.hidden = false; ovIsle.textContent = isleLabel();
-    goBtn.textContent = 'Play this island again'; rerollBtn.textContent = 'New island';
   }
+  // The same choices on every screen: the main button (start a timed round, resume, or keep flying), a timed
+  // round and a free flight on this island, and a new island (which comes back here, to the start screen)
+  const timedLabel = 'Timed round · ' + Math.round(CFG.round.durationSeconds / 60) + ' min';
+  const main = mode === 'pause' ? 'Resume' : mode === 'results' && !G.timed ? 'Keep flying' : null;
+  goBtn.hidden = !main; goBtn.textContent = main || '';
+  timedBtn.textContent = mode === 'pause' ? 'Restart: timed round' : mode === 'results' && G.timed ? 'Timed round again' : timedLabel;
+  freeBtn.textContent = mode === 'pause' ? 'Restart: free flight' : 'Free flight';
+  timedBtn.className = main ? 'go alt' : 'go'; freeBtn.className = 'go alt';
+  rerollBtn.textContent = 'New island';
   releaseInput();
 }
 // The address keeps the island's seed as #s<seed>; any query string (e.g. ?seed=) is dropped so it cannot go stale
@@ -78,13 +84,13 @@ function startGame(timed = G.timed) {
   clearCreatures(); clearProjectiles();
   applyLevel(1, false); placePlayerAtCastle();
   G.active = true; populate();
-  releaseInput(); overlay.hidden = true; hud.hidden = false; G.mode = 'play'; lockPointer();
+  releaseInput(); recentreTilt(); overlay.hidden = true; hud.hidden = false; G.mode = 'play'; lockPointer();
   clearToasts();
   toast('Hunt the creatures. Gather their gold. Carry it home to the beam.\n' +
     (timed ? 'You have ' + Math.round(CFG.round.durationSeconds / 60) + ' minutes.' : 'Free flight: no clock, take your time.'), 4200);
 }
 // Resuming and starting come from a click or key press, which browsers require before locking the pointer
-function resume() { releaseInput(); overlay.hidden = true; hud.hidden = false; G.mode = 'play'; G.active = true; lockPointer(); }
+function resume() { releaseInput(); recentreTilt(); overlay.hidden = true; hud.hidden = false; G.mode = 'play'; G.active = true; lockPointer(); }
 let pausedAt = 0;
 function pause() { if (G.mode === 'play') { pausedAt = performance.now(); showOverlay('pause'); } }
 function togglePause() {
@@ -93,19 +99,13 @@ function togglePause() {
   else if (G.mode === 'pause' && performance.now() - pausedAt > 250) { audioInit(); resume(); }
 }
 
-goBtn.addEventListener('click', () => {
-  audioInit();
-  if (G.mode === 'title') startGame(true);
-  else if (G.mode === 'pause') resume();
-  else if (G.mode === 'results') { if (G.timed) startGame(); else resume(); }
-});
-freeBtn.addEventListener('click', () => { audioInit(); if (G.mode === 'title') startGame(false); });
-rerollBtn.addEventListener('click', () => {
-  audioInit();
-  const wasTitle = G.mode === 'title';
-  newIsland();
-  if (!wasTitle) startGame();
-});
+// Every button that starts or resumes flight is a tap, the moment iOS allows asking for tilt permission
+const tiltStart = () => requestTilt(settings.tilt);
+goBtn.addEventListener('click', () => { audioInit(); tiltStart(); if (G.mode === 'pause' || G.mode === 'results') resume(); });
+timedBtn.addEventListener('click', () => { audioInit(); tiltStart(); if (G.mode !== 'play') startGame(true); });
+freeBtn.addEventListener('click', () => { audioInit(); tiltStart(); if (G.mode !== 'play') startGame(false); });
+// A new island always goes to its start screen, where you choose timed or free
+rerollBtn.addEventListener('click', () => { audioInit(); newIsland(); showOverlay('title'); });
 bindControls({
   onPause: togglePause,
   onMute: () => { const m = toggleMute(); if (G.active) toast(m ? 'Sound off' : 'Sound on', 900, true); },
@@ -127,6 +127,9 @@ setRider(settings.rider);
 const shadowBox = $('optShadows');
 shadowBox.checked = settings.shadows; setShadows(settings.shadows);
 shadowBox.addEventListener('change', () => { saveSetting('shadows', shadowBox.checked); setShadows(shadowBox.checked); });
+const tiltBox = $('optTilt'), tiltRow = $('tiltRow');
+tiltRow.hidden = !tiltAvailable(); tiltBox.checked = settings.tilt;
+tiltBox.addEventListener('change', () => { saveSetting('tilt', tiltBox.checked); requestTilt(tiltBox.checked); });
 const fsBtn = $('fullscreen');
 fsBtn.addEventListener('click', () => { toggleFullscreen(); });
 const fsLabel = () => { fsBtn.textContent = isFullscreen() ? 'Leave full screen' : 'Full screen'; };
@@ -197,7 +200,7 @@ window.addEventListener('hashchange', () => {
   newIsland(s); showOverlay('title');
 });
 showOverlay('title');
-goBtn.disabled = false; freeBtn.disabled = false; rerollBtn.disabled = false;
+goBtn.disabled = timedBtn.disabled = freeBtn.disabled = rerollBtn.disabled = false;
 requestAnimationFrame(frame);
 
 // Handy in the browser console while tuning

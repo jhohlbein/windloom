@@ -9,26 +9,52 @@ export const SIZE = Math.round(2 * CFG.world.worldRadius);
 
 function terrace(h) { const s = CFG.world.terraceStep, f = h / s, i = Math.floor(f); return (i + smooth(0.55, 0.95, f - i)) * s; }
 
-// Height before the palace plateau is flattened in
-export function rawH(x, z) {
-  const wx = x, wz = z, OFF = W.OFF;
-  x /= WS; z /= WS;
-  const ca = Math.cos(W.ISL_ANG), sa = Math.sin(W.ISL_ANG);
+// The three noise fields behind the land, at shape coordinates (x, z already divided by WS):
+// m = island mask (1 inland, 0 at the coast), n = broad elevation, r = mountain ridges (sharpened)
+let fm = 0, fn = 0, fr = 0;
+function fields(x, z) {
+  const OFF = W.OFF, ca = Math.cos(W.ISL_ANG), sa = Math.sin(W.ISL_ANG);
   const u = (x * ca + z * sa) * (1 + W.ISL_EX), v = (-x * sa + z * ca) * (1 - W.ISL_EX);
   const coast = 1 + (fbm(x * 0.0022 + OFF[4], z * 0.0022 + OFF[5]) - 0.5) * 0.55;
   const d = Math.sqrt(u * u + v * v) / (1800 * 0.43) * coast;
-  const m = Math.max(0, 1 - d * d);
-  const n = fbm(x * 0.0030 + OFF[0], z * 0.0030 + OFF[1]);
-  const r = 1 - Math.abs(fbm(x * 0.0065 + OFF[2], z * 0.0065 + OFF[3]) * 2 - 1);
-  const mount = terrace(Math.pow(r, 3.2) * Math.max(0, n - 0.42) * 520 * W.P.mountainScale);
-  const base = (n - 0.40) * 140;
-  let h = (base + mount) * m * W.P.heightScale - (1 - m) * 28;
+  fm = Math.max(0, 1 - d * d);
+  fn = fbm(x * 0.0030 + OFF[0], z * 0.0030 + OFF[1]);
+  fr = Math.pow(1 - Math.abs(fbm(x * 0.0065 + OFF[2], z * 0.0065 + OFF[3]) * 2 - 1), 3.2);
+}
+// Mountains rise where n is in the top mountainCover share of the island, along the ridges of r. Called once per
+// island (before any height is read): finds that threshold (W.MT) and the factor (W.MK) that makes this island's
+// tallest peak mountainHeight metres, so both settings mean the same on every seed.
+export function calibrateMountains() {
+  const ns = [], cand = [], R = CFG.world.worldRadius;
+  for (let X = -R; X <= R; X += 12) for (let Z = -R; Z <= R; Z += 12) {
+    fields(X / WS, Z / WS); if (fm < 0.05) continue;
+    ns.push(fn); cand.push(fn, fr, fm);
+  }
+  ns.sort((a, b) => a - b);
+  W.MT = ns.length ? ns[Math.floor(clamp(1 - W.P.mountainCover, 0, 1) * (ns.length - 1))] : 1;
+  let peak = 0;
+  for (let i = 0; i < cand.length; i += 3) peak = Math.max(peak, cand[i + 1] * Math.max(0, cand[i] - W.MT) * cand[i + 2]);
+  W.MK = peak > 1e-6 ? W.P.mountainHeight / peak : 0;
+}
+
+// Height before the palace plateau is flattened in: lowland hills (scaled by lowlandScale) plus terraced
+// mountains (in metres), both fading out towards the coast, and the sea floor beyond it
+export function rawH(x, z) {
+  const wx = x, wz = z, OFF = W.OFF;
+  x /= WS; z /= WS;
+  fields(x, z); const m = fm, n = fn;
+  const mount = terrace(fr * Math.max(0, n - W.MT) * W.MK * m);
+  const base = (n - 0.40) * 140 * W.P.lowlandScale * m;
+  let h = base + mount - (1 - m) * 28;
   if (h > 0.5 && h < 34) {
     // sin has period 2*PI, so a crest every duneWavelength metres (x, z are unscaled here, hence * WS)
     const freq = Math.PI * WS / W.P.duneWavelength;
     const dd = (x * Math.cos(W.DUNE_ANG) + z * Math.sin(W.DUNE_ANG)) * freq + fbm(x * 0.004 + OFF[6], z * 0.004 + OFF[7]) * 5;
     const field = 0.35 + 1.3 * fbm(x * 0.0025 + OFF[7], z * 0.0025 + OFF[6]); // dune fields come and go
-    h += Math.pow(1 - Math.abs(Math.sin(dd)), 2.2) * W.P.duneHeight * field * smooth(0.5, 5, h) * smooth(34, 18, h);
+    // crest profile: duneSharpness 0 = rounded swells (cos^2), 1 = sharp wind-cut crests (a cusp)
+    const c = Math.cos(dd), sharp = CFG.world.duneSharpness ?? 1;
+    const prof = lerp(c * c, Math.pow(1 - Math.abs(Math.sin(dd)), 2.2), sharp);
+    h += prof * W.P.duneHeight * field * smooth(0.5, 5, h) * smooth(34, 18, h);
   }
   for (const o of W.OASES) {
     const od = Math.hypot(wx - o.x, wz - o.z);

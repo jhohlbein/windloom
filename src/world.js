@@ -5,7 +5,7 @@ import { W } from './state.js';
 import { TAU, clamp, smooth, mulberry, vnoise } from './util.js';
 import { scene, shared, addSprite, glowMat, disposeTree } from './scene.js';
 import { emit, C } from './particles.js';
-import { rawH, terrainH, greenAt, SIZE } from './terrain.js';
+import { rawH, terrainH, greenAt, SIZE, calibrateMountains } from './terrain.js';
 import { castle } from './palace.js';
 
 const worldGroup = new THREE.Group(); scene.add(worldGroup);
@@ -52,7 +52,7 @@ function buildMap(colorAt) {
 // The config values are the means. world.variation varies some of them per island; every value is drawn from
 // the island's seed (one random stream per setting), so the same seed always gives the same island.
 // Kinds: { dist: "poisson", min, max } for counts, { spread } for mean x (1 +- spread), { min, max } for a range.
-const VARIED = ['heightScale', 'mountainScale', 'duneHeight', 'duneWavelength', 'greenCover', 'oasisCount', 'rockCount', 'palmMax'];
+const VARIED = ['lowlandScale', 'mountainHeight', 'mountainCover', 'duneHeight', 'duneWavelength', 'greenCover', 'oasisCount', 'rockCount', 'palmMax'];
 const COUNTS = new Set(['oasisCount', 'rockCount', 'palmMax']);
 const strHash = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619); return h >>> 0; };
 function poisson(mean, rnd) { // Knuth; fine for the small means used here, normal approximation above 30
@@ -81,8 +81,8 @@ export function islandParams(seed) {
 export function islandTraits() {
   const cw = CFG.world, P = W.P, out = [];
   const rel = k => P[k] / cw[k];
-  const relief = rel('heightScale') * rel('mountainScale');
-  if (relief > 1.2) out.push('rugged'); else if (relief < 0.8) out.push('flat');
+  const relief = Math.cbrt(rel('lowlandScale') * rel('mountainHeight') * rel('mountainCover'));
+  if (relief > 1.12) out.push('rugged'); else if (relief < 0.88) out.push('flat');
   if (rel('greenCover') > 1.15) out.push('lush'); else if (rel('greenCover') < 0.85) out.push('arid');
   if (rel('duneHeight') > 1.15) out.push('high dunes'); else if (rel('duneHeight') < 0.85) out.push('low dunes');
   if (P.oasisCount >= cw.oasisCount + 2) out.push('many oases'); else if (P.oasisCount <= 1) out.push(P.oasisCount ? 'one oasis' : 'no oasis');
@@ -96,6 +96,7 @@ export function buildWorld(seed) {
   const r = mulberry(W.SEED);
   for (let i = 0; i < 8; i++) W.OFF[i] = r() * 600;
   W.ISL_ANG = r() * Math.PI; W.ISL_EX = r() * 0.22; W.DUNE_ANG = r() * Math.PI;
+  calibrateMountains();
   const rnd = mulberry(W.SEED ^ 0x9e3779b9);
 
   // oases first, on land

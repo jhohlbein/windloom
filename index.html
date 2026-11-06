@@ -71,7 +71,8 @@
       <div>
         <h2>Touch</h2>
         <dl>
-          <dt>Drag</dt><dd>turn and climb</dd>
+          <dt>Tilt</dt><dd>turn and climb (switch off in Settings)</dd>
+          <dt>Drag</dt><dd>turn and climb, with or without tilt</dd>
           <dt>Fire</dt><dd>hold for fireballs</dd>
           <dt>Nova</dt><dd>blast, costs spell mana</dd>
           <dt>Surge / Back</dt><dd>a surge burst (held, it repeats) or fly backwards</dd>
@@ -90,7 +91,8 @@
       </dl>
     </div>
     <div class="actions">
-      <button class="go" id="go" type="button" disabled>Timed round · 4 min</button>
+      <button class="go" id="go" type="button" disabled hidden>Resume</button>
+      <button class="go" id="goTimed" type="button" disabled>Timed round · 4 min</button>
       <button class="go alt" id="goFree" type="button" disabled>Free flight</button>
       <button class="go2" id="reroll" type="button" disabled>New island</button>
       <button class="go2" id="fullscreen" type="button">Full screen</button>
@@ -106,6 +108,10 @@
       <fieldset>
         <legend>Graphics</legend>
         <label><input type="checkbox" id="optShadows"> Shadows (turn off if the game runs slowly)</label>
+      </fieldset>
+      <fieldset id="tiltRow" hidden>
+        <legend>Controls</legend>
+        <label><input type="checkbox" id="optTilt"> Tilt to steer: tilt the phone left and right to turn, tip it towards or away from you to climb or dive. The way you hold it when you start or resume is the centre.</label>
       </fieldset>
       <p class="hint">Saved in this browser.</p>
     </div>

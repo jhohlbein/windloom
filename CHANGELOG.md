@@ -4,6 +4,23 @@ All notable changes to Windloom are recorded here. The format follows [Keep a Ch
 
 ## [Unreleased]
 
+## [0.2.9] - 2026-11-06
+
+### Added
+- Tilt steering on phones: tilt the phone left/right to turn and tip it towards/away from you to climb or dive. The centre is how you hold it when you start or resume (`controls.tilt`). It is on by default and can be switched off in Settings; dragging still works alongside it. On iPhone, Safari asks for motion permission the first time you start.
+- The Settings button is on the pause and results screens too, not only the start screen.
+
+### Changed
+- The start, pause and results screens offer the same choices: a timed round and a free flight on this island, and New island. Pause also has Resume, and a finished free flight has Keep flying. After a timed round you can now go straight into a free flight. New island always leads to the new island's start screen, where you pick the mode.
+- Land height has two independent settings: `lowlandScale` for the rolling hills and `mountainHeight` for the tallest peak in metres. `mountainCover` sets the share of the island where mountains may rise. They replace `heightScale` and `mountainScale`, which multiplied each other. Each island is calibrated so these mean the same on every seed.
+- Fewer but much taller mountains: typically 1–3 per island, with the main peak around 100 m (70–130 m by seed). Before, peaks were 25–50 m.
+- Mountains taller than the flight `ceiling` are walls: the carpet slides along their slopes instead of riding up and over them. Mana that lands above the ceiling rolls downhill until you can reach it.
+- Dunes have rounder crests. The new `duneSharpness` setting (0.2) goes from 0 = smooth swells to 1 = the old sharp ridges.
+- `terraceStep` is now the real step height on the ground (6 m; before, 12 was squashed to about 6). Islands from a given seed look different from before.
+
+### Fixed
+- The start screen title ("Windloom") was cut off on screens narrower than about 1000 px. It now always fits on one line, and the title, island line, intro text and buttons are centred.
+
 ## [0.2.8] - 2026-11-06
 
 ### Fixed

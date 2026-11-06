@@ -10,7 +10,7 @@ Windloom is a browser game (three.js r128, plain ES modules, no build step) insp
 
 - Serve locally: `python3 tools/serve.py` in the repo root (like `python3 -m http.server 8000` but with caching off, so edited modules are always reloaded), open http://localhost:8000. Opening `index.html` from disk does not work (modules and `fetch` are blocked on `file://`).
 - There is no test suite yet. After a change: load the page, check the browser console for errors, start a game, fly, shoot, bank mana in the beam until the palace rises a stage, pause, and try "New island".
-- Headless check (if Playwright is available): load the page, click `#go`, and read `window.windloom.G` (state), `window.windloom.W` (island) and `window.windloom.CFG`.
+- Headless check (if Playwright is available): load the page, click `#goTimed` (or `#goFree`), and read `window.windloom.G` (state), `window.windloom.W` (island) and `window.windloom.CFG`.
 - A specific island can be reproduced with `#s<seed>` in the URL.
 
 ## Architecture

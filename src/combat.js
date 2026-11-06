@@ -1,7 +1,7 @@
 // Spells, enemy projectiles, mana orbs, damage and death.
 import * as THREE from 'three';
 import { CFG } from './config.js';
-import { G } from './state.js';
+import { G, W } from './state.js';
 import { scene, addSprite, mats, fireCoreMat, coreMatFor, haloMatFor } from './scene.js';
 import { TAU, clamp, lerp } from './util.js';
 import { terrainH, groundH } from './terrain.js';
@@ -45,6 +45,13 @@ export function updateOrbs(dt) {
         o.vel.y -= 22 * dt; o.vel.x *= 0.985; o.vel.z *= 0.985;
         o.pos.addScaledVector(o.vel, dt);
         if (o.pos.y < gy) { o.pos.y = gy; o.vel.set(0, 0, 0); }
+      } else if (gy > CFG.world.ceiling) {
+        // a mountain above the ceiling is out of reach: the orb rolls downhill until the carpet can get to it
+        const e = 3, sx = groundH(o.pos.x + e, o.pos.z) - groundH(o.pos.x - e, o.pos.z), sz = groundH(o.pos.x, o.pos.z + e) - groundH(o.pos.x, o.pos.z - e);
+        let ux = -sx, uz = -sz;
+        if (Math.hypot(ux, uz) < 0.05) { ux = o.pos.x - W.LX; uz = o.pos.z - W.LZ; } // flat terrace: away from the peak
+        const ul = Math.hypot(ux, uz) || 1;
+        o.pos.x += ux / ul * 14 * dt; o.pos.z += uz / ul * 14 * dt; o.pos.y = groundH(o.pos.x, o.pos.z) + 2.4;
       }
     }
     if (!canTake && G.active && d < cm.magnetRadius && !fullHint) { fullHint = true; toast('You carry all you can. Bank it in the beam.', 2200, true); }

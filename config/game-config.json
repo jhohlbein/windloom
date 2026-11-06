@@ -3,16 +3,18 @@
     "islandRadius": 480,
     "worldRadius": 558,
     "boundFraction": 0.95,
-    "heightScale": 0.5,
-    "mountainScale": 0.55,
+    "lowlandScale": 0.5,
+    "mountainHeight": 100,
+    "mountainCover": 0.06,
     "ceiling": 50,
     "fogNear": 150,
     "fogFar": 950,
     "terrainSegments": 320,
     "duneHeight": 7,
     "duneWavelength": 60,
+    "duneSharpness": 0.2,
     "greenCover": 0.4,
-    "terraceStep": 12,
+    "terraceStep": 6,
     "oasisCount": 3,
     "oasisRadiusMin": 34,
     "oasisRadiusMax": 50,
@@ -23,8 +25,9 @@
     "lairMinDistanceFromPalace": 290,
     "lairSearchRadius": 440,
     "variation": {
-      "heightScale": { "spread": 0.25 },
-      "mountainScale": { "spread": 0.35 },
+      "lowlandScale": { "spread": 0.25 },
+      "mountainHeight": { "spread": 0.3 },
+      "mountainCover": { "spread": 0.35 },
       "duneHeight": { "spread": 0.35 },
       "duneWavelength": { "spread": 0.25 },
       "greenCover": { "min": 0.25, "max": 0.55 },
@@ -39,7 +42,8 @@
   },
   "controls": {
     "pointerLock": true,
-    "lockedSensitivity": 1
+    "lockedSensitivity": 1,
+    "tilt": { "steerDegrees": 25, "pitchDegrees": 20, "deadzoneDegrees": 2, "invertPitch": false }
   },
   "hud": {
     "toastMinSeconds": 2.5,
