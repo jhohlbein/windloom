@@ -10,8 +10,8 @@ import { formatClock } from './round.js';
 
 const $ = id => document.getElementById(id);
 export const hud = $('hud');
-const elHpLbl = $('hpLbl'), elHp = $('hpFill'), elSpLbl = $('spLbl'), elSp = $('spFill'), elMana = $('manaNum'), elCap = $('manaCap'), elStageName = $('stageName'), elStageNum = $('stageNum'),
-  elCastle = $('castleFill'), elCastleTxt = $('castleTxt'), elCastle2 = $('castleFill2'), elCastleTxt2 = $('castleTxt2'), elStageNum2 = $('stageNum2'), elToast = $('toast'), elHurt = $('hurt'), elSteer = $('steer'), elClock = $('clock');
+const elHpLbl = $('hpLbl'), elHp = $('hpFill'), elSpLbl = $('spLbl'), elSp = $('spFill'), elManaLbl = $('manaLbl'), elMana = $('manaFill'), elStageName = $('stageName'), elStageNum = $('stageNum'),
+  elCastle = $('castleFill'), elToast = $('toast'), elHurt = $('hurt'), elSteer = $('steer'), elClock = $('clock');
 const rctx = $('radar').getContext('2d');
 const NUMERALS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
 // Messages stay up long enough to read (longer text, longer time; config "hud"). Minor ones ("Wyvern slain",
@@ -55,18 +55,16 @@ export function updateHud() {
   elSp.style.width = (clamp(G.spellMana / CFG.spells.mana.max, 0, 1) * 100).toFixed(1) + '%';
   elSp.classList.toggle('out', G.spellExhausted);
   setText(elSpLbl, 'sl', G.spellExhausted ? 'Spell mana · recovering' : 'Spell mana');
-  setText(elMana, 'm', String(Math.floor(G.carried)));
-  setText(elCap, 'c', '/ ' + carryCap()); // a full carry is shown by the orange pulse, not extra text (keeps the row on one line)
+  // carried mana is a bar (no numbers); a full carry pulses orange
   const full = G.carried >= carryCap();
-  elMana.classList.toggle('full', full); elCap.classList.toggle('full', full);
+  elMana.style.width = (clamp(G.carried / carryCap(), 0, 1) * 100).toFixed(1) + '%';
+  elMana.classList.toggle('full', full);
+  setText(elManaLbl, 'ml', full ? 'Mana carried · full' : 'Mana carried');
   setText(elStageName, 's', CFG.palace.stageNames[G.level - 1]); setText(elStageNum, 'sn', NUMERALS[G.level - 1]);
   const T = CFG.palace.stageThresholds, last = T.length;
   const lo = T[G.level - 1], hi = G.level < last ? T[G.level] : T[last - 1];
   const frac = G.level >= last ? 1 : clamp((G.castleMana - lo) / (hi - lo), 0, 1);
-  elCastle.style.width = elCastle2.style.width = (frac * 100).toFixed(1) + '%';
-  setText(elStageNum2, 'sn2', NUMERALS[G.level - 1]);
-  setText(elCastleTxt, 'ct', G.level >= last ? 'Complete' : Math.floor(G.castleMana) + ' / ' + hi);
-  setText(elCastleTxt2, 'ct2', G.level >= last ? 'Complete' : Math.floor(G.castleMana) + ' / ' + hi);
+  elCastle.style.width = (frac * 100).toFixed(1) + '%';
   elClock.hidden = !G.timed;
   setText(elClock, 'clk', formatClock(G.timeLeft));
   elClock.classList.toggle('warn', G.timeLeft <= CFG.round.warnSeconds);
@@ -74,7 +72,9 @@ export function updateHud() {
 }
 
 export function drawRadar() {
-  const Wd = 224, c = 112, range = 320, k = (c - 8) / range, P = G.playerPos;
+  // drawn in 224-unit coordinates, scaled to the canvas resolution (R)
+  const Wd = 224, c = 112, range = 320, k = (c - 8) / range, P = G.playerPos, R = rctx.canvas.width / Wd;
+  rctx.setTransform(R, 0, 0, R, 0, 0);
   rctx.clearRect(0, 0, Wd, Wd); rctx.save();
   rctx.beginPath(); rctx.arc(c, c, c - 2, 0, TAU); rctx.clip();
   rctx.fillStyle = '#1b4c78'; rctx.fillRect(0, 0, Wd, Wd); // open sea beyond the map
@@ -83,7 +83,7 @@ export function drawRadar() {
     // bird's-eye map of the island, turned so that the flight direction points up (same mapping as toScreen)
     const a = k * rx, b = -k * fx, cc = k * rz, d = -k * fz, S = SIZE;
     rctx.save(); rctx.globalAlpha = 0.85;
-    rctx.setTransform(a, b, cc, d, c - (a * P.x + cc * P.z), c - (b * P.x + d * P.z));
+    rctx.setTransform(R * a, R * b, R * cc, R * d, R * (c - (a * P.x + cc * P.z)), R * (c - (b * P.x + d * P.z)));
     rctx.imageSmoothingEnabled = true; rctx.drawImage(W.map, -S / 2, -S / 2, S, S);
     rctx.restore();
   }

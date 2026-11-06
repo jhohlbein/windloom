@@ -4,6 +4,17 @@ All notable changes to Windloom are recorded here. The format follows [Keep a Ch
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-11-06
+
+### Changed
+- HUD: the palace moved from its own panel at the bottom left into the panel at the top left, under carried mana, on every screen size. It is the stage name with its numeral (Minaret · I; on phones only the numeral) over a light green progress bar, with no numbers.
+- HUD: carried mana is a gold bar like vitality and spell mana, with no numbers. A full carry still pulses orange, and the label reads "Mana carried · full".
+- HUD: on larger screens the map at the top right is as tall as the panel on the left (152 px instead of 112 px) and drawn at a higher resolution. Phones keep the 112 px map.
+- The steering dot in the centre is dark grey with a light rim instead of turquoise, so it no longer disappears against the sea.
+
+### Removed
+- The key reminder in the bottom right corner during flight. The controls are still listed on the start and pause screens.
+
 ## [0.3.1] - 2026-11-06
 
 ### Changed

@@ -37,23 +37,20 @@
       <div class="lbl" id="spLbl">Spell mana</div>
       <div class="bar" style="margin-top:5px"><i id="spFill"></i></div>
     </div>
-    <div class="row"><span class="lbl">Mana carried</span><span><span id="manaNum">0</span> <span id="manaCap">/ 120</span></span></div>
-    <!-- phones only: the palace in one line (stage numeral, stored / next) instead of the panel at the bottom -->
-    <div class="mini" id="castleMini">
-      <div class="bar"><i id="castleFill2"></i></div>
-      <div class="row"><span id="stageNum2">I</span><span id="castleTxt2">0 / 50</span></div>
+    <div>
+      <div class="lbl" id="manaLbl">Mana carried</div>
+      <div class="bar" style="margin-top:5px"><i id="manaFill"></i></div>
+    </div>
+    <!-- the palace: stage name and numeral (phones: numeral only) and progress to the next stage -->
+    <div class="palace">
+      <div id="stage"><span id="stageName">Minaret</span><span class="sep"> · </span><span id="stageNum">I</span></div>
+      <div class="bar"><i id="castleFill"></i></div>
     </div>
   </div>
-  <div id="radarWrap"><canvas id="radar" width="224" height="224"></canvas></div>
+  <div id="radarWrap"><canvas id="radar" width="336" height="336"></canvas></div>
   <div id="fps">– fps</div>
   <div id="clock" class="glass">4:00</div>
   <div id="cross"></div><div id="steer"></div>
-  <div id="castle" class="glass">
-    <div class="row"><span class="lbl">Palace</span><span id="stage"><span id="stageName">Minaret</span><span class="sep"> · </span><span id="stageNum">I</span></span></div>
-    <div class="bar"><i id="castleFill"></i></div>
-    <div class="row"><span class="lbl">Stored mana</span><span id="castleTxt">0 / 50</span></div>
-  </div>
-  <div id="keys"><b>Mouse / ← →</b> turn · <b>↑ ↓</b> climb<br><b>W</b> surge burst · <b>S</b> reverse · <b>A D</b> strafe<br><b>Click / Space</b> fireball · <b>Right-click / E</b> nova<br><b>Esc</b> pause · <b>M</b> mute · <b>F</b> full screen</div>
   <!-- touch: a four-way pad on the left (up surge, down back, left/right strafe; diagonals combine them),
        spells on the right -->
   <div class="touch touchL">
