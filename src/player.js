@@ -192,7 +192,7 @@ export function updatePlayer(dt) {
   G.surging = G.surgeT > 0;
   const want = back ? -cp.baseSpeed * cp.reverseMultiplier : G.surging ? cp.baseSpeed * cp.surgeMultiplier : cp.baseSpeed;
   G.speed = lerp(G.speed, want, Math.min(1, dt * RS.speed));
-  const st = ((keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0)) * cp.strafeSpeed;
+  const st = ((keys.KeyD || I.touchRight ? 1 : 0) - (keys.KeyA || I.touchLeft ? 1 : 0)) * cp.strafeSpeed;
   G.strafe = lerp(G.strafe, st, Math.min(1, dt * RS.strafe));
   G.roll = lerp(G.roll, -G.steerX * 0.6 - G.strafe / cp.strafeSpeed * 0.35, Math.min(1, dt * RS.roll));
   const cpi = Math.cos(G.pitch);

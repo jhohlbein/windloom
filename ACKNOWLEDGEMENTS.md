@@ -10,6 +10,10 @@
 - **IBM Plex Mono** by IBM, SIL Open Font License 1.1. https://fonts.google.com/specimen/IBM+Plex+Mono
 - Both served by Google Fonts: https://fonts.google.com
 
+## Artwork
+
+- The app icon (`icons/icon.svg` and the PNGs rendered from it) is original artwork made for Windloom.
+
 ## Algorithms
 
 - **mulberry32** pseudo-random number generator by Tommy Ettinger, public domain. Used for seeded islands. https://gist.github.com/tommyettinger/46a874533244883189143505d203312c

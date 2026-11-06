@@ -15,7 +15,7 @@ import { applyLevel, updateDeposit, stageCount, upgradeHint } from './progress.j
 import { updateShots, updateBolts, updateOrbs, updateRings, clearProjectiles } from './combat.js';
 import { populate, spawnTick, spawnDragon, updateEnemies, clearCreatures, unlocked } from './creatures/spawn.js';
 import { updatePlayer, updateCamera, placePlayerAtCastle, setRider } from './player.js';
-import { bindControls, releaseInput, lockPointer, unlockPointer, toggleFullscreen, isFullscreen, requestTilt, recentreTilt, tiltAvailable } from './controls.js';
+import { bindControls, releaseInput, lockPointer, unlockPointer, toggleFullscreen, isFullscreen, requestTilt, recentreTilt, tiltAvailable, enterFullscreen, fullscreenAvailable, runningInstalled } from './controls.js';
 import { resetRound, updateRound, scoreRound, bestFor, recordScore } from './round.js';
 import { settings, saveSetting } from './settings.js';
 
@@ -99,8 +99,12 @@ function togglePause() {
   else if (G.mode === 'pause' && performance.now() - pausedAt > 250) { audioInit(); resume(); }
 }
 
-// Every button that starts or resumes flight is a tap, the moment iOS allows asking for tilt permission
-const tiltStart = () => requestTilt(settings.tilt);
+// Every button that starts or resumes flight is a tap: the moment browsers allow full screen and iOS allows
+// asking for tilt permission. On phones and tablets the game goes full screen here (Settings can switch it off).
+const tiltStart = () => {
+  if (settings.autoFullscreen && tiltAvailable()) enterFullscreen();
+  requestTilt(settings.tilt);
+};
 goBtn.addEventListener('click', () => { audioInit(); tiltStart(); if (G.mode === 'pause' || G.mode === 'results') resume(); });
 timedBtn.addEventListener('click', () => { audioInit(); tiltStart(); if (G.mode !== 'play') startGame(true); });
 freeBtn.addEventListener('click', () => { audioInit(); tiltStart(); if (G.mode !== 'play') startGame(false); });
@@ -129,6 +133,10 @@ shadowBox.checked = settings.shadows; setShadows(settings.shadows);
 shadowBox.addEventListener('change', () => { saveSetting('shadows', shadowBox.checked); setShadows(shadowBox.checked); });
 const tiltBox = $('optTilt'), tiltRow = $('tiltRow');
 tiltRow.hidden = !tiltAvailable(); tiltBox.checked = settings.tilt;
+const fsAutoBox = $('optAutoFs'), fsAutoRow = $('autoFsRow');
+fsAutoRow.hidden = !fullscreenAvailable(); fsAutoBox.checked = settings.autoFullscreen;
+$('installHint').hidden = fullscreenAvailable() || runningInstalled(); // iPhone: only the Home Screen gives full screen
+fsAutoBox.addEventListener('change', () => { saveSetting('autoFullscreen', fsAutoBox.checked); });
 tiltBox.addEventListener('change', () => { saveSetting('tilt', tiltBox.checked); requestTilt(tiltBox.checked); });
 const fsBtn = $('fullscreen');
 fsBtn.addEventListener('click', () => { toggleFullscreen(); });

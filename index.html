@@ -5,6 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Windloom</title>
 <meta name="description" content="A browser flying game in the spirit of Magic Carpet: ride a carpet over a desert island, hunt creatures for mana and raise your palace.">
+<!-- installable: Add to Home Screen opens the game without browser bars (iPhone has no full screen otherwise) -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#140f22">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Windloom">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/svg+xml" href="icons/icon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -28,6 +38,11 @@
       <div class="bar" style="margin-top:5px"><i id="spFill"></i></div>
     </div>
     <div class="row"><span class="lbl">Mana carried</span><span><span id="manaNum">0</span> <span id="manaCap">/ 120</span></span></div>
+    <!-- phones only: the palace in one line (stage numeral, stored / next) instead of the panel at the bottom -->
+    <div class="mini" id="castleMini">
+      <div class="bar"><i id="castleFill2"></i></div>
+      <div class="row"><span id="stageNum2">I</span><span id="castleTxt2">0 / 50</span></div>
+    </div>
   </div>
   <div id="radarWrap"><canvas id="radar" width="224" height="224"></canvas></div>
   <div id="fps">– fps</div>
@@ -39,8 +54,14 @@
     <div class="row"><span class="lbl">Stored mana</span><span id="castleTxt">0 / 50</span></div>
   </div>
   <div id="keys"><b>Mouse / ← →</b> turn · <b>↑ ↓</b> climb<br><b>W</b> surge burst · <b>S</b> reverse · <b>A D</b> strafe<br><b>Click / Space</b> fireball · <b>Right-click / E</b> nova<br><b>Esc</b> pause · <b>M</b> mute · <b>F</b> full screen</div>
-  <div class="touch">
-    <div class="col"><button id="btnBoost" type="button">Surge</button><button id="btnBack" type="button">Back</button></div>
+  <!-- touch: movement on the left laid out like W A S D, spells on the right -->
+  <div class="touch touchL">
+    <button id="btnBoost" type="button" class="kw">Surge</button>
+    <button id="btnLeft" type="button" class="ka" aria-label="Strafe left">◀</button>
+    <button id="btnBack" type="button" class="ks">Back</button>
+    <button id="btnRight" type="button" class="kd" aria-label="Strafe right">▶</button>
+  </div>
+  <div class="touch touchR">
     <div class="col"><button id="btnNova" type="button">Nova</button><button id="btnFire" type="button">Fire</button></div>
   </div>
   <div id="toast"></div>
@@ -76,6 +97,7 @@
           <dt>Fire</dt><dd>hold for fireballs</dd>
           <dt>Nova</dt><dd>blast, costs spell mana</dd>
           <dt>Surge / Back</dt><dd>a surge burst (held, it repeats) or fly backwards</dd>
+          <dt>◀ ▶</dt><dd>strafe left and right</dd>
         </dl>
       </div>
     </div>
@@ -112,6 +134,8 @@
       <fieldset id="tiltRow" hidden>
         <legend>Controls</legend>
         <label><input type="checkbox" id="optTilt"> Tilt to steer: tilt the phone left and right to turn, tip it towards or away from you to climb or dive. The way you hold it when you start or resume is the centre.</label>
+        <label id="autoFsRow"><input type="checkbox" id="optAutoFs"> Full screen when a flight starts</label>
+        <span class="hint" id="installHint" hidden>For full screen on iPhone: tap Share, then “Add to Home Screen”, and start Windloom from its icon.</span>
       </fieldset>
       <p class="hint">Saved in this browser.</p>
     </div>

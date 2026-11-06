@@ -43,7 +43,7 @@
   "controls": {
     "pointerLock": true,
     "lockedSensitivity": 1,
-    "tilt": { "steerDegrees": 25, "pitchDegrees": 20, "deadzoneDegrees": 2, "invertPitch": false }
+    "tilt": { "steerDegrees": 15, "pitchDegrees": 12, "deadzoneDegrees": 1.5, "invertPitch": false }
   },
   "hud": {
     "toastMinSeconds": 2.5,

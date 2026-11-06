@@ -6,7 +6,7 @@ A browser flying game in the spirit of Bullfrog's *Magic Carpet* (1994). Ride a 
 
 Every game generates a new island. The page address ends with the island's seed (`#s123456789`); open that link to replay the same island.
 
-Version 0.2.9. See [CHANGELOG.md](CHANGELOG.md).
+Version 0.3.0. See [CHANGELOG.md](CHANGELOG.md).
 
 ## Controls
 
@@ -16,10 +16,12 @@ Version 0.2.9. See [CHANGELOG.md](CHANGELOG.md).
 | Climb / dive | mouse up/down, ↑ ↓ | tip the phone towards/away from you, or drag |
 | Surge forward (a short burst, repeats every 2 s while held) | W or Shift | Surge |
 | Fly backwards | S | Back (hold) |
-| Strafe | A / D | – |
+| Strafe | A / D | ◀ ▶ |
 | Fireball | left click or Space | Fire (hold) |
 | Nova (costs mana) | right click or E | Nova |
 | Pause / mute | Esc / M | – |
+
+On phones and tablets the game goes full screen when a flight starts. iPhone Safari cannot do that for web pages. Instead, tap Share → Add to Home Screen and start Windloom from its icon: it then runs without browser bars. This also works on Android.
 
 ## How the game works
 

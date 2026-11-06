@@ -11,7 +11,7 @@ import { formatClock } from './round.js';
 const $ = id => document.getElementById(id);
 export const hud = $('hud');
 const elHpLbl = $('hpLbl'), elHp = $('hpFill'), elSpLbl = $('spLbl'), elSp = $('spFill'), elMana = $('manaNum'), elCap = $('manaCap'), elStageName = $('stageName'), elStageNum = $('stageNum'),
-  elCastle = $('castleFill'), elCastleTxt = $('castleTxt'), elToast = $('toast'), elHurt = $('hurt'), elSteer = $('steer'), elClock = $('clock');
+  elCastle = $('castleFill'), elCastleTxt = $('castleTxt'), elCastle2 = $('castleFill2'), elCastleTxt2 = $('castleTxt2'), elStageNum2 = $('stageNum2'), elToast = $('toast'), elHurt = $('hurt'), elSteer = $('steer'), elClock = $('clock');
 const rctx = $('radar').getContext('2d');
 const NUMERALS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
 // Messages stay up long enough to read (longer text, longer time; config "hud"). Minor ones ("Wyvern slain",
@@ -63,8 +63,10 @@ export function updateHud() {
   const T = CFG.palace.stageThresholds, last = T.length;
   const lo = T[G.level - 1], hi = G.level < last ? T[G.level] : T[last - 1];
   const frac = G.level >= last ? 1 : clamp((G.castleMana - lo) / (hi - lo), 0, 1);
-  elCastle.style.width = (frac * 100).toFixed(1) + '%';
+  elCastle.style.width = elCastle2.style.width = (frac * 100).toFixed(1) + '%';
+  setText(elStageNum2, 'sn2', NUMERALS[G.level - 1]);
   setText(elCastleTxt, 'ct', G.level >= last ? 'Complete' : Math.floor(G.castleMana) + ' / ' + hi);
+  setText(elCastleTxt2, 'ct2', G.level >= last ? 'Complete' : Math.floor(G.castleMana) + ' / ' + hi);
   elClock.hidden = !G.timed;
   setText(elClock, 'clk', formatClock(G.timeLeft));
   elClock.classList.toggle('warn', G.timeLeft <= CFG.round.warnSeconds);

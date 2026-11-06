@@ -24,7 +24,7 @@ export const G = {
   spellMana: 100, spellExhausted: false, // fireball energy (config spells.mana), separate from carried mana
   playerPos: new THREE.Vector3(), playerVel: new THREE.Vector3(),
   fwd: new THREE.Vector3(0, 0, -1), rightV: new THREE.Vector3(1, 0, 0),
-  input: { mouseX: 0, mouseY: 0, touchX: 0, touchY: 0, mouseFire: false, touchFire: false, touchBoost: false, touchBack: false, tiltX: 0, tiltY: 0, novaReq: false },
+  input: { mouseX: 0, mouseY: 0, touchX: 0, touchY: 0, mouseFire: false, touchFire: false, touchBoost: false, touchBack: false, touchLeft: false, touchRight: false, tiltX: 0, tiltY: 0, novaReq: false },
   enemies: [], orbs: [], shots: [], bolts: [], rings: [],
   dragon: null, dragonTimer: 0, dragonSeen: false, surging: false, surgeT: 0, surgeCd: 0,
   spawnTimer: 0, upgradeHint: 0, // last stage for which the 'enough mana' message was shown

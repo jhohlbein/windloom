@@ -16,6 +16,15 @@ export function lockPointer() {
 }
 export function unlockPointer() { if (pointerLocked() && document.exitPointerLock) document.exitPointerLock(); }
 export const isFullscreen = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
+const fsApi = () => document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen;
+export const fullscreenAvailable = () => !!fsApi();
+// Started from the Home Screen (installed): there are no browser bars to hide
+export const runningInstalled = () => matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches || navigator.standalone === true;
+// Enters full screen if possible; must be called from a tap or click
+export function enterFullscreen() {
+  if (isFullscreen() || runningInstalled() || !fsApi()) return;
+  try { const p = fsApi().call(document.documentElement); if (p && p.catch) p.catch(() => { }); } catch (e) { /* not allowed now */ }
+}
 export function toggleFullscreen() {
   const d = document, el = d.documentElement;
   try {
@@ -101,6 +110,8 @@ export function bindControls({ onPause, onMute, onBlur, onLockLost }) {
   bindHold('btnNova', () => { I.novaReq = true; }, () => { });
   bindHold('btnBoost', () => { I.touchBoost = true; }, () => { I.touchBoost = false; });
   bindHold('btnBack', () => { I.touchBack = true; }, () => { I.touchBack = false; });
+  bindHold('btnLeft', () => { I.touchLeft = true; }, () => { I.touchLeft = false; });
+  bindHold('btnRight', () => { I.touchRight = true; }, () => { I.touchRight = false; });
 }
 
 /* ---------- tilt steering (phones) ---------- */
@@ -144,6 +155,6 @@ export function requestTilt(on) {
 
 export function releaseInput() {
   const I = G.input;
-  I.mouseFire = I.touchFire = I.touchBoost = I.touchBack = false; I.mouseX = I.mouseY = 0; I.novaReq = false; vx = vy = 0;
+  I.mouseFire = I.touchFire = I.touchBoost = I.touchBack = I.touchLeft = I.touchRight = false; I.mouseX = I.mouseY = 0; I.novaReq = false; vx = vy = 0;
   for (const k in G.keys) delete G.keys[k];
 }

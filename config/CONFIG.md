@@ -68,7 +68,7 @@ Kinds: `{ "spread": s }` = mean × (1 ± s), uniform; `{ "min": a, "max": b }` =
 |---|---|---|
 | `pointerLock` | true | Clicking into the game captures the mouse: the cursor is hidden and cannot leave the window, so steering never gets stuck at the screen edge. Esc releases it and pauses. Set to `false` for the old free cursor. |
 | `lockedSensitivity` | 1 | With the mouse captured: how far the steering moves per pixel of mouse movement (higher = more sensitive). |
-| `tilt` | steerDegrees 25, pitchDegrees 20, deadzoneDegrees 2, invertPitch false | Phones (Settings → Tilt to steer): tilting the phone this many degrees left/right gives full turn, tipping it this many degrees towards/away from you gives full climb/dive, measured from how it was held at start or resume. Smaller tilts inside the dead zone are ignored. `invertPitch` swaps climb and dive (by default tipping the top towards you climbs, like pulling back on a stick). |
+| `tilt` | steerDegrees 15, pitchDegrees 12, deadzoneDegrees 1.5, invertPitch false | Phones (Settings → Tilt to steer): tilting the phone this many degrees left/right gives full turn, tipping it this many degrees towards/away from you gives full climb/dive, measured from how it was held at start or resume. Smaller tilts inside the dead zone are ignored. `invertPitch` swaps climb and dive (by default tipping the top towards you climbs, like pulling back on a stick). |
 
 ## hud
 

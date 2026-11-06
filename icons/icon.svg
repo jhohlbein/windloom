@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Windloom app icon: a flying carpet before the palace beam, under a crescent. Original artwork. -->
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="38%" r="75%">
+      <stop offset="0" stop-color="#3a2b5e"/><stop offset="1" stop-color="#140f22"/>
+    </radialGradient>
+    <linearGradient id="beam" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffcf63" stop-opacity="0"/><stop offset=".45" stop-color="#ffcf63" stop-opacity=".55"/><stop offset="1" stop-color="#ffcf63" stop-opacity=".9"/>
+    </linearGradient>
+    <linearGradient id="rug" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#9a2836"/><stop offset="1" stop-color="#6a1824"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <!-- crescent -->
+  <path d="M318 96a62 62 0 1 0 52 98a52 52 0 1 1 -52 -98z" fill="#f7eedd" opacity=".9"/>
+  <!-- beam -->
+  <rect x="236" y="70" width="40" height="300" fill="url(#beam)"/>
+  <!-- carpet: a rippled slab seen from slightly above -->
+  <path d="M112 300 C150 282 182 318 220 300 S290 282 330 300 S376 318 400 300 L376 368 C340 386 308 350 270 368 S200 386 160 368 S108 352 88 368 Z" fill="url(#rug)" stroke="#ffcf63" stroke-width="12" stroke-linejoin="round"/>
+  <path d="M138 316 C170 304 196 330 226 316 S286 302 318 316 S360 330 374 318 L360 352 C330 366 304 340 272 352 S208 366 176 352 S130 342 120 352 Z" fill="none" stroke="#5fe0d6" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M244 318 L262 334 L244 350 L226 334 Z" fill="#5fe0d6"/>
+  <path d="M178 322 L192 334 L178 346 L164 334 Z M312 322 L326 334 L312 346 L298 334 Z" fill="#ff8a3d"/>
+  <!-- fringe -->
+  <g stroke="#ffcf63" stroke-width="6" stroke-linecap="round">
+    <path d="M90 372 l-8 18 M106 366 l-8 18 M122 364 l-8 18"/>
+    <path d="M398 298 l14 -12 M406 312 l14 -12 M412 326 l14 -12"/>
+  </g>
+</svg>

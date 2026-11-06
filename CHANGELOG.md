@@ -4,6 +4,16 @@ All notable changes to Windloom are recorded here. The format follows [Keep a Ch
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-06
+
+### Added
+- Phones and tablets go full screen when a flight starts (Settings → "Full screen when a flight starts", on by default). This doesn't work on iPhone, where Safari has no full screen for web pages.
+- Windloom can be added to the Home Screen and then runs without browser bars, also on iPhone. This uses a web app manifest, app icons (`icons/`, original artwork) and the iOS meta tags. On iPhone, Settings shows how to do it.
+
+### Changed
+- Tilt steering is more responsive: full turn at 15° of tilt (was 25°), full climb or dive at 12° (was 20°), with a 1.5° dead zone.
+- Touch controls are laid out like a keyboard: Surge, Back and the new strafe buttons ◀ ▶ sit on the left like W, S, A and D, with Fire and Nova on the right. On phones the palace moves into the top-left panel as one line: the stage numeral (I–VI), a gold bar and stored / next mana. The bottom panel is gone there.
+
 ## [0.2.9] - 2026-11-06
 
 ### Added
