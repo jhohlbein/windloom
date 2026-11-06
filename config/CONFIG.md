@@ -9,7 +9,7 @@ The **Value** column shows what `game-config.json` currently contains. Keep it i
 ## How scaling works
 
 - **Hit points:** `hp + hpBonus × floor(stage / hpBonusEveryStages)`. Example: kraken `12 + 2 × floor(stage / 2)` gives 12 at stage 1, 14 at stages 2–3, 16 at 4–5.
-- **Population targets** (`spawning.flyers`, `krakens`, `sandworms`): `min(base + add × floor(stage / everyStages), max)`.
+- **Population targets** (every creature in `spawning` except the dragon): none before `fromStage`, then `min(base + floor(add × (stage − fromStage)), max)`. `add` may be a fraction: 0.5 adds one creature every second stage. Example: sandworms `fromStage 3, base 2, add 0.5, max 3` give 2 at stages 3–4 and 3 from stage 5.
 
 ## world
 
@@ -102,7 +102,9 @@ The sun rises over the course of a round: dawn at the start (low, warm, dim ligh
 | Key | Value | Meaning |
 |---|---|---|
 | `baseSpeed` | 44 | Normal forward speed. |
-| `surgeMultiplier` | 1.85 | Speed while surging (W). |
+| `surgeMultiplier` | 1.85 | Speed during a surge burst (W). |
+| `surgeSeconds` | 0.9 | How long one surge burst lasts. The carpet then eases back to `baseSpeed`. |
+| `surgeCooldownSeconds` | 2 | Time from the start of one burst to the next while W (or Surge) is held down. |
 | `reverseMultiplier` | 0.6 | Speed backwards (S), as a fraction of base speed. |
 | `strafeSpeed` | 32 | Sideways speed (A/D). |
 | `turnRate` | 1.55 | How fast the carpet turns (radians per second at full steer). |
@@ -188,16 +190,14 @@ A timed game is a round. The clock keeps running everywhere, including in the pa
 
 | Key | Value | Meaning |
 |---|---|---|
-| `intervalSeconds` | 2 | How often the game tops up creature numbers (one creature per check). |
-| `flyersAtStart` | 6 | Wyverns/drakes present when a game starts. |
-| `flyers` | base 4, add 2, everyStages 1, max 13 | Population target (see scaling above). |
-| `skeletons` | fromStage 1, groupsAtStart 4, groupsPerStage 1, groupSizeMin 2, groupSizeMax 4 | Skeleton archers roam in groups of 2–4: four groups at the start and one more per palace stage (nine at stage 6). A group counts as long as one member lives; lost groups are replaced. |
-| `krakens` | fromStage 4, base 2, add 2, everyStages 2, max 6 | Population target (see scaling above), from palace stage `fromStage` on. |
-| `sandworms` | fromStage 3, base 2, add 2, everyStages 2, max 6 | Population target (see scaling above), from palace stage `fromStage` on. |
-| `krakens.announce`, `sandworms.announce`, `drakes.announce`, `dragon.announce` | see JSON | Line shown under "Palace raised" when the stage that unlocks this creature is reached. Leave empty for no message. |
-| `drakes.fromStage` | 2 | First stage at which drakes can appear. |
-| `drakes.chanceBase`, `chancePerStage` | 0.16, 0.05 | Chance that a new flyer is a drake: base + perStage × stage. |
-| `drakes.maxBase`, `maxAdd`, `maxEveryStages` | 1, 1, 2 | Maximum drakes alive at once. |
+| `intervalSeconds` | 2 | How often the game tops up creature numbers (one creature, or one skeleton group, per check; the type furthest below its target goes first). A new game starts with every type at its target. |
+| `wyverns` | fromStage 1, base 5, add 0.5, max 7 | Population target (see scaling above): 5 at stage 1, 7 from stage 5. |
+| `drakes` | fromStage 2, base 1, add 0.5, max 3 | 1 at stages 2–3, 2 at 4–5, 3 at stage 6. |
+| `skeletons` | fromStage 1, base 4, add 0.5, max 6, groupSizeMin 2, groupSizeMax 4 | Skeleton archers roam in groups of 2–4; the target counts groups (4 at stage 1, 6 from stage 5). A group counts as long as one member lives; lost groups are replaced. |
+| `sandworms` | fromStage 3, base 2, add 0.5, max 3 | 2 at stages 3–4, 3 from stage 5. |
+| `krakens` | fromStage 4, base 2, add 0.5, max 3 | 2 at stages 4–5, 3 at stage 6. |
+| `dragon.fromStage`, `dragon.respawnSeconds` | 5, 240 | There is only ever one Vharoth. It wakes at this stage and returns this long after being slain. |
+| `drakes.announce`, `sandworms.announce`, `krakens.announce`, `dragon.announce` | see JSON | Line shown under "Palace raised" when the stage that unlocks this creature is reached. Any rule can have one; leave it out for no message. |
 | `dragon.fromStage` | 5 | Palace stage at which Vharoth first appears on its peak. |
 | `dragonRespawnSeconds` | 240 | Time until Vharoth returns after it falls. |
 

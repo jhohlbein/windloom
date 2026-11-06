@@ -153,6 +153,25 @@ const water = new THREE.Mesh(new THREE.PlaneGeometry(9000, 9000), new THREE.Mesh
   envMap: envTarget.texture, envMapIntensity: 0.5, normalMap: waterNormals, normalScale: new THREE.Vector2(0.35, 0.35)
 }));
 water.rotation.x = -Math.PI / 2; water.receiveShadow = true; scene.add(water);
+// Break up the tiling: the ripple map is sampled three times at unrelated scales, angles and drift directions
+// and blended, and a very slow, large sample varies the ripple strength across the sea, so the pattern of a
+// single tile (about 56 m) never lines up into visible rows.
+const waterTime = { value: 0 };
+water.material.onBeforeCompile = sh => {
+  const target = 'vec3 mapN = texture2D( normalMap, vUv ).xyz * 2.0 - 1.0;';
+  const chunk = THREE.ShaderChunk.normal_fragment_maps;
+  if (!chunk.includes(target)) return; // a different three.js version: keep the plain single sample
+  sh.uniforms.uWaterT = waterTime;
+  sh.fragmentShader = 'uniform float uWaterT;\n' + sh.fragmentShader.replace('#include <normal_fragment_maps>', chunk.replace(target, `
+    vec2 wa = vUv;
+    vec2 wb = mat2(0.799, 0.602, -0.602, 0.799) * vUv * 0.413 + vec2(uWaterT * 0.0071, -uWaterT * 0.0049);
+    vec2 wc = mat2(0.276, -0.961, 0.961, 0.276) * vUv * 1.731 + vec2(-uWaterT * 0.0113, uWaterT * 0.0087);
+    vec3 n1 = texture2D( normalMap, wa ).xyz * 2.0 - 1.0;
+    vec3 n2 = texture2D( normalMap, wb ).xyz * 2.0 - 1.0;
+    vec3 n3 = texture2D( normalMap, wc ).xyz * 2.0 - 1.0;
+    float patchy = 1.0 + 1.3 * (texture2D( normalMap, mat2(0.92, 0.39, -0.39, 0.92) * vUv * 0.037 ).x - 0.5);
+    vec3 mapN = normalize(vec3((n1.xy * 0.45 + n2.xy * 0.4 + n3.xy * 0.35) * patchy, 1.0));`));
+};
 
 /* ---------- daylight: sunrise over the round ---------- */
 // Colour keyframes at phase 0 (dawn), 0.35 (early morning) and 1 (late morning)
@@ -198,6 +217,7 @@ export function setDaylight(phase, dt = 0) {
 
 export function updateSky(dt) {
   waterNormals.offset.x += dt * 0.012; waterNormals.offset.y += dt * 0.007;
+  waterTime.value += dt;
   for (const c of clouds) { c.position.x += dt * 4; if (c.position.x > 2800) c.position.x = -2800; }
   sky.position.copy(camera.position);
 }

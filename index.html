@@ -34,13 +34,13 @@
   <div id="clock" class="glass">4:00</div>
   <div id="cross"></div><div id="steer"></div>
   <div id="castle" class="glass">
-    <div class="row"><span class="lbl">Palace</span><span id="stage">Minaret · I</span></div>
+    <div class="row"><span class="lbl">Palace</span><span id="stage"><span id="stageName">Minaret</span><span class="sep"> · </span><span id="stageNum">I</span></span></div>
     <div class="bar"><i id="castleFill"></i></div>
     <div class="row"><span class="lbl">Stored mana</span><span id="castleTxt">0 / 50</span></div>
   </div>
-  <div id="keys"><b>Mouse / ← →</b> turn · <b>↑ ↓</b> climb<br><b>W</b> surge · <b>S</b> reverse · <b>A D</b> strafe<br><b>Click / Space</b> fireball · <b>Right-click / E</b> nova<br><b>Esc</b> pause · <b>M</b> mute · <b>F</b> full screen</div>
+  <div id="keys"><b>Mouse / ← →</b> turn · <b>↑ ↓</b> climb<br><b>W</b> surge burst · <b>S</b> reverse · <b>A D</b> strafe<br><b>Click / Space</b> fireball · <b>Right-click / E</b> nova<br><b>Esc</b> pause · <b>M</b> mute · <b>F</b> full screen</div>
   <div class="touch">
-    <div class="col"><button id="btnBack" type="button">Back</button><button id="btnBoost" type="button">Surge</button></div>
+    <div class="col"><button id="btnBoost" type="button">Surge</button><button id="btnBack" type="button">Back</button></div>
     <div class="col"><button id="btnNova" type="button">Nova</button><button id="btnFire" type="button">Fire</button></div>
   </div>
   <div id="toast"></div>
@@ -60,7 +60,7 @@
         <dl>
           <dt>Mouse / ← →</dt><dd>turn left and right</dd>
           <dt>Mouse / ↑ ↓</dt><dd>climb and dive</dd>
-          <dt>W / Shift</dt><dd>surge forward</dd>
+          <dt>W / Shift</dt><dd>surge forward in a short burst; held, it repeats every 2 s</dd>
           <dt>S</dt><dd>fly backwards</dd>
           <dt>A / D</dt><dd>strafe left and right</dd>
           <dt>Click / Space</dt><dd>fireball</dd>
@@ -74,7 +74,7 @@
           <dt>Drag</dt><dd>turn and climb</dd>
           <dt>Fire</dt><dd>hold for fireballs</dd>
           <dt>Nova</dt><dd>blast, costs spell mana</dd>
-          <dt>Surge / Back</dt><dd>hold to speed up or reverse</dd>
+          <dt>Surge / Back</dt><dd>a surge burst (held, it repeats) or fly backwards</dd>
         </dl>
       </div>
     </div>

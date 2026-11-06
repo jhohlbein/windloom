@@ -73,7 +73,9 @@ export function sfx(name, v = 1) {
     case 'flap': if (throttle(name, 250)) noise(500, 180, 0.3, 0.9, 0.18 * v, 0.06); break;
     case 'roar': tone(115, 42, 1.5, 'sawtooth', 0.22 * v); tone(72, 30, 1.7, 'square', 0.14 * v); tone(170, 60, 1.0, 'sawtooth', 0.08 * v); break;
     case 'bow': noise(2600, 900, 0.18, 2, 0.18 * v, 0.004); tone(196, 147, 0.12, 'triangle', 0.05 * v); break;
-    case 'whoosh': noise(350, 1800, 0.7, 0.9, 0.35 * v * CFG.audio.windVolume / 0.18, 0.25); break;
+    // surge burst: a short airy swish (a high sweep falling fast) over a soft low push
+    case 'whoosh': { const w = v * CFG.audio.windVolume / 0.18;
+      noise(2600 * j, 700, 0.42, 1.1, 0.3 * w, 0.05); noise(260, 120, 0.5, 0.7, 0.22 * w, 0.08); break; }
   }
 }
 // Positional sound: louder the closer it is to the player (or camera on the title screen)
@@ -87,7 +89,8 @@ export function sfxAt(name, pos, range = 320) {
 let windGain, windFilter, wasSurging = false;
 function startWind() {
   const s = ac.createBufferSource(); s.buffer = noiseBuf; s.loop = true;
-  windFilter = ac.createBiquadFilter(); windFilter.type = 'bandpass'; windFilter.Q.value = 0.6; windFilter.frequency.value = 500;
+  // low-passed (not band-passed) noise: a steady band-pass hiss in the 1-2 kHz range sounds like running water
+  windFilter = ac.createBiquadFilter(); windFilter.type = 'lowpass'; windFilter.Q.value = 0.4; windFilter.frequency.value = 300;
   windGain = ac.createGain(); windGain.gain.value = 0;
   s.connect(windFilter); windFilter.connect(windGain); windGain.connect(sfxBus); s.start();
 }
@@ -193,8 +196,9 @@ export function updateAudio(dt) {
   // wind follows speed; a whoosh when a surge starts
   const base = CFG.player.baseSpeed, top = base * CFG.player.surgeMultiplier;
   const sp = G.active ? clamp(Math.abs(G.speed) / top, 0, 1) : 0;
-  windGain.gain.setTargetAtTime(A.windVolume * sp * sp, t, 0.15);
-  windFilter.frequency.setTargetAtTime(300 + sp * 1100, t, 0.2);
+  const gust = 0.75 + 0.25 * Math.sin(t * 0.7) * Math.sin(t * 0.31 + 1); // slow swells, so it reads as wind
+  windGain.gain.setTargetAtTime(A.windVolume * sp * sp * gust * 1.3, t, 0.15);
+  windFilter.frequency.setTargetAtTime((220 + sp * 520) * (0.85 + 0.3 * gust), t, 0.2);
   const surging = G.active && G.surging;
   if (surging && !wasSurging) sfx('whoosh');
   wasSurging = surging;

@@ -163,7 +163,7 @@ function frame(now) {
       updateDeposit(dt); upgradeHint();
       G.spawnTimer -= dt;
       if (G.spawnTimer <= 0) { G.spawnTimer = CFG.spawning.intervalSeconds; spawnTick(); }
-      // The dragon appears once its stage is reached (announced by the palace) and returns after dragonRespawnSeconds when slain
+      // The dragon appears once its stage is reached (announced by the palace) and returns after spawning.dragon.respawnSeconds when slain
       if (!G.dragon && unlocked(CFG.spawning.dragon)) {
         const returning = G.dragonTimer > 0;
         G.dragonTimer -= dt;

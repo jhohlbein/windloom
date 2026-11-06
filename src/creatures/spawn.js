@@ -1,4 +1,5 @@
-// Where and how many creatures appear. Counts scale with the palace stage (see config "spawning").
+// Where and how many creatures appear. Every creature type has its own rule in config "spawning"
+// (fromStage, base, add, max; see targetFor in config.js). Skeletons count in groups, the dragon is unique.
 import * as THREE from 'three';
 import { CFG, targetFor } from '../config.js';
 import { G, W } from '../state.js';
@@ -17,10 +18,7 @@ import { spawnOrb } from '../combat.js';
 function addEnemy(e) { castShadows(e.root); G.enemies.push(e); return e; }
 const far = (x, z, d) => !G.active || Math.hypot(x - G.playerPos.x, z - G.playerPos.z) >= d;
 
-export function spawnFlyer() {
-  const S = CFG.spawning.drakes, L = G.level;
-  const maxDrakes = S.maxBase + S.maxAdd * Math.floor(L / S.maxEveryStages);
-  const kind = (L >= S.fromStage && countKind('drake') < maxDrakes && Math.random() < S.chanceBase + S.chancePerStage * L) ? 'drake' : 'wyvern';
+export function spawnFlyer(kind) {
   for (let t = 0; t < 30; t++) {
     const a = Math.random() * TAU, r = 110 + Math.random() * 320, x = Math.cos(a) * r, z = Math.sin(a) * r;
     if (Math.hypot(x - W.CX, z - W.CZ) < 110 || !far(x, z, 160)) continue;
@@ -45,9 +43,8 @@ export function spawnWorm() {
   }
 }
 // Skeleton archers: a group of groupSizeMin..groupSizeMax on open, gentle land away from the palace (outside its
-// ward) and the dragon's peak. Number of groups: groupsAtStart + groupsPerStage per palace stage above the first.
+// ward) and the dragon's peak. Their rule counts groups, not archers; a group counts while one member lives.
 const skeletonGroups = () => new Set(G.enemies.filter(e => e.kind === 'skeleton').map(e => e.group)).size;
-const skeletonGroupTarget = L => { const S = CFG.spawning.skeletons; return unlocked(S, L) ? S.groupsAtStart + S.groupsPerStage * (L - 1) : 0; };
 export function spawnSkeletonGroup() {
   const S = CFG.spawning.skeletons;
   for (let t = 0; t < 80; t++) {
@@ -67,15 +64,22 @@ export function spawnSkeletonGroup() {
 // There is only ever one Vharoth
 export function spawnDragon() { if (G.dragon || countKind('dragon')) return; G.dragon = addEnemy(createDragon()); }
 
-// A creature group (spawning.krakens, sandworms, drakes, dragon) is active from its fromStage on
+// A spawn rule is active from its fromStage on
 export const unlocked = (rule, stage = G.level) => stage >= (rule.fromStage || 1);
 
+// One entry per creature type: how many are alive (groups for skeletons) and how to add one
+const POPULATIONS = [
+  { rule: 'wyverns', count: () => countKind('wyvern'), spawn: () => spawnFlyer('wyvern') },
+  { rule: 'drakes', count: () => countKind('drake'), spawn: () => spawnFlyer('drake') },
+  { rule: 'skeletons', count: skeletonGroups, spawn: spawnSkeletonGroup },
+  { rule: 'sandworms', count: () => countKind('worm'), spawn: spawnWorm },
+  { rule: 'krakens', count: () => countKind('kraken'), spawn: spawnKraken }
+];
+
+// A new game starts with every population at its target for the current stage
 export function populate() {
   const S = CFG.spawning;
-  for (let i = 0; i < S.flyersAtStart; i++) spawnFlyer();
-  for (let i = 0; i < skeletonGroupTarget(G.level); i++) spawnSkeletonGroup();
-  if (unlocked(S.krakens)) spawnKraken();
-  if (unlocked(S.sandworms)) spawnWorm();
+  for (const p of POPULATIONS) for (let i = targetFor(S[p.rule], G.level); i > 0; i--) p.spawn();
   if (unlocked(S.dragon)) spawnDragon();
   scatterMana();
 }
@@ -92,19 +96,14 @@ function scatterMana() {
     c++;
   }
 }
-// Called every spawning.intervalSeconds: add one creature to the group that is furthest below its target
-// (as a fraction), so a newly unlocked group fills up quickly instead of waiting for the flyers
+// Called every spawning.intervalSeconds: add one creature to the population that is furthest below its target
+// (as a fraction), so a newly unlocked type fills up quickly instead of waiting behind the others
 export function spawnTick() {
   const S = CFG.spawning, L = G.level;
-  const groups = [
-    { n: countKind('wyvern') + countKind('drake'), target: targetFor(S.flyers, L), spawn: spawnFlyer },
-    { n: countKind('worm'), target: unlocked(S.sandworms) ? targetFor(S.sandworms, L) : 0, spawn: spawnWorm },
-    { n: countKind('kraken'), target: unlocked(S.krakens) ? targetFor(S.krakens, L) : 0, spawn: spawnKraken },
-    { n: skeletonGroups(), target: skeletonGroupTarget(L), spawn: spawnSkeletonGroup }
-  ].filter(g => g.n < g.target);
-  if (!groups.length) return;
-  groups.sort((a, b) => a.n / a.target - b.n / b.target);
-  groups[0].spawn();
+  const short = POPULATIONS.map(p => ({ p, n: p.count(), target: targetFor(S[p.rule], L) })).filter(g => g.n < g.target);
+  if (!short.length) return;
+  short.sort((a, b) => a.n / a.target - b.n / b.target);
+  short[0].p.spawn();
 }
 export function updateEnemies(dt) {
   for (let i = G.enemies.length - 1; i >= 0; i--) {

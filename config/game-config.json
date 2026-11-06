@@ -65,6 +65,8 @@
   "player": {
     "baseSpeed": 44,
     "surgeMultiplier": 1.85,
+    "surgeSeconds": 0.9,
+    "surgeCooldownSeconds": 2,
     "reverseMultiplier": 0.6,
     "strafeSpeed": 32,
     "turnRate": 1.55,
@@ -135,14 +137,12 @@
   },
   "spawning": {
     "intervalSeconds": 2,
-    "flyersAtStart": 6,
-    "flyers": { "base": 4, "add": 2, "everyStages": 1, "max": 13 },
-    "skeletons": { "fromStage": 1, "groupsAtStart": 4, "groupsPerStage": 1, "groupSizeMin": 2, "groupSizeMax": 4 },
-    "krakens": { "fromStage": 4, "base": 2, "add": 2, "everyStages": 2, "max": 6, "announce": "Krakens stir in the deep water around the island." },
-    "sandworms": { "fromStage": 3, "base": 2, "add": 2, "everyStages": 2, "max": 6, "announce": "Sandworms wake beneath the dunes." },
-    "drakes": { "fromStage": 2, "chanceBase": 0.16, "chancePerStage": 0.05, "maxBase": 1, "maxAdd": 1, "maxEveryStages": 2, "announce": "Drakes join the wyverns in the sky." },
-    "dragon": { "fromStage": 5, "announce": "Vharoth wakes on the highest peak." },
-    "dragonRespawnSeconds": 240
+    "wyverns": { "fromStage": 1, "base": 5, "add": 0.5, "max": 7 },
+    "drakes": { "fromStage": 2, "base": 1, "add": 0.5, "max": 3, "announce": "Drakes join the wyverns in the sky." },
+    "skeletons": { "fromStage": 1, "base": 4, "add": 0.5, "max": 6, "groupSizeMin": 2, "groupSizeMax": 4 },
+    "sandworms": { "fromStage": 3, "base": 2, "add": 0.5, "max": 3, "announce": "Sandworms wake beneath the dunes." },
+    "krakens": { "fromStage": 4, "base": 2, "add": 0.5, "max": 3, "announce": "Krakens stir in the deep water around the island." },
+    "dragon": { "fromStage": 5, "respawnSeconds": 240, "announce": "Vharoth wakes on the highest peak." }
   },
   "creatures": {
     "skeleton": {

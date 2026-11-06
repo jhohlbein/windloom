@@ -4,6 +4,23 @@ All notable changes to Windloom are recorded here. The format follows [Keep a Ch
 
 ## [Unreleased]
 
+## [0.2.7] - 2026-11-06
+
+### Changed
+- Surge (W, Shift or the Surge button) is a short burst now: 0.9 s at surge speed, then the carpet eases back to cruising speed. Held down, it repeats every 2 s (`player.surgeSeconds`, `surgeCooldownSeconds`). Keyboard play now works like touch play, where you mostly cruise and keep the thumb on Fire.
+- Each burst plays a short swish. The wind noise is low-passed and swells slowly, so it no longer sounds like running water.
+- Spawning has one rule per creature type in `spawning` (`wyverns`, `drakes`, `skeletons`, `sandworms`, `krakens`): `fromStage`, `base`, `add` per stage after that, and `max`. Drakes no longer appear by chance among the wyverns. `everyStages`, `flyersAtStart`, the drake chance keys and `dragonRespawnSeconds` (now `dragon.respawnSeconds`) are gone.
+- Fewer creatures per stage. At stage 6 there are 7 wyverns, 3 drakes, 6 skeleton groups, 3 sandworms and 3 krakens. Before, there were 13 flyers, 9 groups, 6 sandworms and 6 krakens.
+- Touch: the Surge button is above Back, like W above S.
+- Phones: the vitality, spell mana, carried mana and palace panels are narrow and have no labels. They show only bars, numbers and the stage numeral.
+- Phones: in-game messages use a smaller font and sit a little lower.
+- The sea no longer shows a regular grid of ripples. The water shader blends the ripple texture at three unrelated scales, angles and drift directions, and the ripple strength varies slowly across the sea.
+- The carpet ripples like cloth: slightly more at speed and towards its back edge (calm while surging). It also bobs and sways gently.
+- The riders lean into speed and turns and turn their heads into a turn. The sultan's turban has a loose end that streams and flutters behind him. The princess's scarf lifts back with speed, two scarf ends and a sash ribbon flutter behind her, and her veil stirs.
+
+### Fixed
+- The carpet and rider cast no shadow: shadows were switched on before their parts were attached.
+
 ## [0.2.6] - 2026-11-05
 
 ### Fixed

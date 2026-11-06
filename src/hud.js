@@ -10,7 +10,7 @@ import { formatClock } from './round.js';
 
 const $ = id => document.getElementById(id);
 export const hud = $('hud');
-const elHpLbl = $('hpLbl'), elHp = $('hpFill'), elSpLbl = $('spLbl'), elSp = $('spFill'), elMana = $('manaNum'), elCap = $('manaCap'), elStage = $('stage'),
+const elHpLbl = $('hpLbl'), elHp = $('hpFill'), elSpLbl = $('spLbl'), elSp = $('spFill'), elMana = $('manaNum'), elCap = $('manaCap'), elStageName = $('stageName'), elStageNum = $('stageNum'),
   elCastle = $('castleFill'), elCastleTxt = $('castleTxt'), elToast = $('toast'), elHurt = $('hurt'), elSteer = $('steer'), elClock = $('clock');
 const rctx = $('radar').getContext('2d');
 const NUMERALS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
@@ -59,7 +59,7 @@ export function updateHud() {
   setText(elCap, 'c', '/ ' + carryCap()); // a full carry is shown by the orange pulse, not extra text (keeps the row on one line)
   const full = G.carried >= carryCap();
   elMana.classList.toggle('full', full); elCap.classList.toggle('full', full);
-  setText(elStage, 's', stageLabel(G.level));
+  setText(elStageName, 's', CFG.palace.stageNames[G.level - 1]); setText(elStageNum, 'sn', NUMERALS[G.level - 1]);
   const T = CFG.palace.stageThresholds, last = T.length;
   const lo = T[G.level - 1], hi = G.level < last ? T[G.level] : T[last - 1];
   const frac = G.level >= last ? 1 : clamp((G.castleMana - lo) / (hi - lo), 0, 1);
