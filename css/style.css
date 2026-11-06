@@ -63,10 +63,14 @@ body{
 #steer{position:fixed;left:50%;top:50%;width:8px;height:8px;margin:-4px 0 0 -4px;background:var(--sky);border-radius:50%;opacity:.85}
 #hurt{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,rgba(255,77,109,0) 45%,rgba(255,77,109,.55) 100%);opacity:0;transition:opacity .25s}
 .touch{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));display:none;gap:10px;align-items:flex-end;pointer-events:auto}
-.touchL{right:auto;left:max(16px,env(safe-area-inset-left,0px));grid-template-columns:repeat(3,54px);grid-template-areas:". w ." "a s d";gap:8px}
-.touchL button{width:54px;height:54px}
-.touchL .kw{grid-area:w}.touchL .ka{grid-area:a}.touchL .ks{grid-area:s}.touchL .kd{grid-area:d}
-.touchL .ka,.touchL .kd{font-size:15px}
+.touchL{right:auto;left:max(16px,env(safe-area-inset-left,0px))}
+.dpad{position:relative;width:156px;height:156px;border-radius:50%;background:rgba(20,15,34,.5);border:1px solid rgba(247,238,221,.3);touch-action:none}
+.dpad .arm{position:absolute;display:flex;align-items:center;justify-content:center;width:54px;height:54px;border-radius:50%;font:700 11px/1 var(--font-display);letter-spacing:.06em;text-transform:uppercase;color:var(--paper);background:rgba(20,15,34,.55);border:1px solid rgba(247,238,221,.22);pointer-events:none}
+.dpad .up{left:50%;top:4px;margin-left:-27px}.dpad .down{left:50%;bottom:4px;margin-left:-27px}
+.dpad .left{top:50%;left:4px;margin-top:-27px;font-size:15px}.dpad .right{top:50%;right:4px;margin-top:-27px;font-size:15px}
+.dpad .arm.on{background:rgba(95,224,214,.4);border-color:var(--sky)}
+.dpad .hub{position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:rgba(247,238,221,.35);pointer-events:none}
+.touch button.small{width:46px;height:46px;font-size:9px}
 .mini{display:none}
 #castleFill2{background:var(--gold)}
 #stageNum2{font:700 14px/1 var(--font-display)}
@@ -92,7 +96,6 @@ body{
 }
 @media (pointer:coarse){
   .touch{display:flex}
-  .touch.touchL{display:grid}
   #keys{display:none}
   #cross,#steer{display:none}
 }

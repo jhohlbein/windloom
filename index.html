@@ -54,15 +54,15 @@
     <div class="row"><span class="lbl">Stored mana</span><span id="castleTxt">0 / 50</span></div>
   </div>
   <div id="keys"><b>Mouse / ← →</b> turn · <b>↑ ↓</b> climb<br><b>W</b> surge burst · <b>S</b> reverse · <b>A D</b> strafe<br><b>Click / Space</b> fireball · <b>Right-click / E</b> nova<br><b>Esc</b> pause · <b>M</b> mute · <b>F</b> full screen</div>
-  <!-- touch: movement on the left laid out like W A S D, spells on the right -->
+  <!-- touch: a four-way pad on the left (up surge, down back, left/right strafe; diagonals combine them),
+       spells on the right -->
   <div class="touch touchL">
-    <button id="btnBoost" type="button" class="kw">Surge</button>
-    <button id="btnLeft" type="button" class="ka" aria-label="Strafe left">◀</button>
-    <button id="btnBack" type="button" class="ks">Back</button>
-    <button id="btnRight" type="button" class="kd" aria-label="Strafe right">▶</button>
+    <div class="dpad" id="dpad" role="group" aria-label="Movement pad">
+      <span class="arm up">Surge</span><span class="arm left">◀</span><span class="arm right">▶</span><span class="arm down">Back</span><span class="hub"></span>
+    </div>
   </div>
   <div class="touch touchR">
-    <div class="col"><button id="btnNova" type="button">Nova</button><button id="btnFire" type="button">Fire</button></div>
+    <div class="col"><button id="btnCentre" type="button" class="small" aria-label="Centre tilt steering">Centre</button><button id="btnNova" type="button">Nova</button><button id="btnFire" type="button">Fire</button></div>
   </div>
   <div id="toast"></div>
   <div id="hurt"></div>
@@ -96,8 +96,8 @@
           <dt>Drag</dt><dd>turn and climb, with or without tilt</dd>
           <dt>Fire</dt><dd>hold for fireballs</dd>
           <dt>Nova</dt><dd>blast, costs spell mana</dd>
-          <dt>Surge / Back</dt><dd>a surge burst (held, it repeats) or fly backwards</dd>
-          <dt>◀ ▶</dt><dd>strafe left and right</dd>
+          <dt>Pad</dt><dd>up: surge burst (held, it repeats) · down: backwards · left/right: strafe · between two arms: both</dd>
+          <dt>Centre</dt><dd>takes how you hold the phone now as level</dd>
         </dl>
       </div>
     </div>
@@ -133,7 +133,7 @@
       </fieldset>
       <fieldset id="tiltRow" hidden>
         <legend>Controls</legend>
-        <label><input type="checkbox" id="optTilt"> Tilt to steer: tilt the phone left and right to turn, tip it towards or away from you to climb or dive. The way you hold it when you start or resume is the centre.</label>
+        <label><input type="checkbox" id="optTilt"> Tilt to steer: tilt the phone left and right to turn, tip it towards or away from you to climb or dive. The way you hold it when you start, resume, turn the screen or tap Centre is level.</label>
         <label id="autoFsRow"><input type="checkbox" id="optAutoFs"> Full screen when a flight starts</label>
         <span class="hint" id="installHint" hidden>For full screen on iPhone: tap Share, then “Add to Home Screen”, and start Windloom from its icon.</span>
       </fieldset>

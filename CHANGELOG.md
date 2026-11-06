@@ -4,6 +4,12 @@ All notable changes to Windloom are recorded here. The format follows [Keep a Ch
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-11-06
+
+### Changed
+- Touch: Surge, Back and strafe are one four-way pad under the left thumb. The thumb's direction from the centre picks the move, and between two arms both are on (for example surge and strafe right).
+- Tilt centring: the centre is now the average of the first 0.4 s of readings after start or resume, so lifting your finger from the button no longer skews it. It is also taken again whenever the screen turns between portrait and landscape. A new Centre button (above Nova) re-centres at any time.
+
 ## [0.3.0] - 2026-11-06
 
 ### Added

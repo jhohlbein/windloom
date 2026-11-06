@@ -114,7 +114,8 @@ bindControls({
   onPause: togglePause,
   onMute: () => { const m = toggleMute(); if (G.active) toast(m ? 'Sound off' : 'Sound on', 900, true); },
   onBlur: () => { releaseInput(); pause(); },
-  onLockLost: pause
+  onLockLost: pause,
+  onCentre: () => toast('Hold the phone steady: steering is centred on how you hold it now', 1800, true)
 });
 // Settings (start screen): choices are saved in this browser and applied at once
 const settingsBtn = $('settingsBtn'), settingsPanel = $('settingsPanel');
@@ -137,7 +138,9 @@ const fsAutoBox = $('optAutoFs'), fsAutoRow = $('autoFsRow');
 fsAutoRow.hidden = !fullscreenAvailable(); fsAutoBox.checked = settings.autoFullscreen;
 $('installHint').hidden = fullscreenAvailable() || runningInstalled(); // iPhone: only the Home Screen gives full screen
 fsAutoBox.addEventListener('change', () => { saveSetting('autoFullscreen', fsAutoBox.checked); });
-tiltBox.addEventListener('change', () => { saveSetting('tilt', tiltBox.checked); requestTilt(tiltBox.checked); });
+const centreBtn = $('btnCentre'), showCentre = () => { centreBtn.hidden = !(settings.tilt && tiltAvailable()); };
+showCentre();
+tiltBox.addEventListener('change', () => { saveSetting('tilt', tiltBox.checked); requestTilt(tiltBox.checked); showCentre(); });
 const fsBtn = $('fullscreen');
 fsBtn.addEventListener('click', () => { toggleFullscreen(); });
 const fsLabel = () => { fsBtn.textContent = isFullscreen() ? 'Leave full screen' : 'Full screen'; };

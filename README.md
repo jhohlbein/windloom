@@ -6,7 +6,7 @@ A browser flying game in the spirit of Bullfrog's *Magic Carpet* (1994). Ride a 
 
 Every game generates a new island. The page address ends with the island's seed (`#s123456789`); open that link to replay the same island.
 
-Version 0.3.0. See [CHANGELOG.md](CHANGELOG.md).
+Version 0.3.1. See [CHANGELOG.md](CHANGELOG.md).
 
 ## Controls
 
@@ -14,9 +14,9 @@ Version 0.3.0. See [CHANGELOG.md](CHANGELOG.md).
 |---|---|---|
 | Turn | mouse left/right, ← → | tilt the phone left/right, or drag |
 | Climb / dive | mouse up/down, ↑ ↓ | tip the phone towards/away from you, or drag |
-| Surge forward (a short burst, repeats every 2 s while held) | W or Shift | Surge |
-| Fly backwards | S | Back (hold) |
-| Strafe | A / D | ◀ ▶ |
+| Surge forward (a short burst, repeats every 2 s while held) | W or Shift | pad up |
+| Fly backwards | S | pad down |
+| Strafe | A / D | pad left / right (diagonals combine with surge or back) |
 | Fireball | left click or Space | Fire (hold) |
 | Nova (costs mana) | right click or E | Nova |
 | Pause / mute | Esc / M | – |
