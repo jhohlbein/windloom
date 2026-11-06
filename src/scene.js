@@ -52,15 +52,25 @@ const hemi = new THREE.HemisphereLight(0xc8a8e0, 0x8a6a48, 0.95);
 scene.add(hemi);
 
 /* ---------- textures, shared materials and geometry ---------- */
-function radialTex(stops) {
-  const c = document.createElement('canvas'); c.width = c.height = 128;
-  const g = c.getContext('2d'); const gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
-  stops.forEach(s => gr.addColorStop(s[0], s[1]));
-  g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
-  return new THREE.CanvasTexture(c);
+// A soft white disc: alpha falls off along the [radius, alpha] stops, colour is pure white everywhere.
+// Built as raw pixel data, not with a canvas gradient: Safari stores canvas pixels premultiplied, so nearly
+// transparent pixels lose their colour and show up as coloured specks once uploaded and mipmapped.
+function radialTex(stops, n = 128) {
+  const d = new Uint8Array(n * n * 4), h = n / 2;
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const r = Math.min(1, Math.hypot(x + 0.5 - h, y + 0.5 - h) / h);
+    let k = 1; while (k < stops.length - 1 && r > stops[k][0]) k++;
+    const [r0, a0] = stops[k - 1], [r1, a1] = stops[k], f = Math.min(1, Math.max(0, (r - r0) / (r1 - r0)));
+    const i = (y * n + x) * 4;
+    d[i] = d[i + 1] = d[i + 2] = 255; d[i + 3] = Math.round((a0 + (a1 - a0) * f) * 255);
+  }
+  const t = new THREE.DataTexture(d, n, n, THREE.RGBAFormat);
+  t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearMipmapLinearFilter; t.generateMipmaps = true;
+  t.needsUpdate = true;
+  return t;
 }
-export const glowTex = radialTex([[0, 'rgba(255,255,255,1)'], [0.25, 'rgba(255,255,255,.55)'], [1, 'rgba(255,255,255,0)']]);
-const cloudTex = radialTex([[0, 'rgba(255,255,255,.9)'], [0.5, 'rgba(255,255,255,.35)'], [1, 'rgba(255,255,255,0)']]);
+export const glowTex = radialTex([[0, 1], [0.25, 0.55], [1, 0]]);
+const cloudTex = radialTex([[0, 0.9], [0.5, 0.35], [1, 0]]);
 export function addSprite(mat, scale) { const s = new THREE.Sprite(mat); s.scale.set(scale, scale, 1); return s; }
 export function glowMat(color) { return new THREE.SpriteMaterial({ map: glowTex, color, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false }); }
 export const mats = {

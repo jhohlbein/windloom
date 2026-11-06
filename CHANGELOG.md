@@ -4,6 +4,11 @@ All notable changes to Windloom are recorded here. The format follows [Keep a Ch
 
 ## [Unreleased]
 
+## [0.2.8] - 2026-11-06
+
+### Fixed
+- Safari (Mac and iPhone): clouds, glows and projectiles showed specks of stray colour. Their soft-disc textures are now built from pixel data instead of a canvas gradient.
+
 ## [0.2.7] - 2026-11-06
 
 ### Changed
