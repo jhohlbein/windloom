@@ -9,9 +9,10 @@ Windloom is a browser game (three.js r128, plain ES modules, no build step) insp
 ## Run and check
 
 - Serve locally: `python3 tools/serve.py` in the repo root (like `python3 -m http.server 8000` but with caching off, so edited modules are always reloaded), open http://localhost:8000. Opening `index.html` from disk does not work (modules and `fetch` are blocked on `file://`).
-- There is no test suite yet. After a change: load the page, check the browser console for errors, start a game, fly, shoot, bank mana in the beam until the palace rises a stage, pause, and try "New island".
-- Headless check (if Playwright is available): load the page, click `#goTimed` (or `#goFree`), and read `window.windloom.G` (state), `window.windloom.W` (island) and `window.windloom.CFG`.
+- There is no test suite yet. After a change: load the page, check the browser console for errors, start a game, fly, shoot, bank mana in the beam until the palace rises a stage, pause, and try "New island". Run the tutorial through once when its steps or the controls change.
+- Headless check (if Playwright is available): load the page, pick a game mode (`input[name=mode][value=timed|free|tutorial]`), click `#start`, and read `window.windloom.G` (state), `window.windloom.W` (island) and `window.windloom.CFG`.
 - A specific island can be reproduced with `#s<seed>` in the URL.
+- Stutters (on `localhost` only): frames over 50 ms are logged to the console as `[hitch]` with the events of that frame (`src/perf.js`; add `mark('...')` calls to tag more events), and kept in `window.windloom.hitches`.
 
 ## Architecture
 

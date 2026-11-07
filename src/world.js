@@ -110,12 +110,13 @@ export function buildWorld(seed) {
     if (W.OASES.some(o => Math.hypot(o.x - ox, o.z - oz) < 150)) continue;
     W.OASES.push({ x: ox, z: oz, r: cw.oasisRadiusMin + r() * (cw.oasisRadiusMax - cw.oasisRadiusMin) }); k++;
   }
-  // palace site: flat, moderate height, near the middle, clear of oases
+  // palace site: flat, moderate height (at least palaceCeilingMargin below the ceiling), near the middle, clear of oases
   let best = 1e9, bx = 0, bz = 0, bh = 18;
+  const siteMax = Math.min(32, CFG.world.ceiling - CFG.world.palaceCeilingMargin);
   for (let x = -190; x <= 190; x += 12) {
     for (let z = -190; z <= 190; z += 12) {
       const h = rawH(x, z);
-      if (h < 6 || h > 32) continue;
+      if (h < 6 || h > siteMax) continue;
       if (W.OASES.some(o => Math.hypot(x - o.x, z - o.z) < o.r + 50)) continue;
       const s = Math.abs(rawH(x + 14, z) - h) + Math.abs(rawH(x, z + 14) - h) + Math.abs(rawH(x - 14, z) - h) + Math.abs(rawH(x, z - 14) - h);
       const score = s + Math.abs(h - 16) * 0.4 + Math.hypot(x, z) * 0.05;

@@ -16,11 +16,14 @@ const rctx = $('radar').getContext('2d');
 const NUMERALS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
 // Messages stay up long enough to read (longer text, longer time; config "hud"). Minor ones ("Wyvern slain",
 // "Sound on") never replace an important message that is still showing; an important one replaces another
-// only after that has been up for toastMinShowSeconds, otherwise it waits in a short queue.
+// only after that has been up for toastMinShowSeconds, otherwise it waits in a short queue. In the tutorial a
+// message stays up after its time until another one replaces it.
 let toastTimer = 0, toastShown = 0, toastMinor = true;
 const toastQueue = [];
+// One sentence per line (the tutorial uses this for its messages and task texts, for easier reading)
+export const lineBySentence = s => s.replace(/([.!?])\s+(?=[A-Z])/g, '$1\n');
 function showToast(msg, secs, minor) {
-  elToast.textContent = msg; elToast.classList.add('on');
+  elToast.textContent = G.tut ? lineBySentence(msg) : msg; elToast.classList.add('on');
   toastTimer = secs; toastShown = 0; toastMinor = minor;
 }
 export function toast(msg, ms = 2400, minor = false) {
@@ -39,7 +42,7 @@ export function updateToast(dt) {
   if (toastQueue.length && !toastMinor && toastShown >= CFG.hud.toastMinShowSeconds && toastTimer < 0.6) { const q = toastQueue.shift(); showToast(q.msg, q.secs, false); return; }
   if (toastTimer <= 0) {
     if (toastQueue.length) { const q = toastQueue.shift(); showToast(q.msg, q.secs, false); }
-    else elToast.classList.remove('on');
+    else if (!G.tut) elToast.classList.remove('on'); // in the tutorial the last message stays until the next one
   }
 }
 export function clearToasts() { toastQueue.length = 0; toastTimer = 0; elToast.classList.remove('on'); }
@@ -71,6 +74,10 @@ export function updateHud() {
   elSteer.style.transform = 'translate(' + (G.steerX * 70).toFixed(1) + 'px,' + (-G.steerY * 70).toFixed(1) + 'px)';
 }
 
+// Sample map contents for the tutorial (offsets from the centre, in the map's 224-unit drawing): gold specks, and
+// creature dots in their own colours (wyvern, drake, skeleton, sandworm, kraken)
+const DEMO_ORBS = [[-30, -40], [-24, -46], [-36, -50], [20, 30], [28, 24], [44, -12], [50, -6]];
+const DEMO_FOES = [[38, -58, '#ff4d6d', 3.4], [-62, 18, '#ff8a3d', 5], [-20, 62, '#efe4c8', 3], [-12, 68, '#efe4c8', 3], [70, 40, '#e0a457', 4], [-74, -40, '#9b7bff', 4.4]];
 export function drawRadar() {
   // drawn in 224-unit coordinates, scaled to the canvas resolution (R)
   const Wd = 224, c = 112, range = 320, k = (c - 8) / range, P = G.playerPos, R = rctx.canvas.width / Wd;
@@ -106,6 +113,12 @@ export function drawRadar() {
     rctx.globalAlpha = e.targetable() ? 1 : 0.4; rctx.fillStyle = RD.c;
     if (e.kind === 'dragon') { diamond(s, 9); rctx.fill(); rctx.strokeStyle = '#f7eedd'; rctx.lineWidth = 1.5; rctx.stroke(); }
     else { rctx.beginPath(); rctx.arc(s[0], s[1], RD.s, 0, TAU); rctx.fill(); }
+  }
+  if (G.tut && G.tut.demo === 'map') { // tutorial: sample mana and creatures, blinking, where the map is explained
+    rctx.globalAlpha = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(performance.now() / 160));
+    rctx.fillStyle = '#ffcf63';
+    for (const [x, y] of DEMO_ORBS) rctx.fillRect(c + x - 1.6, c + y - 1.6, 3.4, 3.4);
+    for (const [x, y, col, r] of DEMO_FOES) { rctx.fillStyle = col; rctx.beginPath(); rctx.arc(c + x, c + y, r, 0, TAU); rctx.fill(); }
   }
   rctx.globalAlpha = 1;
   const cs = toScreen(W.CX, W.CZ, true);

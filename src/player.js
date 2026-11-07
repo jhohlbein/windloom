@@ -125,16 +125,18 @@ function animateRig(dt) {
   }
 }
 
+// Start (and after a fall): just below the ceiling on the far side of the palace from the island's centre, inside the
+// beam's reach and facing across the palace and its beam towards the island (the palace is taller than the ceiling)
 export function placePlayerAtCastle() {
-  G.playerPos.set(W.CX, W.PH + G.castleTopY + 30, W.CZ);
-  G.yaw = Math.atan2(W.CX, W.CZ); G.pitch = 0; G.roll = 0; G.speed = CFG.player.baseSpeed; G.strafe = 0; G.steerX = G.steerY = 0; camSmoothed = false;
+  const d = Math.hypot(W.CX, W.CZ), ux = d > 1 ? W.CX / d : 0, uz = d > 1 ? W.CZ / d : 1, back = 27;
+  G.yaw = Math.atan2(ux, uz);
+  G.playerPos.set(W.CX + ux * back, Math.min(CFG.world.ceiling - 3, W.PH + G.castleTopY + 30), W.CZ + uz * back); G.pitch = 0; G.roll = 0; G.speed = CFG.player.baseSpeed; G.strafe = 0; G.steerX = G.steerY = 0; camSmoothed = false;
 }
 
 // Lowest height the carpet's centre may have here: the centre keeps groundClearance above the ground, and each
 // corner of the (tilted) carpet keeps cornerClearance above the ground beneath that corner.
 const CORNERS = [[-1.7, 2.5], [1.7, 2.5], [-1.7, -2.5], [1.7, -2.5]].map(([x, z]) => new THREE.Vector3(x, 0, z));
 const cEuler = new THREE.Euler(0, 0, 0, 'YXZ'), cTmp = new THREE.Vector3();
-const cPrev = new THREE.Vector3();
 function groundFloor(P) {
   const cp = CFG.player;
   let floor = groundH(P.x, P.z) + cp.groundClearance;
@@ -149,6 +151,7 @@ function groundFloor(P) {
 // Palace and creature collision. The carpet is treated as a sphere of radius PR. Coming from above, it rides on roofs and
 // domes; from the side, it is pushed out of walls and towers and slides along them.
 const PR = 2.6;
+const cPrev = new THREE.Vector3();
 function collidePalace(P, prevY) {
   const cx = castle.position.x, cy = castle.position.y, cz = castle.position.z, clear = CFG.player.groundClearance;
   for (let pass = 0; pass < 2; pass++) { // two passes settle corners where shapes meet

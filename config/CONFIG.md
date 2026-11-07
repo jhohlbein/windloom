@@ -23,7 +23,8 @@ The **Value** column shows what `game-config.json` currently contains. Keep it i
 | `mountainHeight` | 100 | Height of the island's tallest peak in metres (before terracing). Every island is scaled so its highest mountain reaches this; the dragon's lair sits on it. Lower peaks scale with it. |
 | `mountainCover` | 0.06 | Share of the island (0–1) where mountains may rise: the highest-lying 6% of the land. Mountains follow ridges inside it. At 0.06 an island typically has 1–3 mountains (up to 6), and the lower ones are smaller than the main peak. Lower = fewer, more isolated mountains. |
 | `boundFraction` | 0.95 | The sandstorm turns the player back at `worldRadius × boundFraction` (530 m now). Creature spawning and the kraken's swim limit use the same distance. |
-| `ceiling` | 50 | Highest altitude the carpet can reach (metres above sea level). Mountains taller than this are walls: the carpet slides along their slopes and cannot cross them. |
+| `ceiling` | 35 | Highest altitude the carpet can reach (metres above sea level). Mountains taller than this are walls: the carpet slides along their slopes and cannot cross them. |
+| `palaceCeilingMargin` | 12 | The palace stands on ground at least this far below `ceiling`, so there is always room to fly over its plateau and into the beam. |
 | `fogNear`, `fogFar` | 150, 950 | Haze starts / is complete at these distances. |
 | `terrainSegments` | 320 | Mesh resolution of the island (higher = finer and slower to generate). |
 | `duneHeight` | 7 | Height of dune ridges on low sand (varies by dune field, up to about 1.6× this). |
@@ -161,7 +162,7 @@ The sun rises over the course of a round: dawn at the start (low, warm, dim ligh
 
 ## round
 
-There are two modes, chosen on the start screen. **Timed round** is described below. **Free flight** has no clock and no score; when the palace is complete and Vharoth is slain, a short screen says so and you can keep flying.
+There are three game modes, chosen on the start screen. **Timed round** is described below. **Free flight** has no clock and no score; when the palace is complete and Vharoth is slain, a short screen says so and you can keep flying. The **tutorial** has its own section below.
 
 A timed game is a round. The clock keeps running everywhere, including in the palace beam; it stops only while paused. The round ends when time runs out, or early when the palace reaches its last stage **and** Vharoth is slain. The best score per island seed is kept in the browser (`localStorage`).
 
@@ -173,6 +174,23 @@ A timed game is a round. The clock keeps running everywhere, including in the pa
 | `pointsPerStage` | 100 | Points per palace stage above the first (500 for the Crescent Sanctum). |
 | `dragonSlainBonus` | 500 | Points for slaying Vharoth. |
 | `completionBonus`, `pointsPerSecondLeft` | 1000, 10 | Bonus for ending the round early (palace complete and Vharoth slain), plus points for every second left on the clock. |
+
+## tutorial
+
+A practice island. It opens with five pages on the HUD (the bars, the map and the beam; click, tap or Enter to turn them, the carpet holds still), then one task at a time: five flying lessons in order (look up and down, turn left and right, slide sideways, surge, brake; shown as 1/5 … 5/5), then gather `manaGoal` mana, bank it in the beam (banking is off until then), slay the wyverns that appear (fireballs), find a group of skeleton archers and strike them with a nova, and bank the creatures' mana. No other creatures appear, there is no clock, and the carpet cannot fall (vitality stops at 1).
+
+| Key | Value | Meaning |
+|---|---|---|
+| `seed` | 31337 | The tutorial's island. |
+| `pauseSeconds` | 1 | After a task is done, it stays on screen with a green tick this long before the next one appears. |
+| `lookThreshold` | 0.35 | How far (0–1 of full steering) you must steer up, down, left and right for the first two lessons. Sliding counts at half the strafe speed. |
+| `manaGoal` | 50 | Mana to gather and bank. 50 also raises the palace to its second stage. |
+| `orbCount`, `orbValue` | 36, 4 | Orbs scattered on land around the palace once the flying lessons are done, and the mana in each (144 in total, nearly three times the goal). They never expire. |
+| `orbRadiusMin`, `orbRadiusMax` | 40, 220 | Distance of the orbs from the palace, in metres. |
+| `wyverns` | 3 | Wyverns to slay. |
+| `wyvernRadiusMin`, `wyvernRadiusMax` | 140, 220 | Distance from the palace at which they appear. |
+| `practiceSpawns` | wyverns, skeletons | After the tutorial, "Keep flying" starts free practice on the island: these creatures (rule names from `spawning`) keep coming by their usual rules, and the palace can be raised to its last stage. Nothing else appears and there is no end. |
+| `skeletonRadiusMin`, `skeletonRadiusMax` | 160, 260 | Distance from the palace at which the group of skeleton archers rises (the nova lesson). |
 
 ## palace
 
@@ -199,7 +217,7 @@ A timed game is a round. The clock keeps running everywhere, including in the pa
 
 | Key | Value | Meaning |
 |---|---|---|
-| `intervalSeconds` | 2 | How often the game tops up creature numbers (one creature, or one skeleton group, per check; the type furthest below its target goes first). A new game starts with every type at its target. |
+| `intervalSeconds` | 4 | How often the game tops up creature numbers (one creature, or one skeleton group, per check; the type furthest below its target goes first). A new game starts with every type at its target. |
 | `wyverns` | fromStage 1, base 5, add 0.5, max 7 | Population target (see scaling above): 5 at stage 1, 7 from stage 5. |
 | `drakes` | fromStage 2, base 1, add 0.5, max 3 | 1 at stages 2–3, 2 at 4–5, 3 at stage 6. |
 | `skeletons` | fromStage 1, perLand, base 4, add 0.5, max 6, groupSizeMin 2, groupSizeMax 4 | Skeleton archers roam in groups of 2–4; the target counts groups (4 at stage 1, 6 from stage 5). A group counts as long as one member lives; lost groups are replaced. |

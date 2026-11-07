@@ -10,6 +10,7 @@ import { sfx } from './audio.js';
 import { toast, flashHurt } from './hud.js';
 import { carryCap, stageCount } from './progress.js';
 import { removeEnemyObj } from './creatures/common.js';
+import { mark } from './perf.js';
 import { dragonAlert } from './creatures/dragon.js';
 import { placePlayerAtCastle } from './player.js';
 
@@ -102,7 +103,7 @@ export function damageEnemy(e, dmg, at) {
 }
 export function killEnemy(e) {
   const i = G.enemies.indexOf(e); if (i < 0) return;
-  G.enemies.splice(i, 1); removeEnemyObj(e);
+  G.enemies.splice(i, 1); removeEnemyObj(e); mark('kill ' + e.kind);
   const big = e.kind === 'dragon';
   burst(e.pos, big ? 180 : 60, C.FIRE, big ? 64 : 34, big ? 4.4 : 3, big ? 1.5 : 0.9);
   burst(e.pos, big ? 90 : 30, C.RED, big ? 40 : 22, 2.4, 0.8);
@@ -125,6 +126,7 @@ export function hurtPlayer(d) {
   if (G.invuln > 0) return;
   G.lastHurt = G.playTime;
   G.hp -= d; G.invuln = CFG.player.invulnerableAfterHitSeconds; sfx('hurt'); flashHurt();
+  if (G.tut) G.hp = Math.max(1, G.hp); // the tutorial carpet does not fall
   if (G.hp <= 0) playerDown();
 }
 function playerDown() {
@@ -170,6 +172,8 @@ export function castNova() {
   if (G.novaCd > 0) return;
   if (G.spellMana < nv.manaCost) { toast('Nova needs ' + nv.manaCost + ' spell mana', 1400, true); G.novaCd = 0.6; return; }
   G.spellMana -= nv.manaCost; G.novaCd = nv.cooldownSeconds; makeNoise();
+  mark('nova');
+  if (G.tut) G.tut.novaCast = true;
   addRing(G.playerPos, nv.radius, 0.55, 0x7defff); sfx('nova');
   burst(G.playerPos, 50, C.MANA, 50, 2.4, 0.8);
   G.enemies.slice().forEach(e => { if (e.targetable() && e.pos.distanceTo(G.playerPos) < nv.radius + e.r) damageEnemy(e, nv.damage + nv.damagePerStage * (G.level - 1)); });

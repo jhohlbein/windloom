@@ -161,5 +161,8 @@ export function buildCastle(L) {
 
 export function updatePalace(dt, now) {
   for (const c of palace.spin) c.o.rotation.y += c.s * dt;
-  if (palace.beam) palace.beam.material.opacity = 0.13 + 0.05 * Math.sin(now * 0.002);
+  if (!palace.beam) return;
+  // in the tutorial page on the beam it flashes brightly, so it is clear what is meant
+  palace.beam.material.opacity = G.tut && G.tut.demo === 'beam' ? 0.08 + 0.42 * (0.5 + 0.5 * Math.sin(now * 0.008))
+    : 0.13 + 0.05 * Math.sin(now * 0.002);
 }

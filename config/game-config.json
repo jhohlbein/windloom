@@ -7,7 +7,8 @@
     "lowlandScale": 0.5,
     "mountainHeight": 100,
     "mountainCover": 0.06,
-    "ceiling": 50,
+    "ceiling": 35,
+    "palaceCeilingMargin": 12,
     "fogNear": 150,
     "fogFar": 950,
     "terrainSegments": 320,
@@ -125,6 +126,22 @@
     "completionBonus": 1000,
     "pointsPerSecondLeft": 10
   },
+  "tutorial": {
+    "seed": 31337,
+    "lookThreshold": 0.35,
+    "pauseSeconds": 1,
+    "manaGoal": 50,
+    "orbCount": 36,
+    "orbValue": 4,
+    "orbRadiusMin": 40,
+    "orbRadiusMax": 220,
+    "wyverns": 3,
+    "wyvernRadiusMin": 140,
+    "wyvernRadiusMax": 220,
+    "skeletonRadiusMin": 160,
+    "skeletonRadiusMax": 260,
+    "practiceSpawns": ["wyverns", "skeletons"]
+  },
   "palace": {
     "stageNames": ["Minaret", "Palace", "Garden Walls", "Golden Dome", "Lantern Ring", "Crescent Sanctum"],
     "stageThresholds": [0, 50, 130, 250, 420, 650],
@@ -144,7 +161,7 @@
     "startOrbValue": 2
   },
   "spawning": {
-    "intervalSeconds": 2,
+    "intervalSeconds": 4,
     "wyverns": { "fromStage": 1, "base": 5, "add": 0.5, "max": 7 },
     "drakes": { "fromStage": 2, "base": 1, "add": 0.5, "max": 3, "announce": "Drakes join the wyverns in the sky." },
     "skeletons": { "fromStage": 1, "perLand": true, "base": 4, "add": 0.5, "max": 6, "groupSizeMin": 2, "groupSizeMax": 4 },

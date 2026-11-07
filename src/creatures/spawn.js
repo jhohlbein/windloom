@@ -7,6 +7,7 @@ import { TAU } from '../util.js';
 import { terrainH, groundH } from '../terrain.js';
 import { castShadows } from '../scene.js';
 import { applyFlash, countKind, removeEnemyObj } from './common.js';
+import { mark } from '../perf.js';
 import { createFlyer } from './flyers.js';
 import { createKraken } from './kraken.js';
 import { createWorm } from './sandworm.js';
@@ -18,12 +19,20 @@ import { spawnOrb } from '../combat.js';
 function addEnemy(e) { castShadows(e.root); G.enemies.push(e); return e; }
 const far = (x, z, d) => !G.active || Math.hypot(x - G.playerPos.x, z - G.playerPos.z) >= d;
 
+// Flyers patrol 30-60 m above the ground, but no more than about 12 m over the ceiling (and at least 15 m above the
+// ground), so that over the lowlands they stay within reach of the carpet
+const flyY = g => Math.max(g + 15, Math.min(g + 30 + Math.random() * 30, CFG.world.ceiling + Math.random() * 12));
 export function spawnFlyer(kind) {
   for (let t = 0; t < 30; t++) {
     const a = Math.random() * TAU, r = 110 + Math.random() * 320, x = Math.cos(a) * r, z = Math.sin(a) * r;
     if (Math.hypot(x - W.CX, z - W.CZ) < 110 || !far(x, z, 160)) continue;
-    addEnemy(createFlyer(kind, new THREE.Vector3(x, groundH(x, z) + 30 + Math.random() * 30, z))); return;
+    addEnemy(createFlyer(kind, new THREE.Vector3(x, flyY(groundH(x, z)), z))); return;
   }
+}
+// A flyer at a distance between rMin and rMax from (cx, cz) (the tutorial places its wyverns around the palace)
+export function spawnFlyerNear(kind, cx, cz, rMin, rMax) {
+  const a = Math.random() * TAU, r = rMin + Math.random() * (rMax - rMin), x = cx + Math.cos(a) * r, z = cz + Math.sin(a) * r;
+  return addEnemy(createFlyer(kind, new THREE.Vector3(x, flyY(groundH(x, z)), z)));
 }
 export function spawnKraken() {
   const B = CFG.world.boundRadius;
@@ -45,13 +54,17 @@ export function spawnWorm() {
 // Skeleton archers: a group of groupSizeMin..groupSizeMax on open, gentle land away from the palace (outside its
 // ward) and the dragon's peak. Their rule counts groups, not archers; a group counts while one member lives.
 const skeletonGroups = () => new Set(G.enemies.filter(e => e.kind === 'skeleton').map(e => e.group)).size;
-export function spawnSkeletonGroup() {
+// near: optional { x, z, rMin, rMax } to place the group at that distance from a point (the tutorial's archers)
+export function spawnSkeletonGroup(near) {
   const S = CFG.spawning.skeletons;
-  for (let t = 0; t < 80; t++) {
-    const a = Math.random() * TAU, r = Math.sqrt(Math.random()) * CFG.world.islandRadius * 0.9, x = Math.cos(a) * r, z = Math.sin(a) * r, h = terrainH(x, z);
-    if (h < 2 || h > 40) continue;
+  for (let t = 0; t < (near ? 400 : 80); t++) {
+    let x, z;
+    if (near) { const a = Math.random() * TAU, r = near.rMin + Math.random() * (near.rMax - near.rMin); x = near.x + Math.cos(a) * r; z = near.z + Math.sin(a) * r; }
+    else { const a = Math.random() * TAU, r = Math.sqrt(Math.random()) * CFG.world.islandRadius * 0.9; x = Math.cos(a) * r; z = Math.sin(a) * r; }
+    const h = terrainH(x, z);
+    if (h < 2 || h > Math.min(40, CFG.world.ceiling - 4)) continue; // on ground the carpet can reach
     if ((Math.abs(terrainH(x + 6, z) - h) + Math.abs(terrainH(x, z + 6) - h)) / 6 > 0.7) continue;
-    if (Math.hypot(x - W.CX, z - W.CZ) < CFG.palace.wardRadius + 20 || Math.hypot(x - W.LX, z - W.LZ) < 60 || !far(x, z, 130)) continue;
+    if (Math.hypot(x - W.CX, z - W.CZ) < CFG.palace.wardRadius + 20 || Math.hypot(x - W.LX, z - W.LZ) < 60 || (!near && !far(x, z, 130))) continue;
     const group = createSkeletonGroup(new THREE.Vector3(x, h, z));
     const n = S.groupSizeMin + Math.floor(Math.random() * (S.groupSizeMax - S.groupSizeMin + 1));
     for (let i = 0; i < n; i++) {
@@ -104,12 +117,13 @@ function scatterMana() {
 }
 // Called every spawning.intervalSeconds: add one creature to the population that is furthest below its target
 // (as a fraction), so a newly unlocked type fills up quickly instead of waiting behind the others
-export function spawnTick() {
+// rules: optional list of rule names to limit spawning to (the tutorial's practice uses wyverns and skeletons)
+export function spawnTick(rules) {
   const S = CFG.spawning, L = G.level;
-  const short = POPULATIONS.map(p => ({ p, n: p.count(), target: target(S[p.rule], L) })).filter(g => g.n < g.target);
+  const short = POPULATIONS.filter(p => !rules || rules.includes(p.rule)).map(p => ({ p, n: p.count(), target: target(S[p.rule], L) })).filter(g => g.n < g.target);
   if (!short.length) return;
   short.sort((a, b) => a.n / a.target - b.n / b.target);
-  short[0].p.spawn();
+  short[0].p.spawn(); mark('spawn ' + short[0].p.rule);
 }
 export function updateEnemies(dt) {
   for (let i = G.enemies.length - 1; i >= 0; i--) {

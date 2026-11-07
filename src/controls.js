@@ -109,6 +109,7 @@ export function bindControls({ onPause, onMute, onBlur, onLockLost, onCentre }) 
   bindHold('btnFire', () => { I.touchFire = true; }, () => { I.touchFire = false; });
   bindHold('btnNova', () => { I.novaReq = true; }, () => { });
   bindHold('btnCentre', () => { recentreTilt(); if (onCentre) onCentre(); }, () => { });
+  bindHold('btnPause', () => { onPause(); }, () => { });
   // Four-way pad: the direction from the pad's centre to the finger picks surge (up), back (down) and strafe
   // (left/right); between two arms both are on, so surge and strafe work together. The finger may slide off the pad.
   const pad = document.getElementById('dpad'), arms = {};

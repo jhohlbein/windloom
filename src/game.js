@@ -18,21 +18,48 @@ import { updatePlayer, updateCamera, placePlayerAtCastle, setRider } from './pla
 import { bindControls, releaseInput, lockPointer, unlockPointer, toggleFullscreen, isFullscreen, requestTilt, recentreTilt, tiltAvailable, enterFullscreen, fullscreenAvailable, runningInstalled } from './controls.js';
 import { resetRound, updateRound, scoreRound, bestFor, recordScore } from './round.js';
 import { settings, saveSetting } from './settings.js';
+import { mark, endFrame, hitches } from './perf.js';
+import { startTutorial, stopTutorial, updateTutorial, tutorialFinished, tutorialHolds } from './tutorial.js';
 
 const $ = id => document.getElementById(id);
-const overlay = $('overlay'), goBtn = $('go'), timedBtn = $('goTimed'), freeBtn = $('goFree'), rerollBtn = $('reroll'), ovTitle = $('ovTitle'), ovText = $('ovText'),
-  ovStats = $('stats'), ovIsle = $('isle'), ovCtl = $('ovCtl'), ovBeasts = $('ovBeasts'), ovLede = ovText.textContent;
+const overlay = $('overlay'), goBtn = $('go'), startBtn = $('start'), exitTutBtn = $('exitTut'), rerollBtn = $('reroll'), ovTitle = $('ovTitle'), ovText = $('ovText'),
+  ovStats = $('stats'), ovIsle = $('isle'), ovLede = ovText.textContent;
 $('ver').textContent = 'Version ' + VERSION;
 const isleLabel = () => { const b = bestFor(), tr = islandTraits(); return 'Isle of ' + isleName(W.SEED) + (tr.length ? ' · ' + tr.join(', ') : '') + ' · seed ' + W.SEED + (b ? ' · best ' + b.score : ''); };
+
+// Game mode selector (start, pause and results screens): timed round, free flight or tutorial; remembered
+const modeRadios = [...document.querySelectorAll('input[name="mode"]')], modeHint = $('modeHint');
+const MODE_HINT = {
+  timed: () => Math.round(CFG.round.durationSeconds / 60) + ' minutes to score: creatures, palace stages and Vharoth. Your best is kept for each island.',
+  free: () => 'No clock and no score: fly, hunt and build at your own pace.',
+  tutorial: () => 'Learn to fly, gather and bank mana, and fight, one step at a time, on a practice island.'
+};
+const chosenMode = () => (modeRadios.find(r => r.checked) || {}).value || 'timed';
+function chooseMode(m) {
+  if (!MODE_HINT[m]) m = 'timed';
+  for (const r of modeRadios) r.checked = r.value === m;
+  modeHint.textContent = MODE_HINT[m]();
+}
+$('modeTimedLbl').textContent = 'Timed round · ' + Math.round(CFG.round.durationSeconds / 60) + ' min';
+for (const r of modeRadios) r.addEventListener('change', () => { if (r.checked) { saveSetting('mode', r.value); chooseMode(r.value); } });
+chooseMode(settings.mode);
 
 function showOverlay(mode) {
   G.mode = mode; G.active = false; unlockPointer();
   overlay.hidden = false; hud.hidden = (mode === 'title');
   ovStats.hidden = true; ovIsle.textContent = isleLabel();
-  ovCtl.hidden = ovBeasts.hidden = (mode === 'results');
-  settingsPanel.hidden = true; settingsBtn.setAttribute('aria-expanded', 'false'); // Settings: on every screen, closed at first
+  openPanel(null); // Settings and Controls + more: on every screen, closed at first
   if (mode === 'title') { ovTitle.textContent = 'Windloom'; ovText.textContent = ovLede; }
-  else if (mode === 'pause') { ovTitle.textContent = 'Paused'; ovText.textContent = 'The creatures will wait. Your palace stands at ' + stageLabel(G.level) + ' of ' + stageCount() + ' stages.'; }
+  else if (mode === 'pause') {
+    ovTitle.textContent = 'Paused';
+    ovText.textContent = G.tut ? 'The tutorial will wait. Resume, start a game with the mode below, or leave the tutorial.'
+      : 'The creatures will wait. Your palace stands at ' + stageLabel(G.level) + ' of ' + stageCount() + ' stages.';
+  }
+  else if (mode === 'results' && G.tut) {
+    ovTitle.textContent = 'Tutorial complete';
+    ovText.textContent = 'You can fly, gather and bank mana, and fight. In a game, creatures keep coming and grow in number as your palace rises through six stages, and at the fifth Vharoth the ash wyrm wakes on the highest peak. Keep flying to practise, or leave the tutorial and play a timed round for points or a free flight.';
+    chooseMode('timed'); saveSetting('mode', 'timed');
+  }
   else if (mode === 'results' && !G.timed) {
     // free flight: the Sanctum is whole; no score, keep flying if you like
     const m = Math.floor(G.playTime / 60), s = Math.floor(G.playTime % 60);
@@ -50,14 +77,15 @@ function showOverlay(mode) {
     ovStats.textContent = rows.map(r => r[0].padEnd(w, ' ') + String(r[1]).padStart(5, ' ')).join('\n') + '\n\n' + (isBest ? (prev ? 'New best on this island (was ' + prev.score + ')' : 'First score on this island') : 'Best on this island ' + prev.score);
     ovStats.hidden = false; ovIsle.textContent = isleLabel();
   }
-  // The same choices on every screen: the main button (start a timed round, resume, or keep flying), a timed
-  // round and a free flight on this island, and a new island (which comes back here, to the start screen)
-  const timedLabel = 'Timed round · ' + Math.round(CFG.round.durationSeconds / 60) + ' min';
-  const main = mode === 'pause' ? 'Resume' : mode === 'results' && !G.timed ? 'Keep flying' : null;
+  // The same choices on every screen: the game mode, Start (a new game in that mode; Resume or Keep flying come
+  // first where you can carry on), and a new island (which comes back here, to the start screen)
+  // In the tutorial (paused, or finished) Exit tutorial goes back to the start screen
+  const main = mode === 'pause' ? (tutorialFinished() ? 'Keep flying' : 'Resume')
+    : mode === 'results' && (G.tut || (!G.timed && G.gameMode === 'free')) ? 'Keep flying' : null;
+  exitTutBtn.hidden = !G.tut || mode === 'title';
   goBtn.hidden = !main; goBtn.textContent = main || '';
-  timedBtn.textContent = mode === 'pause' ? 'Restart: timed round' : mode === 'results' && G.timed ? 'Timed round again' : timedLabel;
-  freeBtn.textContent = mode === 'pause' ? 'Restart: free flight' : 'Free flight';
-  timedBtn.className = main ? 'go alt' : 'go'; freeBtn.className = 'go alt';
+  startBtn.textContent = mode === 'pause' ? 'Start again' : mode === 'results' && G.gameMode === 'timed' ? 'Play again' : 'Start';
+  startBtn.className = main ? 'go alt' : 'go';
   rerollBtn.textContent = 'New island';
   releaseInput();
 }
@@ -71,28 +99,35 @@ function seedFromUrl() {
   return v && /^\d{1,10}$/.test(v) ? parseInt(v, 10) >>> 0 : undefined;
 }
 function newIsland(seed) {
-  clearCreatures(); clearProjectiles();
+  stopTutorial(); clearCreatures(); clearProjectiles();
   buildWorld(seed === undefined ? Math.floor(R() * 1e9) : seed);
   G.level = 0; applyLevel(1, false);
   populate(); rememberSeed();
   ovIsle.textContent = isleLabel();
 }
-function startGame(timed = G.timed) {
+function startGame(gameMode) {
+  mark('start ' + gameMode);
+  const C = CFG.tutorial, tutorial = gameMode === 'tutorial', timed = gameMode === 'timed';
+  stopTutorial();
+  if (tutorial && W.SEED !== C.seed) newIsland(C.seed); // the tutorial always uses its own island
+  G.gameMode = gameMode;
   Object.assign(G, { carried: 0, castleMana: 0, level: 1, maxHp: CFG.player.maxHp, hp: CFG.player.maxHp, kills: 0, playTime: 0, lastHurt: -99, dragonSeen: false, dragonTimer: 0 });
   G.invuln = 2; resetRound(timed); G.upgradeHint = 0;
   G.spellMana = CFG.spells.mana.max; G.spellExhausted = false;
   clearCreatures(); clearProjectiles();
   applyLevel(1, false); placePlayerAtCastle();
-  G.active = true; populate();
+  G.active = true;
+  if (tutorial) startTutorial(); else populate();
   releaseInput(); recentreTilt(); overlay.hidden = true; hud.hidden = false; G.mode = 'play'; lockPointer();
   clearToasts();
-  toast('Hunt the creatures. Gather their gold. Carry it home to the beam.\n' +
+  if (tutorial) toast('Welcome aboard! Follow the tasks at the top.', 3200);
+  else toast('Hunt the creatures. Gather their gold. Carry it home to the beam.\n' +
     (timed ? 'You have ' + Math.round(CFG.round.durationSeconds / 60) + ' minutes.' : 'Free flight: no clock, take your time.'), 4200);
 }
 // Resuming and starting come from a click or key press, which browsers require before locking the pointer
-function resume() { releaseInput(); recentreTilt(); overlay.hidden = true; hud.hidden = false; G.mode = 'play'; G.active = true; lockPointer(); }
+function resume() { mark('resume'); releaseInput(); recentreTilt(); overlay.hidden = true; hud.hidden = false; G.mode = 'play'; G.active = true; lockPointer(); }
 let pausedAt = 0;
-function pause() { if (G.mode === 'play') { pausedAt = performance.now(); showOverlay('pause'); } }
+function pause() { if (G.mode === 'play') { mark('pause'); pausedAt = performance.now(); showOverlay('pause'); } }
 function togglePause() {
   if (G.mode === 'play') pause();
   // Esc both releases the pointer lock (which pauses) and arrives as a key press; don't resume right away
@@ -106,9 +141,9 @@ const tiltStart = () => {
   requestTilt(settings.tilt);
 };
 goBtn.addEventListener('click', () => { audioInit(); tiltStart(); if (G.mode === 'pause' || G.mode === 'results') resume(); });
-timedBtn.addEventListener('click', () => { audioInit(); tiltStart(); if (G.mode !== 'play') startGame(true); });
-freeBtn.addEventListener('click', () => { audioInit(); tiltStart(); if (G.mode !== 'play') startGame(false); });
-// A new island always goes to its start screen, where you choose timed or free
+startBtn.addEventListener('click', () => { audioInit(); tiltStart(); if (G.mode !== 'play') startGame(chosenMode()); });
+exitTutBtn.addEventListener('click', () => { stopTutorial(); showOverlay('title'); });
+// A new island always goes to its start screen, where you choose the game mode
 rerollBtn.addEventListener('click', () => { audioInit(); newIsland(); showOverlay('title'); });
 bindControls({
   onPause: togglePause,
@@ -117,13 +152,14 @@ bindControls({
   onLockLost: pause,
   onCentre: () => toast('Hold the phone steady: steering is centred on how you hold it now', 1800, true)
 });
-// Settings (start screen): choices are saved in this browser and applied at once
-const settingsBtn = $('settingsBtn'), settingsPanel = $('settingsPanel');
-settingsBtn.addEventListener('click', () => {
-  settingsPanel.hidden = !settingsPanel.hidden;
-  settingsBtn.setAttribute('aria-expanded', String(!settingsPanel.hidden));
-  if (!settingsPanel.hidden) settingsPanel.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-});
+// The menu panels below the buttons, one open at a time: Settings (choices are saved in this browser and applied at
+// once) and Controls + more (controls and bestiary)
+const PANELS = [[$('settingsBtn'), $('settingsPanel')], [$('moreBtn'), $('morePanel')]];
+function openPanel(panel) {
+  for (const [b, p] of PANELS) { p.hidden = p !== panel; b.setAttribute('aria-expanded', String(p === panel)); }
+  if (panel) panel.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+for (const [b, p] of PANELS) b.addEventListener('click', () => openPanel(p.hidden ? p : null));
 for (const r of document.querySelectorAll('input[name="rider"]')) {
   r.checked = r.value === settings.rider;
   r.addEventListener('change', () => { if (r.checked) { saveSetting('rider', r.value); setRider(r.value); } });
@@ -167,23 +203,35 @@ function countFps(now, frameMs) {
 }
 function frame(now) {
   requestAnimationFrame(frame);
-  countFps(now, now - last);
+  const interval = now - last, t0 = performance.now();
+  countFps(now, interval);
   const dt = Math.min(0.05, Math.max(0.0001, (now - last) / 1000)); last = now;
   if (G.mode === 'play' || G.mode === 'title') {
-    if (G.mode === 'play') { G.playTime += dt; updatePlayer(dt); }
+    if (G.mode === 'play') { G.playTime += dt; if (!tutorialHolds()) updatePlayer(dt); }
     updateEnemies(dt);
     updateShots(dt); updateBolts(dt); updateOrbs(dt); updateRings(dt);
     if (G.mode === 'play') {
       updateDeposit(dt); upgradeHint();
-      G.spawnTimer -= dt;
-      if (G.spawnTimer <= 0) { G.spawnTimer = CFG.spawning.intervalSeconds; spawnTick(); }
-      // The dragon appears once its stage is reached (announced by the palace) and returns after spawning.dragon.respawnSeconds when slain
-      if (!G.dragon && unlocked(CFG.spawning.dragon)) {
-        const returning = G.dragonTimer > 0;
-        G.dragonTimer -= dt;
-        if (G.dragonTimer <= 0) { spawnDragon(); if (returning) toast('Vharoth returns to its peak', 2600); }
+      // The tutorial brings its own creatures and has no clock; otherwise the populations are topped up every
+      // intervalSeconds, the dragon appears once its stage is reached (announced by the palace) and returns
+      // spawning.dragon.respawnSeconds after it is slain, and the round may end
+      if (G.tut) {
+        if (updateTutorial(dt)) showOverlay('results');
+        else if (tutorialFinished()) { // practice after the tutorial: wyverns and skeletons keep coming
+          G.spawnTimer -= dt;
+          if (G.spawnTimer <= 0) { G.spawnTimer = CFG.spawning.intervalSeconds; spawnTick(CFG.tutorial.practiceSpawns); }
+        }
       }
-      if (updateRound(dt)) showOverlay('results');
+      else {
+        G.spawnTimer -= dt;
+        if (G.spawnTimer <= 0) { G.spawnTimer = CFG.spawning.intervalSeconds; spawnTick(); }
+        if (!G.dragon && unlocked(CFG.spawning.dragon)) {
+          const returning = G.dragonTimer > 0;
+          G.dragonTimer -= dt;
+          if (G.dragonTimer <= 0) { spawnDragon(); if (returning) toast('Vharoth returns to its peak', 2600); }
+        }
+        if (updateRound(dt)) showOverlay('results');
+      }
     }
     updateLair(dt);
     updatePalace(dt, now);
@@ -200,6 +248,7 @@ function frame(now) {
   if (G.mode === 'play' && hudTimer <= 0) { hudTimer = 0.05; updateHud(); drawRadar(); }
   renderer.render(scene, camera);
   drawBars();
+  endFrame(renderer, interval, performance.now() - t0);
 }
 
 // Boot: a seed in the address (#s12345) replays that island, otherwise a random one
@@ -211,8 +260,8 @@ window.addEventListener('hashchange', () => {
   newIsland(s); showOverlay('title');
 });
 showOverlay('title');
-goBtn.disabled = timedBtn.disabled = freeBtn.disabled = rerollBtn.disabled = false;
+goBtn.disabled = startBtn.disabled = rerollBtn.disabled = false;
 requestAnimationFrame(frame);
 
 // Handy in the browser console while tuning
-window.windloom = { G, W, CFG, version: VERSION };
+window.windloom = { G, W, CFG, version: VERSION, hitches };
