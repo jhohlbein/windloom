@@ -3,20 +3,21 @@ import * as THREE from 'three';
 import { CFG } from './config.js';
 import { VERSION } from './version.js';
 import { G, W } from './state.js';
-import { renderer, scene, camera, updateSky, resizeRenderer, setDaylight, setShadows, updateShadows } from './scene.js';
+import { renderer, scene, camera, updateSky, resizeRenderer, setDaylight, setShadows, updateShadows, adaptResolution, adaptive, pixelRatio } from './scene.js';
 import { R } from './util.js';
 import { isleName } from './terrain.js';
 import { buildWorld, updateLair, islandTraits } from './world.js';
 import { updatePalace } from './palace.js';
 import { updateParticles, resizeParticles } from './particles.js';
 import { audioInit, toggleMute, updateAudio } from './audio.js';
-import { hud, toast, clearToasts, updateToast, updateHud, drawRadar, drawBars, resizeFx, stageLabel } from './hud.js';
+import { hud, toast, clearToasts, updateToast, updateHud, drawRadar, drawBars, placeCross, resizeFx, stageLabel } from './hud.js';
 import { applyLevel, updateDeposit, stageCount, upgradeHint } from './progress.js';
 import { updateShots, updateBolts, updateOrbs, updateRings, clearProjectiles } from './combat.js';
 import { populate, spawnTick, spawnDragon, updateEnemies, clearCreatures, unlocked } from './creatures/spawn.js';
 import { updatePlayer, updateCamera, placePlayerAtCastle, setRider } from './player.js';
 import { bindControls, releaseInput, lockPointer, unlockPointer, toggleFullscreen, isFullscreen, requestTilt, recentreTilt, tiltAvailable, enterFullscreen, fullscreenAvailable, runningInstalled } from './controls.js';
 import { resetRound, updateRound, scoreRound, bestFor, recordScore } from './round.js';
+import { renderLeaderboard, bindLeaderboard } from './leaderboard.js';
 import { settings, saveSetting } from './settings.js';
 import { mark, endFrame, hitches } from './perf.js';
 import { startTutorial, stopTutorial, updateTutorial, tutorialFinished, tutorialHolds } from './tutorial.js';
@@ -26,6 +27,10 @@ const overlay = $('overlay'), goBtn = $('go'), startBtn = $('start'), exitTutBtn
   ovStats = $('stats'), ovIsle = $('isle'), ovLede = ovText.textContent;
 $('ver').textContent = 'Version ' + VERSION;
 const isleLabel = () => { const b = bestFor(), tr = islandTraits(); return 'Isle of ' + isleName(W.SEED) + (tr.length ? ' · ' + tr.join(', ') : '') + ' · seed ' + W.SEED + (b ? ' · best ' + b.score : ''); };
+
+// Height mode 'hold' (the carpet keeps its height above the ground): texts that say up/down climb and dive say
+// instead that they raise and lower the nose to aim
+if (CFG.player.altitude.mode === 'hold') for (const el of document.querySelectorAll('[data-hold]')) el.textContent = el.dataset.hold;
 
 // Game mode selector (start, pause and results screens): timed round, free flight or tutorial; remembered
 const modeRadios = [...document.querySelectorAll('input[name="mode"]')], modeHint = $('modeHint');
@@ -45,7 +50,7 @@ for (const r of modeRadios) r.addEventListener('change', () => { if (r.checked) 
 chooseMode(settings.mode);
 
 function showOverlay(mode) {
-  G.mode = mode; G.active = false; unlockPointer();
+  G.mode = mode; G.active = false; unlockPointer(); document.body.classList.remove('flying');
   overlay.hidden = false; hud.hidden = (mode === 'title');
   ovStats.hidden = true; ovIsle.textContent = isleLabel();
   openPanel(null); // Settings and Controls + more: on every screen, closed at first
@@ -68,13 +73,14 @@ function showOverlay(mode) {
     ovStats.textContent = 'Creatures slain ' + G.kills + '\nTime aloft ' + m + ':' + (s < 10 ? '0' : '') + s; ovStats.hidden = false;
   }
   else if (mode === 'results') {
-    const done = G.endReason === 'complete', sc = scoreRound(), prev = bestFor(), isBest = recordScore(sc.total);
+    const done = G.endReason === 'complete', sc = scoreRound(), prev = bestFor(), rec = recordScore(sc.total);
     ovTitle.textContent = done ? 'The Sanctum is whole' : 'Time is up';
     ovText.textContent = done
       ? 'Vharoth is slain and every stage of the palace stands, with time to spare.'
       : 'Your palace stands at ' + stageLabel(G.level) + ' of ' + stageCount() + ' stages' + (G.dragonSlain ? ', and Vharoth is slain.' : '.');
     const rows = [...sc.lines, ['Score', sc.total]], w = Math.max(...rows.map(r => r[0].length)) + 2;
-    ovStats.textContent = rows.map(r => r[0].padEnd(w, ' ') + String(r[1]).padStart(5, ' ')).join('\n') + '\n\n' + (isBest ? (prev ? 'New best on this island (was ' + prev.score + ')' : 'First score on this island') : 'Best on this island ' + prev.score);
+    ovStats.textContent = rows.map(r => r[0].padEnd(w, ' ') + String(r[1]).padStart(5, ' ')).join('\n') + '\n\n' + (rec.best ? (prev ? 'New best on this island (was ' + prev.score + ')' : 'First score on this island') : 'Best on this island ' + prev.score)
+      + (rec.rank ? '\nNo. ' + rec.rank + ' on your leaderboard' : '');
     ovStats.hidden = false; ovIsle.textContent = isleLabel();
   }
   // The same choices on every screen: the game mode, Start (a new game in that mode; Resume or Keep flying come
@@ -87,6 +93,8 @@ function showOverlay(mode) {
   startBtn.textContent = mode === 'pause' ? 'Start again' : mode === 'results' && G.gameMode === 'timed' ? 'Play again' : 'Start';
   startBtn.className = main ? 'go alt' : 'go';
   rerollBtn.textContent = 'New island';
+  // The leaderboard (best timed rounds, with their islands) on the start screen and after a timed round
+  renderLeaderboard(mode === 'title' || (mode === 'results' && G.timed && !G.tut));
   releaseInput();
 }
 // The address keeps the island's seed as #s<seed>; any query string (e.g. ?seed=) is dropped so it cannot go stale
@@ -118,14 +126,16 @@ function startGame(gameMode) {
   applyLevel(1, false); placePlayerAtCastle();
   G.active = true;
   if (tutorial) startTutorial(); else populate();
-  releaseInput(); recentreTilt(); overlay.hidden = true; hud.hidden = false; G.mode = 'play'; lockPointer();
+  releaseInput(); recentreTilt(); overlay.hidden = true; hud.hidden = false; G.mode = 'play'; lockPointer(); hideCursor();
   clearToasts();
   if (tutorial) toast('Welcome aboard! Follow the tasks at the top.', 3200);
-  else toast('Hunt the creatures. Gather their gold. Carry it home to the beam.\n' +
+  else toast((matchMedia('(pointer:coarse)').matches ? 'Hold Go on the pad to speed up. ' : 'Hold W to speed up. ') + 'Hunt the creatures. Gather their gold. Carry it home to the beam.\n' +
     (timed ? 'You have ' + Math.round(CFG.round.durationSeconds / 60) + ' minutes.' : 'Free flight: no clock, take your time.'), 4200);
 }
 // Resuming and starting come from a click or key press, which browsers require before locking the pointer
-function resume() { mark('resume'); releaseInput(); recentreTilt(); overlay.hidden = true; hud.hidden = false; G.mode = 'play'; G.active = true; lockPointer(); }
+function resume() { mark('resume'); releaseInput(); recentreTilt(); overlay.hidden = true; hud.hidden = false; G.mode = 'play'; G.active = true; lockPointer(); hideCursor(); }
+// Keys only (Settings → Mouse and trackpad off): the cursor is hidden while flying
+function hideCursor() { document.body.classList.toggle('flying', !settings.mouse); }
 let pausedAt = 0;
 function pause() { if (G.mode === 'play') { mark('pause'); pausedAt = performance.now(); showOverlay('pause'); } }
 function togglePause() {
@@ -145,6 +155,13 @@ startBtn.addEventListener('click', () => { audioInit(); tiltStart(); if (G.mode 
 exitTutBtn.addEventListener('click', () => { stopTutorial(); showOverlay('title'); });
 // A new island always goes to its start screen, where you choose the game mode
 rerollBtn.addEventListener('click', () => { audioInit(); newIsland(); showOverlay('title'); });
+// Leaderboard: an island picked there (and confirmed) starts a timed round on it, to try to beat its score
+bindLeaderboard(seed => {
+  audioInit(); tiltStart();
+  if (W.SEED !== seed) newIsland(seed);
+  chooseMode('timed'); saveSetting('mode', 'timed');
+  if (G.mode !== 'play') startGame('timed');
+});
 bindControls({
   onPause: togglePause,
   onMute: () => { const m = toggleMute(); if (G.active) toast(m ? 'Sound off' : 'Sound on', 900, true); },
@@ -168,6 +185,15 @@ setRider(settings.rider);
 const shadowBox = $('optShadows');
 shadowBox.checked = settings.shadows; setShadows(settings.shadows);
 shadowBox.addEventListener('change', () => { saveSetting('shadows', shadowBox.checked); setShadows(shadowBox.checked); });
+// Mouse and trackpad (computers only): off means keys only, so a brushed trackpad does nothing
+const mouseBox = $('optMouse');
+$('mouseRow').hidden = !matchMedia('(any-pointer:fine)').matches; mouseBox.checked = settings.mouse;
+mouseBox.addEventListener('change', () => { saveSetting('mouse', mouseBox.checked); releaseInput(); });
+// Invert up and down, separately for the arrow keys and the mouse
+for (const [id, key] of [['optInvKeys', 'invertKeys'], ['optInvMouse', 'invertMouse']]) {
+  const box = $(id); box.checked = settings[key];
+  box.addEventListener('change', () => saveSetting(key, box.checked));
+}
 const tiltBox = $('optTilt'), tiltRow = $('tiltRow');
 tiltRow.hidden = !tiltAvailable(); tiltBox.checked = settings.tilt;
 const fsAutoBox = $('optAutoFs'), fsAutoRow = $('autoFsRow');
@@ -191,18 +217,34 @@ window.addEventListener('resize', resize); resize();
 
 let last = performance.now(), hudTimer = 0;
 const shadowTitle = new THREE.Vector3();
-// FPS counter: frames counted over half a second, plus the slowest frame in that window
+// FPS counter: frames counted over half a second, plus the slowest frame in that window. The same window drives the
+// adaptive resolution (scene.js): while playing, slow frames lower the rendering resolution a step, quick ones
+// raise it again; the counter shows the current scale when it is below the screen's.
 const elFps = $('fps');
 let fpsFrames = 0, fpsStart = last, fpsWorst = 0;
 function countFps(now, frameMs) {
   fpsFrames++; fpsWorst = Math.max(fpsWorst, frameMs);
   if (now - fpsStart >= 500) {
-    elFps.textContent = Math.round(fpsFrames * 1000 / (now - fpsStart)) + ' fps · max ' + Math.round(fpsWorst) + ' ms';
+    const avg = (now - fpsStart) / fpsFrames;
+    if (G.mode === 'play' && adaptResolution(avg, fpsWorst)) { resizeParticles(window.innerHeight); mark('resolution ' + pixelRatio().toFixed(2)); }
+    const scale = adaptive() && pixelRatio() < Math.min(window.devicePixelRatio || 1, CFG.graphics.pixelRatioMax ?? 1.75) - 0.01 ? ' · ' + pixelRatio().toFixed(2) + '×' : '';
+    elFps.textContent = Math.round(1000 / avg) + ' fps · max ' + Math.round(fpsWorst) + ' ms' + scale;
     fpsFrames = 0; fpsStart = now; fpsWorst = 0;
   }
 }
+// One frame's work. An exception in it must not stop the loop or flood the console every frame: the first few
+// are logged (with the frame's events) and the game goes on with the next frame.
+let frameErrors = 0;
 function frame(now) {
   requestAnimationFrame(frame);
+  try { tick(now); } catch (err) {
+    frameErrors++;
+    if (frameErrors <= 3) console.error('Error in frame ' + frameErrors + ' (the game goes on):', err);
+    else if (frameErrors === 4) console.error('Further frame errors are not logged');
+    last = now;
+  }
+}
+function tick(now) {
   const interval = now - last, t0 = performance.now();
   countFps(now, interval);
   const dt = Math.min(0.05, Math.max(0.0001, (now - last) / 1000)); last = now;
@@ -248,6 +290,7 @@ function frame(now) {
   if (G.mode === 'play' && hudTimer <= 0) { hudTimer = 0.05; updateHud(); drawRadar(); }
   renderer.render(scene, camera);
   drawBars();
+  if (G.mode === 'play') placeCross();
   endFrame(renderer, interval, performance.now() - t0);
 }
 

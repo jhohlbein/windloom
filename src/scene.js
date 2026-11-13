@@ -5,7 +5,25 @@ import { TAU } from './util.js';
 
 export const canvas = document.getElementById('view');
 export const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+// Rendering resolution: the screen's pixel ratio, capped (graphics.pixelRatioMax; phones have 3x screens that
+// would cost nine times the pixels of 1x). When the game runs slowly it lowers the resolution a step at a time
+// down to pixelRatioMin, and raises it again once frames are quick (adaptResolution, called twice a second).
+const RATIO_CAP = Math.min(window.devicePixelRatio || 1, CFG.graphics.pixelRatioMax ?? 1.75);
+let ratio = RATIO_CAP, quickWindows = 0;
+renderer.setPixelRatio(ratio);
+export const pixelRatio = () => ratio;
+export const adaptive = () => CFG.graphics.adaptiveResolution !== false && RATIO_CAP > (CFG.graphics.pixelRatioMin ?? 0.7) + 0.01;
+// avgMs: mean frame interval over the last window, worstMs: the longest frame in it. Returns true if the ratio changed.
+export function adaptResolution(avgMs, worstMs) {
+  if (!adaptive() || worstMs > 150) return false; // a window with a hitch (island build, shader compile) says nothing about the steady rate
+  const min = CFG.graphics.pixelRatioMin ?? 0.7, STEP = 0.15;
+  let next = ratio;
+  if (avgMs > 24 && ratio > min) { next = Math.max(min, ratio - STEP); quickWindows = 0; }   // under 42 fps: a step down
+  else if (avgMs < 13 && ratio < RATIO_CAP && ++quickWindows >= 6) { next = Math.min(RATIO_CAP, ratio + STEP); quickWindows = 0; } // over 75 fps for 3 s: a step up
+  else if (avgMs >= 13) quickWindows = 0;
+  if (next === ratio) return false;
+  ratio = next; renderer.setPixelRatio(ratio); return true;
+}
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 export const scene = new THREE.Scene();
 const FOG = new THREE.Color(0xeeae7c);
@@ -220,6 +238,9 @@ function keyColor(k, t, out) {
   return out.copy(KC[k][s]).lerp(KC[k][s + 1], Math.min(1, Math.max(0, f)));
 }
 let lastPhase = -1, envAge = 99;
+// After a lost WebGL context comes back (phones under memory pressure, a sleeping laptop) three.js re-uploads
+// what the scene needs, but the sea's reflection map is rendered by us: redo it, and the daylight with it
+canvas.addEventListener('webglcontextrestored', () => { lastPhase = -1; envAge = 99; console.warn('WebGL context restored'); });
 // phase: 0 = sunrise, 1 = end of the round
 export function setDaylight(phase, dt = 0) {
   envAge += dt;

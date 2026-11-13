@@ -6,22 +6,24 @@ A browser flying game in the spirit of Bullfrog's *Magic Carpet* (1994). Ride a 
 
 Every game generates a new island. The page address ends with the island's seed (`#s123456789`); open that link to replay the same island.
 
-Version 0.3.3. See [CHANGELOG.md](CHANGELOG.md).
+The start screen keeps a leaderboard of your five best timed rounds in this browser, with each island's name and seed. Pick an island there to fly it again and try to beat its score.
+
+Version 0.5.0. See [CHANGELOG.md](CHANGELOG.md).
 
 ## Controls
 
 | Action | Keyboard and mouse | Touch |
 |---|---|---|
 | Turn | mouse left/right, ← → | tilt the phone left/right, or drag |
-| Climb / dive | mouse up/down, ↑ ↓ | tip the phone towards/away from you, or drag |
-| Surge forward (a short burst, repeats every 2 s while held) | W or Shift | pad up |
-| Fly backwards | S | pad down |
-| Strafe | A / D | pad left / right (diagonals combine with surge or back) |
-| Fireball | left click or Space | Fire (hold) |
-| Nova (costs mana) | right click or E | Nova |
-| Pause / mute | Esc / M | – |
+| Aim up / down: raise or lower the nose (the carpet keeps 5 m above the ground by itself) | mouse up/down, ↑ ↓ | tip the phone towards/away from you, or drag |
+| Speed up (the carpet keeps its speed when you let go, and never drops below a slow glide) | W (hold) | pad up (Go) |
+| Brake, then fly backwards | S | pad down (Back) |
+| Strafe | A / D | pad left / right (diagonals combine with Go or Back) |
+| Fireball | Space or left click | Fire (hold) |
+| Nova (costs mana) | Shift or right click | Nova |
+| Pause / mute | Esc / M | II |
 
-On phones and tablets the game goes full screen when a flight starts. iPhone Safari cannot do that for web pages. Instead, tap Share → Add to Home Screen and start Windloom from its icon: it then runs without browser bars. This also works on Android.
+On a laptop, switch off "Mouse and trackpad" in Settings to play with the keys only, so brushing the trackpad does nothing. Browsers cannot tell a mouse from a trackpad, so this is a setting. On phones and tablets the game goes full screen when a flight starts. iPhone Safari cannot do that for web pages. Instead, tap Share → Add to Home Screen and start Windloom from its icon: it then runs without browser bars. This also works on Android.
 
 ## How the game works
 

@@ -65,13 +65,20 @@ Kinds: `{ "spread": s }` = mean × (1 ± s), uniform; `{ "min": a, "max": b }` =
 |---|---|---|
 | `shadowMapSize` | 2048 | Resolution of the sun's shadow map (1024 is faster and blurrier, 4096 sharper and slower). |
 | `shadowRange` | 220 | Size in metres of the area around the player in which things cast shadows. Larger covers more but makes shadows blurrier. Shadows can be switched off in Settings. |
+| `pixelRatioMax` | 1.75 | Highest rendering resolution, as a multiple of the page's size (the screen's own ratio if that is lower). Phones have 3× screens, which would cost nine times the pixels of 1×. |
+| `pixelRatioMin` | 0.7 | Lowest rendering resolution the adaptive resolution may drop to. |
+| `adaptiveResolution` | true | While playing, a slow game (under about 42 fps for half a second) lowers the rendering resolution a step at a time down to `pixelRatioMin`; quick frames (over 75 fps for 3 s) raise it again up to `pixelRatioMax`. The fps counter shows the scale while it is lowered. `false` always renders at `pixelRatioMax`. |
 
 ## controls
 
 | Key | Value | Meaning |
 |---|---|---|
-| `pointerLock` | true | Clicking into the game captures the mouse: the cursor is hidden and cannot leave the window, so steering never gets stuck at the screen edge. Esc releases it and pauses. Set to `false` for the old free cursor. |
+| `pointerLock` | true | Clicking into the game captures the mouse: the cursor is hidden and cannot leave the window, so steering never gets stuck at the screen edge. Esc releases it and pauses. Set to `false` for the old free cursor. Players can switch mouse and trackpad play off in Settings (keys only). |
 | `lockedSensitivity` | 1 | With the mouse captured: how far the steering moves per pixel of mouse movement (higher = more sensitive). |
+| `expo` | 1.6 | Touch drag and tilt: response curve. 1 is linear; higher makes small movements gentler for fine adjustments while full movements still reach a full turn or full nose. |
+| `keys.turnStart`, `keys.turnRampSeconds` | 0.25, 0.5 | Arrow keys ← →: a turn starts at this fraction of a full turn and builds up to a full turn over this many seconds while the key is held, so a tap is a small correction. |
+| `keys.pitchSeconds` | 0.3 | Arrow keys ↑ ↓ (height mode `hold`): seconds to move the nose from level to fully up or down. |
+| `keys.levelTimeConstant` | 0.25 | Arrow keys: when ↑ and ↓ are let go, the nose eases back to level, quickly at first and gently at the end; this is the time constant in seconds (about 63 % of the way back after this long, nearly level after three times it). 0 leaves the nose where it is. |
 | `tilt` | steerDegrees 15, pitchDegrees 12, deadzoneDegrees 1.5, invertPitch false | Phones (Settings → Tilt to steer): tilting the phone this many degrees left/right gives full turn, tipping it this many degrees towards/away from you gives full climb/dive, measured from how it was held at start or resume. Smaller tilts inside the dead zone are ignored. `invertPitch` swaps climb and dive (by default tipping the top towards you climbs, like pulling back on a stick). |
 
 ## hud
@@ -93,7 +100,8 @@ On-screen messages stay up long enough to read: `max(toastMinSeconds, toastBaseS
 | `lookAhead` | 26 | The camera looks at a point this far ahead of the carpet. |
 | `lookHeight` | 5 | ...and this far above it. Higher tilts the view up, so the carpet sits lower on screen (0 = carpet close to the centre). |
 | `follow` | 10 | How quickly the camera catches up with the carpet (higher = tighter, less lag; was 7). |
-| `fov`, `fovSurgeExtra` | 72, 9 | Field of view in degrees, and how much it widens at full surge. |
+| `fov`, `fovSpeedExtra` | 72, 4 | Field of view in degrees at rest, and how much it widens at full speed. |
+| `pitchFollow` | 0.25 | Height mode `hold`: how much the camera follows the carpet's nose up and down (0 stays level, 1 looks exactly where the nose points). The aiming circle always shows where the nose points. |
 
 ## sky
 
@@ -111,11 +119,11 @@ The sun rises over the course of a round: dawn at the start (low, warm, dim ligh
 
 | Key | Value | Meaning |
 |---|---|---|
-| `baseSpeed` | 44 | Normal forward speed. |
-| `surgeMultiplier` | 1.85 | Speed during a surge burst (W). |
-| `surgeSeconds` | 0.9 | How long one surge burst lasts. The carpet then eases back to `baseSpeed`. |
-| `surgeCooldownSeconds` | 2 | Time from the start of one burst to the next while W (or Surge) is held down. |
-| `reverseMultiplier` | 0.6 | Speed backwards (S), as a fraction of base speed. |
+| `baseSpeed` | 44 | Top speed, reached by holding W (or Go on the touch pad). The carpet keeps whatever speed it has when W is let go, but never less than `throttle.minSpeed`. |
+| `throttle.acceleration` | 44 | How fast holding W speeds the carpet up, in m/s per second (from rest to top speed in 1 s). |
+| `throttle.minSpeed` | 10 | The carpet never flies forward slower than this (m/s) unless S is held: it glides at this speed from the start and comes back to it after braking. 0 lets it rest. |
+| `throttle.brakeDeceleration` | 80 | How fast S (or Back) brakes, and how fast it speeds up backwards after that, in m/s per second. |
+| `reverseMultiplier` | 0.6 | Speed backwards (S), as a fraction of top speed. |
 | `strafeSpeed` | 32 | Sideways speed (A/D). |
 | `turnRate` | 1.55 | How fast the carpet turns (radians per second at full steer). |
 | `pitchMax` | 0.8 | Steepest climb or dive angle (radians). |
@@ -127,7 +135,12 @@ The sun rises over the course of a round: dawn at the start (low, warm, dim ligh
 | `carryBase`, `carryPerStage` | 100, 20 | Mana you can carry: base + per stage × stage. |
 | `groundClearance` | 1.4 | Lowest the carpet's centre can fly above the ground (was a fixed 2.6). |
 | `cornerClearance` | 0.4 | Each corner of the tilted carpet stays at least this far above the ground beneath it, so it does not dip into slopes. |
-| `response` | steer 12, pitch 6, speed 3.5, strafe 7, roll 6 | How quickly the carpet follows the controls, per second (higher = snappier, less delay). Before: steer 8, pitch 3, speed 2, strafe 4, roll 4. |
+| `altitude.mode` | hold | How the carpet's height is set. `hold`: it flies level and keeps `hoverHeight` above the ground (or a palace roof) by itself, rising over hills up to `world.ceiling`; up/down (mouse, arrow keys, tilt, drag) raise and lower the carpet's nose to aim, and the camera stays nearly level (`camera.pitchFollow`). `free`: the carpet flies where it points, so up/down climb and dive, up to `world.ceiling`. |
+| `altitude.hoverHeight` | 5 | `hold` only: metres above the ground (or palace roof) the carpet keeps. |
+| `altitude.lookAheadSeconds` | 0.8 | `hold` only: how far ahead along its path (in seconds of flight) the carpet looks for rising ground, so it starts to climb before a slope. |
+| `altitude.response` | 3 | `hold` only: how quickly the height follows the ground (per second); higher is snappier. |
+| `altitude.climbRate`, `altitude.sinkRate` | 30, 14 | `hold` only: fastest climb and descent, in metres per second. |
+| `response` | steer 12, pitch 6, strafe 7, roll 6 | How quickly the carpet follows the controls, per second (higher = snappier, less delay). Before: steer 8, pitch 3, speed 2, strafe 4, roll 4. |
 
 ## spells
 
@@ -174,10 +187,11 @@ A timed game is a round. The clock keeps running everywhere, including in the pa
 | `pointsPerStage` | 100 | Points per palace stage above the first (500 for the Crescent Sanctum). |
 | `dragonSlainBonus` | 500 | Points for slaying Vharoth. |
 | `completionBonus`, `pointsPerSecondLeft` | 1000, 10 | Bonus for ending the round early (palace complete and Vharoth slain), plus points for every second left on the clock. |
+| `leaderboardSize` | 5 | Rows on the leaderboard (start screen and after a timed round): the best timed rounds in this browser, one per island (the best score there). A few more are kept, so a row that drops off can come back. Picking an island there starts a timed round on it. |
 
 ## tutorial
 
-A practice island. It opens with five pages on the HUD (the bars, the map and the beam; click, tap or Enter to turn them, the carpet holds still), then one task at a time: five flying lessons in order (look up and down, turn left and right, slide sideways, surge, brake; shown as 1/5 … 5/5), then gather `manaGoal` mana, bank it in the beam (banking is off until then), slay the wyverns that appear (fireballs), find a group of skeleton archers and strike them with a nova, and bank the creatures' mana. No other creatures appear, there is no clock, and the carpet cannot fall (vitality stops at 1).
+A practice island. It opens with five pages on the HUD (the bars, the map and the beam; Enter, a click or a tap turns them, the carpet holds still), then one task at a time: five flying lessons in order (aim up and down, turn left and right, slide sideways, speed up, brake; shown as 1/5 … 5/5), then gather `manaGoal` mana, bank it in the beam (banking is off until then), slay the wyverns that appear (fireballs), find a group of skeleton archers and strike them with a nova, and bank the creatures' mana. No other creatures appear, there is no clock, and the carpet cannot fall (vitality stops at 1).
 
 | Key | Value | Meaning |
 |---|---|---|
@@ -320,7 +334,9 @@ All sound is synthesised in the browser; there are no sound files. Volumes are 0
 | `masterVolume` | 0.9 | Overall volume (M mutes). |
 | `sfxVolume` | 1 | Effects and wind. |
 | `musicVolume` | 0.35 | Background music (drops to a third while paused). |
-| `windVolume` | 0.09 | Wind noise at full surge speed; quieter when slower. The surge whoosh scales with it too. |
+| `windVolume` | 0.09 | Wind noise at top speed; quieter when slower, silent at rest. |
+| `reverb` | 0.18 | How much of the sound goes through a short, warm reverb (a generated impulse, no sound file), 0–1; 0 switches it off. |
+| `stereoWidth` | 0.7 | Creature sounds are heard from the side they are on, relative to the carpet's heading (0–1; 0 keeps every sound in the middle). |
 | `tempoCalm`, `tempoDanger` | 88, 124 | Music tempo in beats per minute when calm and under attack. |
 | `melodyGlideSeconds` | 0.25 | How long the flute takes to slide from one note to the next (legato). |
 | `dangerHoldSeconds` | 6 | After taking damage the music stays dramatic this long. It is also dramatic while the dragon hunts you, and halfway there while a wyvern or drake chases you. |

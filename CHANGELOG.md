@@ -4,6 +4,30 @@ All notable changes to Windloom are recorded here. The format follows [Keep a Ch
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-13
+
+### Added
+- Leaderboard on the start screen (and after a timed round): the five best timed rounds in this browser, each with its score, island name and seed, the palace stage reached and the date (`round.leaderboardSize`; one row per island, its best score). Picking an island asks once, then starts a timed round there to try to beat its score. Best scores saved by earlier versions are carried over. The results screen says where the round placed.
+- Adaptive rendering resolution: when the game runs slowly it lowers the rendering resolution a step at a time (down to `graphics.pixelRatioMin`) and raises it again once frames are quick (up to `graphics.pixelRatioMax`, which replaces the fixed 1.75 cap in the code); the fps counter shows the scale while it is lowered. `graphics.adaptiveResolution: false` switches it off.
+- Sound: a short, warm reverb that every sound and the music pass through a little (`audio.reverb`, a generated impulse, no sound file); creature sounds come from the side they are on (`audio.stereoWidth`); a qanun-like plucked run up or down the chord every other bar while the music is calm; and a whoosh when the throttle engages from a glide.
+
+### Changed
+- The carpet and its riders. The carpet has a woven medallion design (gold border with ink lozenges, teal guard stripes, corner spandrels, a lobed central medallion with an eight-pointed star), tassels that hang from its ends and stream back at speed, and a soft golden lift underneath. Both riders now have arms and hands: at rest they lie near the knees, a fireball throws the right hand forward with a glow in the palm, and a nova spreads both arms. The turbaned prince (Settings; was "Turbaned rider") sits cross-legged in blue trousers with gold slippers, wears an ember vest, a gold sash, a wrapped turban band, a beard and a teal plume; the princess has gold cuffs and slippers peeking out of her gown.
+- New islands build about three times faster: the terrain's heights are sampled once into a grid, and the slopes for the colours, the radar map and the placing of palms and rocks read from it instead of sampling the terrain noise again (about 520,000 samples per island before, 130,000 now). Islands look the same for the same seed.
+- Settings → Mouse and trackpad (on computers, on by default): switch it off to play with the keys only, so brushing a laptop's trackpad no longer steers, fires or turns a tutorial page; the cursor is then hidden during flight. Browsers cannot tell a mouse from a trackpad, so it is a setting rather than automatic.
+- Throttle instead of a fixed cruising speed. Hold W (or Go, the pad's top arm, which was Surge) to speed up to full speed in 1 s (`player.throttle.acceleration`); let go and it keeps its speed; S brakes, then flies backwards (`throttle.brakeDeceleration`, rest to full in about half a second). The carpet never flies slower than a 10 m/s glide unless S is held (`throttle.minSpeed`, 0 lets it rest). The surge burst is gone (`surgeMultiplier`, `surgeSeconds`, `surgeCooldownSeconds` and `response.speed` removed); it may come back as a spell. The view widens a little with speed (`camera.fovSpeedExtra`, replaces `fovSurgeExtra`), and the wind is silent at rest.
+- Nova is on Shift (was E; right-click still works with the mouse); fireballs stay on Space (and click). The controls list, README and tutorial texts follow, and the tutorial's Surge lesson is now Speed up.
+- The carpet keeps its height by itself: it flies level 5 m above the ground (`player.altitude.hoverHeight`), looks 0.8 s ahead along its path and starts to rise before a slope or the palace, and never goes above 35 m above sea level, so taller mountains are still walls. Up/down (mouse, arrow keys, tilt, drag) now raise and lower the carpet's nose to aim at things above and below; the camera stays nearly level (`camera.pitchFollow`), and the aiming circle moves to where the nose points (it now also shows on touch screens). The old way, where up/down climb and dive, is still there as `player.altitude.mode: "free"`. The controls list, the tilt setting and the first tutorial lesson say what up/down do in the current mode.
+- Finer steering with keys and touch. Arrow-key turns build up while held (a tap is a small correction, a full turn after half a second: `controls.keys`); ↑ ↓ move the nose gradually (level to full in 0.3 s: `controls.keys.pitchSeconds`), and when let go it eases back to level (time constant 0.25 s: `keys.levelTimeConstant`). Touch drag and tilt respond more gently near the centre (`controls.expo`).
+- Settings → Mouse and keys: up and down can be inverted, separately for the arrow keys and for the mouse (off by default, remembered in this browser).
+
+### Fixed
+- An error inside one frame no longer floods the console every frame: the first few are logged and the game goes on.
+- After the browser drops and restores the WebGL context (phones under memory pressure, a laptop waking up) the sea's reflection and the daylight are redrawn instead of staying black.
+- The published page no longer refetches every module at start to show when it was last changed; that timestamp is a development aid and now appears only on a local server (like the hitch log). The update check is unchanged.
+- Shock rings (nova, palace stage, Vharoth's fall) share one geometry instead of building and disposing a sphere each time.
+- Steering with the arrow keys no longer picks up a slight turn, climb or dive left over from the mouse. The mouse works as a stick that stays where you leave it, and a small nudge kept adding to the keys; pressing an arrow key now re-centres it.
+
 ## [0.4.0] - 2026-11-07
 
 ### Added

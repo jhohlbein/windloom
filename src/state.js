@@ -21,14 +21,15 @@ export const G = {
   kills: 0, playTime: 0, lastHurt: -99,
   timed: true, timeLeft: 0, killsBy: {}, dragonSlain: false, endTimer: -1, endReason: '', finished: false, // round (see round.js)
   gameMode: 'timed', tut: null, // 'timed' | 'free' | 'tutorial'; tut holds the tutorial's progress (see tutorial.js)
-  yaw: 0, pitch: 0, roll: 0, speed: 0, strafe: 0, steerX: 0, steerY: 0,
-  fireCd: 0, novaCd: 0, wallToast: 0,
+  yaw: 0, pitch: 0, bodyPitch: 0, keyPitch: 0, keyTurn: 0, keyTurnDir: 0, roll: 0, // pitch: view and aim; bodyPitch: the carpet's own nose up or down
+  speed: 0, strafe: 0, steerX: 0, steerY: 0,
+  fireCd: 0, novaCd: 0, wallToast: 0, castFx: 0, novaFx: 0, // castFx / novaFx: the rider's casting pose, set by the spells and fading (player.js)
   spellMana: 100, spellExhausted: false, // fireball energy (config spells.mana), separate from carried mana
   playerPos: new THREE.Vector3(), playerVel: new THREE.Vector3(),
   fwd: new THREE.Vector3(0, 0, -1), rightV: new THREE.Vector3(1, 0, 0),
   input: { mouseX: 0, mouseY: 0, touchX: 0, touchY: 0, mouseFire: false, touchFire: false, touchBoost: false, touchBack: false, touchLeft: false, touchRight: false, tiltX: 0, tiltY: 0, novaReq: false },
   enemies: [], orbs: [], shots: [], bolts: [], rings: [],
-  dragon: null, dragonTimer: 0, dragonSeen: false, surging: false, surgeT: 0, surgeCd: 0,
+  dragon: null, dragonTimer: 0, dragonSeen: false,
   spawnTimer: 0, upgradeHint: 0, // last stage for which the 'enough mana' message was shown
   castleTopY: 24
 };

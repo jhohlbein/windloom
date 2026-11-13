@@ -51,6 +51,15 @@ export const stageLabel = L => CFG.palace.stageNames[L - 1] + ' · ' + NUMERALS[
 
 const cache = {};
 function setText(el, key, v) { if (cache[key] !== v) { cache[key] = v; el.textContent = v; } }
+// The aiming cross sits where the carpet's nose points (60 m ahead along G.fwd), since the camera does not look
+// exactly that way; called every frame after rendering
+const elCross = $('cross'), crossV = new THREE.Vector3();
+export function placeCross() {
+  const v = crossV.copy(G.playerPos).addScaledVector(G.fwd, 60).project(camera);
+  if (v.z > 1) { elCross.style.transform = ''; return; }
+  const x = v.x * window.innerWidth / 2, y = -v.y * window.innerHeight / 2;
+  elCross.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px)';
+}
 export function updateHud() {
   const hpPct = clamp(G.hp / G.maxHp, 0, 1);
   elHp.style.width = (hpPct * 100).toFixed(1) + '%';

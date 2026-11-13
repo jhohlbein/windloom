@@ -1,11 +1,14 @@
 // Synthesised audio (Web Audio only, no sound files): effects, wind, and generated background music.
+// Space: a generated reverb (config audio.reverb) that every bus feeds a little into, and creature sounds panned
+// left or right of the carpet's heading (audio.stereoWidth).
+import * as THREE from 'three';
 import { CFG } from './config.js';
 import { G } from './state.js';
 import { camera } from './scene.js';
 import { clamp, lerp } from './util.js';
 
 let ac = null, muted = false, noiseBuf = null;
-let master, sfxBus, musicBus;
+let master, sfxBus, musicBus, sfxOut = null; // sfxOut: where the effect being played goes (a panner, or the bus)
 const lastSfx = {};
 
 export function audioInit() {
@@ -19,7 +22,22 @@ export function audioInit() {
   // two seconds of white noise, reused by every noise-based sound
   noiseBuf = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate);
   const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-  startWind(); startMusic();
+  startReverb(); startWind(); startMusic();
+}
+/* ---------- reverb: a short, warm space from a generated impulse (decaying noise), fed by a send ---------- */
+let reverbSend = null;
+function startReverb() {
+  const wet = CFG.audio.reverb ?? 0;
+  if (!(wet > 0) || !ac.createConvolver) return;
+  try {
+    const secs = 1.7, n = Math.floor(ac.sampleRate * secs), buf = ac.createBuffer(2, n, ac.sampleRate);
+    for (let ch = 0; ch < 2; ch++) { const d = buf.getChannelData(ch); for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2.8); }
+    const conv = ac.createConvolver(); conv.buffer = buf; conv.normalize = true;
+    const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 3000; lp.Q.value = 0.5; // dusty, not a cathedral
+    reverbSend = ac.createGain(); reverbSend.gain.value = wet;
+    reverbSend.connect(conv); conv.connect(lp); lp.connect(master);
+    sfxBus.connect(reverbSend); musicBus.connect(reverbSend);
+  } catch (e) { reverbSend = null; /* audio is optional */ }
 }
 export function toggleMute() {
   muted = !muted;
@@ -28,7 +46,7 @@ export function toggleMute() {
 }
 
 /* ---------- building blocks ---------- */
-function tone(f0, f1, dur, type, vol, out = sfxBus, t = ac && ac.currentTime) {
+function tone(f0, f1, dur, type, vol, out = sfxOut || sfxBus, t = ac && ac.currentTime) {
   if (!ac || muted || vol <= 0.002) return;
   try {
     const o = ac.createOscillator(), g = ac.createGain();
@@ -38,7 +56,7 @@ function tone(f0, f1, dur, type, vol, out = sfxBus, t = ac && ac.currentTime) {
   } catch (e) { /* audio is optional */ }
 }
 // Band-passed noise whose centre frequency sweeps f0 -> f1: shooshes, whooshes, drum slaps
-function noise(f0, f1, dur, q, vol, attack = 0.01, out = sfxBus, t = ac && ac.currentTime) {
+function noise(f0, f1, dur, q, vol, attack = 0.01, out = sfxOut || sfxBus, t = ac && ac.currentTime) {
   if (!ac || muted || vol <= 0.002) return;
   try {
     const s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
@@ -52,9 +70,15 @@ function noise(f0, f1, dur, q, vol, attack = 0.01, out = sfxBus, t = ac && ac.cu
 }
 function throttle(name, ms) { const n = performance.now(); if (n - (lastSfx[name] || 0) < ms) return false; lastSfx[name] = n; return true; }
 
-export function sfx(name, v = 1) {
+// pan: -1 (left) to 1 (right), 0 in the middle; see sfxAt
+export function sfx(name, v = 1, pan = 0) {
   if (!ac) return;
   const j = 0.88 + Math.random() * 0.24; // pitch jitter so repeats are not identical
+  sfxOut = null;
+  if (pan && ac.createStereoPanner) { try { const p = ac.createStereoPanner(); p.pan.value = clamp(pan, -1, 1); p.connect(sfxBus); sfxOut = p; } catch (e) { sfxOut = null; } }
+  try { play(name, v, j); } finally { sfxOut = null; }
+}
+function play(name, v, j) {
   switch (name) {
     case 'fire': noise(3200 * j, 650 * j, 0.32, 1.4, 0.32 * v, 0.012); tone(210 * j, 90, 0.18, 'sine', 0.06 * v); break;
     case 'hit': tone(240, 70, 0.14, 'square', 0.08 * v); noise(1800, 400, 0.12, 1, 0.12 * v); break;
@@ -73,20 +97,29 @@ export function sfx(name, v = 1) {
     case 'flap': if (throttle(name, 250)) noise(500, 180, 0.3, 0.9, 0.18 * v, 0.06); break;
     case 'roar': tone(115, 42, 1.5, 'sawtooth', 0.22 * v); tone(72, 30, 1.7, 'square', 0.14 * v); tone(170, 60, 1.0, 'sawtooth', 0.08 * v); break;
     case 'bow': noise(2600, 900, 0.18, 2, 0.18 * v, 0.004); tone(196, 147, 0.12, 'triangle', 0.05 * v); break;
-    // surge burst: a short airy swish (a high sweep falling fast) over a soft low push
+    // whoosh (the throttle engaging from a slow glide): a short airy swish (a high sweep falling fast) over a soft low push
     case 'whoosh': { const w = v * CFG.audio.windVolume / 0.18;
       noise(2600 * j, 700, 0.42, 1.1, 0.3 * w, 0.05); noise(260, 120, 0.5, 0.7, 0.22 * w, 0.08); break; }
   }
 }
-// Positional sound: louder the closer it is to the player (or camera on the title screen)
+// Positional sound: louder the closer it is to the player (or camera on the title screen), and panned to the
+// side it is on, relative to the carpet's heading (the camera's on the title screen)
+const camRight = new THREE.Vector3();
 export function sfxAt(name, pos, range = 320) {
-  const d = pos.distanceTo(G.active ? G.playerPos : camera.position);
+  const from = G.active ? G.playerPos : camera.position, d = pos.distanceTo(from);
   const v = clamp(1 - d / range, 0, 1);
-  if (v > 0.05) sfx(name, v);
+  if (v <= 0.05) return;
+  let pan = 0; const width = CFG.audio.stereoWidth ?? 0;
+  if (width > 0) {
+    const dx = pos.x - from.x, dz = pos.z - from.z, l = Math.hypot(dx, dz);
+    const r = G.active ? G.rightV : camRight.setFromMatrixColumn(camera.matrixWorld, 0);
+    if (l > 1) pan = clamp((dx * r.x + dz * r.z) / l * width, -1, 1);
+  }
+  sfx(name, v, pan);
 }
 
 /* ---------- wind: a constant rush that follows the carpet's speed ---------- */
-let windGain, windFilter, wasSurging = false;
+let windGain, windFilter;
 function startWind() {
   const s = ac.createBufferSource(); s.buffer = noiseBuf; s.loop = true;
   // low-passed (not band-passed) noise: a steady band-pass hiss in the 1-2 kHz range sounds like running water
@@ -139,6 +172,16 @@ function neyNote(t, f, v, first) {
   if (first) noise(f * 3, f * 2.5, 0.35, 3, 0.04 * v, 0.08, musicBus, t);
 }
 function neyBreathOut(t) { neyGain.gain.setTargetAtTime(0, t, 0.35); }
+// Qanun-like pluck: two slightly detuned triangles through a closing low-pass, bright and quick to fade
+function qanun(t, f, v) {
+  try {
+    const g = ac.createGain(), fl = ac.createBiquadFilter();
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.085 * v, t + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.7);
+    fl.type = 'lowpass'; fl.Q.value = 0.8; fl.frequency.setValueAtTime(4200, t); fl.frequency.exponentialRampToValueAtTime(900, t + 0.5);
+    for (const det of [0.997, 1.003]) { const o = ac.createOscillator(); o.type = 'triangle'; o.frequency.value = f * det; o.connect(fl); o.start(t); o.stop(t + 0.75); }
+    fl.connect(g); g.connect(musicBus);
+  } catch (e) { /* audio is optional */ }
+}
 // Oud-like pluck: bright saw through a closing low-pass
 function oud(t, f, v) {
   try {
@@ -180,6 +223,11 @@ function scheduleStep(s, t, sixteenth) {
   if (FILL[p] === 'k' && Math.random() < I) tek(t, drum * 0.45);
   // danger: oud ostinato on D, F# and A
   if (I > 0.25 && p % 2 === 0) oud(t, hz([-12, -12, -5, -12, -8, -5, -12, -5][(p / 2) | 0]), I);
+  // calm: every other bar, a qanun run up or down the chord (D, F#, A, D an octave up), one note per sixteenth
+  if (p === 0 && s % 32 === 0 && I < 0.5 && Math.random() < 0.7) {
+    const run = [12, 16, 19, 24]; if (Math.random() < 0.4) run.reverse();
+    run.forEach((st, i) => qanun(t + i * sixteenth, hz(st), (1 - I) * (0.9 - i * 0.1)));
+  }
   melodyStep(t, sixteenth);
 }
 function dangerLevel() {
@@ -193,15 +241,11 @@ function dangerLevel() {
 export function updateAudio(dt) {
   if (!ac) return;
   const A = CFG.audio, t = ac.currentTime;
-  // wind follows speed; a whoosh when a surge starts
-  const base = CFG.player.baseSpeed, top = base * CFG.player.surgeMultiplier;
-  const sp = G.active ? clamp(Math.abs(G.speed) / top, 0, 1) : 0;
+  // wind follows speed (silent at rest; at full speed about as loud as the old cruising speed)
+  const sp = G.active ? clamp(Math.abs(G.speed) / CFG.player.baseSpeed, 0, 1) : 0;
   const gust = 0.75 + 0.25 * Math.sin(t * 0.7) * Math.sin(t * 0.31 + 1); // slow swells, so it reads as wind
-  windGain.gain.setTargetAtTime(A.windVolume * sp * sp * gust * 1.3, t, 0.15);
-  windFilter.frequency.setTargetAtTime((220 + sp * 520) * (0.85 + 0.3 * gust), t, 0.2);
-  const surging = G.active && G.surging;
-  if (surging && !wasSurging) sfx('whoosh');
-  wasSurging = surging;
+  windGain.gain.setTargetAtTime(A.windVolume * sp * sp * gust * 0.4, t, 0.15);
+  windFilter.frequency.setTargetAtTime((220 + sp * 280) * (0.85 + 0.3 * gust), t, 0.2);
   // music
   const playing = G.mode === 'play' || G.mode === 'title';
   musicBus.gain.setTargetAtTime(playing ? A.musicVolume : A.musicVolume * 0.35, t, 0.5);

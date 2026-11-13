@@ -6,7 +6,10 @@
 import { VERSION } from './version.js';
 import './game.js';
 
-showBuildTime().then(checkForUpdate);
+// The build time is a development aid: only on a local server (like the hitch log in perf.js). The published
+// page skips it, which saves about thirty requests at start (one per module, just to read a header).
+const LOCAL = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
+(LOCAL ? showBuildTime() : Promise.resolve()).then(checkForUpdate);
 
 // Show when the newest loaded file was last changed (the Last-Modified header of the page, config and every
 // module). The files are fetched with the normal cache policy, so this reflects what the browser actually

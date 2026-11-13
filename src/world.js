@@ -32,20 +32,35 @@ function clearWorldGroup() {
 // hill-shaded, and the sea in blue (shallows lighter). Stored on W.map; hud.js draws it under the radar.
 const MAP_N = 256, mapCanvas = document.createElement('canvas'); mapCanvas.width = mapCanvas.height = MAP_N;
 W.map = mapCanvas;
-function buildMap(colorAt) {
+// Heights come from the terrain mesh's grid (see buildWorld), read bilinearly, instead of evaluating the terrain
+// noise three times per pixel: that was 200k noise evaluations, about a third of the time to build an island.
+function buildMap(colorAt, grid) {
   const g = mapCanvas.getContext('2d'), img = g.createImageData(MAP_N, MAP_N), step = SIZE / MAP_N;
   const deep = new THREE.Color(0x1b4c78), shallow = new THREE.Color(0x3c8fb4), c = new THREE.Color();
   for (let j = 0; j < MAP_N; j++) for (let i = 0; i < MAP_N; i++) {
-    const x = -SIZE / 2 + (i + 0.5) * step, z = -SIZE / 2 + (j + 0.5) * step, h = terrainH(x, z);
+    const x = -SIZE / 2 + (i + 0.5) * step, z = -SIZE / 2 + (j + 0.5) * step, h = grid.at(x, z);
     if (h < 0) c.copy(shallow).lerp(deep, clamp(-h / 14, 0, 1));
     else {
-      const hx = terrainH(x + step, z), hz = terrainH(x, z + step), slope = (Math.abs(hx - h) + Math.abs(hz - h)) / step;
+      const hx = grid.at(x + step, z), hz = grid.at(x, z + step), slope = (Math.abs(hx - h) + Math.abs(hz - h)) / step;
       c.copy(colorAt(h, slope, x, z)).multiplyScalar(clamp(1 + (h - hx + h - hz) * 0.08, 0.7, 1.3)); // light from the north-west
     }
     const k = (j * MAP_N + i) * 4;
     img.data[k] = c.r * 255; img.data[k + 1] = c.g * 255; img.data[k + 2] = c.b * 255; img.data[k + 3] = 255;
   }
   g.putImageData(img, 0, 0);
+}
+// The terrain's heights on the mesh grid (N x N, x and z from -SIZE/2 in steps of SIZE/(N-1)), with bilinear reads
+function heightGrid(h, N) {
+  const step = SIZE / (N - 1), last = N - 1;
+  return {
+    h, N,
+    at(x, z) {
+      const fx = clamp((x + SIZE / 2) / step, 0, last), fz = clamp((z + SIZE / 2) / step, 0, last);
+      const ix = Math.min(last - 1, Math.floor(fx)), iz = Math.min(last - 1, Math.floor(fz)), tx = fx - ix, tz = fz - iz;
+      const a = h[iz * N + ix], b = h[iz * N + ix + 1], c = h[(iz + 1) * N + ix], d = h[(iz + 1) * N + ix + 1];
+      return (a + (b - a) * tx) * (1 - tz) + (c + (d - c) * tx) * tz;
+    }
+  };
 }
 
 /* ---------- per-island landscape settings ---------- */
@@ -157,42 +172,48 @@ export function buildWorld(seed) {
     const ld = Math.hypot(x - W.LX, z - W.LZ); if (ld < 80) out.lerp(cAsh, smooth(80, 30, ld) * 0.85);
     return out;
   }
-  const SEG = cw.terrainSegments;
+  // Every vertex height is sampled once and kept in a grid; the slope for the colours comes from the neighbouring
+  // vertices (two more noise samples per vertex before), and the radar map is drawn from the same grid.
+  const SEG = cw.terrainSegments, N = SEG + 1;
   const tg = new THREE.PlaneGeometry(SIZE, SIZE, SEG, SEG); tg.rotateX(-Math.PI / 2);
-  const tp = tg.attributes.position, tc = new Float32Array(tp.count * 3);
-  for (let vi = 0; vi < tp.count; vi++) {
-    const vx = tp.getX(vi), vz = tp.getZ(vi), vh = terrainH(vx, vz);
-    tp.setY(vi, vh);
-    const sl = (Math.abs(terrainH(vx + 6, vz) - vh) + Math.abs(terrainH(vx, vz + 6) - vh)) / 6;
-    const c = colorAt(vh, sl, vx, vz); tc[vi * 3] = c.r; tc[vi * 3 + 1] = c.g; tc[vi * 3 + 2] = c.b;
+  const tp = tg.attributes.position, tc = new Float32Array(tp.count * 3), hg = new Float32Array(tp.count);
+  for (let vi = 0; vi < tp.count; vi++) { const vh = terrainH(tp.getX(vi), tp.getZ(vi)); tp.setY(vi, vh); hg[vi] = vh; }
+  // PlaneGeometry lays its vertices out row by row: index = iz * N + ix, x growing with ix and (after the turn) z with iz
+  const grid = heightGrid(hg, N), gstep = SIZE / SEG;
+  const hAt = (ix, iz) => hg[clamp(iz, 0, SEG) * N + clamp(ix, 0, SEG)];
+  for (let iz = 0; iz < N; iz++) for (let ix = 0; ix < N; ix++) {
+    const vi = iz * N + ix, vh = hg[vi];
+    const sl = (Math.abs(hAt(ix + 1, iz) - hAt(ix - 1, iz)) + Math.abs(hAt(ix, iz + 1) - hAt(ix, iz - 1))) / (2 * gstep);
+    const c = colorAt(vh, sl, tp.getX(vi), tp.getZ(vi)); tc[vi * 3] = c.r; tc[vi * 3 + 1] = c.g; tc[vi * 3 + 2] = c.b;
   }
   tg.setAttribute('color', new THREE.BufferAttribute(tc, 3));
   tg.computeVertexNormals();
   const terrainMesh = new THREE.Mesh(tg, terrainMat); terrainMesh.castShadow = terrainMesh.receiveShadow = true; worldGroup.add(terrainMesh);
 
-  buildMap(colorAt);
+  buildMap(colorAt, grid);
 
   // palms: around oases, in the palace garden and along the shore
   const palms = [];
-  for (const o of W.OASES) for (let n = 0; n < 24; n++) { const a = rnd() * TAU, d = o.r * (0.5 + rnd() * 0.75), px = o.x + Math.cos(a) * d, pz = o.z + Math.sin(a) * d; if (terrainH(px, pz) > 0.6) palms.push([px, pz]); }
+  const gh = grid.at; // heights as the mesh shows them; cheaper than the noise, and what the trees stand on
+  for (const o of W.OASES) for (let n = 0; n < 24; n++) { const a = rnd() * TAU, d = o.r * (0.5 + rnd() * 0.75), px = o.x + Math.cos(a) * d, pz = o.z + Math.sin(a) * d; if (gh(px, pz) > 0.6) palms.push([px, pz]); }
   for (let g = 0; g < 16; g++) { const ga = g / 16 * TAU + rnd() * 0.2, gd = 31 + rnd() * 10; palms.push([W.CX + Math.cos(ga) * gd, W.CZ + Math.sin(ga) * gd]); }
   // palms in the green patches
   for (let pt = 0; pt < 4000 && palms.length < W.P.palmMax * 0.6; pt++) {
-    const px = (rnd() - 0.5) * SIZE * 0.95, pz = (rnd() - 0.5) * SIZE * 0.95, ph = terrainH(px, pz);
-    const sl = (Math.abs(terrainH(px + 6, pz) - ph) + Math.abs(terrainH(px, pz + 6) - ph)) / 6;
+    const px = (rnd() - 0.5) * SIZE * 0.95, pz = (rnd() - 0.5) * SIZE * 0.95, ph = gh(px, pz);
+    const sl = (Math.abs(gh(px + 6, pz) - ph) + Math.abs(gh(px, pz + 6) - ph)) / 6;
     if (greenAt(px, pz, ph, sl) > 0.6 && Math.hypot(px - W.CX, pz - W.CZ) > 50 && rnd() < 0.35) palms.push([px, pz]);
   }
   for (let pt = 0; pt < 2500 && palms.length < W.P.palmMax; pt++) {
-    const px = (rnd() - 0.5) * SIZE * 0.95, pz = (rnd() - 0.5) * SIZE * 0.95, ph = terrainH(px, pz);
+    const px = (rnd() - 0.5) * SIZE * 0.95, pz = (rnd() - 0.5) * SIZE * 0.95, ph = gh(px, pz);
     if (ph < 0.8 || ph > 7) continue;
-    const wet = terrainH(px + 16, pz) < 0 || terrainH(px - 16, pz) < 0 || terrainH(px, pz + 16) < 0 || terrainH(px, pz - 16) < 0;
+    const wet = gh(px + 16, pz) < 0 || gh(px - 16, pz) < 0 || gh(px, pz + 16) < 0 || gh(px, pz - 16) < 0;
     if (wet) palms.push([px, pz]);
   }
   const trunks = new THREE.InstancedMesh(trunkGeo, trunkMat, palms.length), leaves = new THREE.InstancedMesh(leafGeo, leafMat, palms.length * 7);
   const m4 = new THREE.Matrix4(), q4 = new THREE.Quaternion(), e4 = new THREE.Euler(), sc = new THREE.Vector3(), ps = new THREE.Vector3(), topV = new THREE.Vector3(), col = new THREE.Color();
   let li = 0;
   palms.forEach((p, i) => {
-    const hgt = 7 + rnd() * 6, bh2 = terrainH(p[0], p[1]) - 0.3;
+    const hgt = 7 + rnd() * 6, bh2 = gh(p[0], p[1]) - 0.3;
     e4.set((rnd() - 0.5) * 0.35, 0, (rnd() - 0.5) * 0.35); q4.setFromEuler(e4);
     ps.set(p[0], bh2, p[1]); sc.set(1, hgt, 1); m4.compose(ps, q4, sc); trunks.setMatrixAt(i, m4);
     topV.set(0, hgt, 0).applyQuaternion(q4).add(ps);
@@ -209,7 +230,7 @@ export function buildWorld(seed) {
   // sandstone boulders
   const rocks = new THREE.InstancedMesh(rockGeo, rockMat, W.P.rockCount); let ri = 0;
   for (let rt = 0; rt < 2000 && ri < W.P.rockCount; rt++) {
-    const rx = (rnd() - 0.5) * SIZE * 0.9, rz = (rnd() - 0.5) * SIZE * 0.9, rh = terrainH(rx, rz);
+    const rx = (rnd() - 0.5) * SIZE * 0.9, rz = (rnd() - 0.5) * SIZE * 0.9, rh = gh(rx, rz);
     if (rh < 2 || Math.hypot(rx - W.CX, rz - W.CZ) < 50) continue;
     const rsc = 1 + rnd() * 3.5;
     e4.set(rnd() * 3, rnd() * 3, rnd() * 3, 'XYZ'); q4.setFromEuler(e4); ps.set(rx, rh + rsc * 0.2, rz);

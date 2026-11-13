@@ -1,8 +1,8 @@
 // Tutorial: a practice island (fixed seed) that teaches one task at a time. Numbers in the config section "tutorial".
 // 0. The HUD: the bars (top left), then the map (top right), each highlighted until a click, tap or Enter; the
 //    carpet holds still meanwhile.
-// 1. Five flying lessons, in order, shown as chips 1/5 … 5/5 that turn green: look up and down, turn left and
-//    right, slide sideways (strafe), surge, brake. 2. Gather manaGoal mana (several times that appears around the
+// 1. Five flying lessons, in order, shown as chips 1/5 … 5/5 that turn green: aim up and down, turn left and
+//    right, slide sideways (strafe), speed up, brake. 2. Gather manaGoal mana (several times that appears around the
 //    palace once the lessons are done). 3. Bank it in the beam (banking is off until this task). 4. Slay the wyverns
 //    that now appear (fireballs). 5. Find a group of skeleton archers and blast them with a nova. 6. Bank the
 //    creatures' mana. Then done.
@@ -24,11 +24,14 @@ const $ = id => document.getElementById(id);
 const hudEl = $('hud'), elToast = $('toast'), panel = $('task'), elName = $('taskName'), elChips = $('taskChips'), elCount = $('taskCount'), elText = $('taskText'), elCont = $('taskCont');
 const touch = () => window.matchMedia && window.matchMedia('(pointer:coarse)').matches;
 const tilt = () => settings.tilt && tiltAvailable();
+const mouse = () => settings.mouse && !touch(); // mouse play on (Settings; otherwise keys only on a computer)
+const fireHow = () => touch() ? 'hold Fire' : mouse() ? 'click or press Space' : 'press Space';
+const novaHow = () => touch() ? 'tap Nova' : mouse() ? 'right-click or press Shift' : 'press Shift';
 
 // The HUD pages before the lessons: the element to highlight, a name, a short text (one line per thing shown)
 // and which of that element's pages it is. demo: the empty bars, or the map, blink with sample contents (see
 // #vitals.demo in style.css and drawRadar in hud.js), or the beam flashes (updatePalace), until the page is turned
-const cont = () => touch() ? 'Tap to continue …' : 'Press Enter or click to continue …';
+const cont = () => touch() ? 'Tap to continue …' : mouse() ? 'Press Enter or click to continue …' : 'Press Enter to continue …';
 const HUD_PAGES = [
   { el: 'vitals', name: 'Your bars', text: 'Red is vitality; your palace\'s beam heals it.\nBlue is spell mana for your spells.', n: 1, of: 2 },
   { el: 'vitals', name: 'Your bars', text: 'Gold is the mana you carry.\nGreen is your palace\'s next stage.', n: 2, of: 2, demo: 'bars' },
@@ -40,17 +43,17 @@ const HUD_PAGES = [
 // The flying lessons; each test is checked every frame and only for the current lesson, so they go in order
 const LESSONS = [
   {
-    name: 'Look up and down',
-    text: () => tilt() ? 'Tip the phone towards you and away from you (or drag up and down) to climb and dive.'
-      : touch() ? 'Drag up and down on the screen to climb and dive.'
-        : 'Move the mouse up and down (or press ↑ and ↓) to climb and dive.',
+    name: 'Aim up and down',
+    text: () => (tilt() ? 'Tip the phone towards you and away from you (or drag up and down)'
+      : touch() ? 'Drag up and down on the screen' : mouse() ? 'Move the mouse up and down (or hold ↑ and ↓)' : 'Hold ↑ and ↓') +
+      (CFG.player.altitude.mode === 'hold' ? ' to raise and lower the nose. Your shots go where it points (the circle). The carpet keeps its height by itself.' : ' to climb and dive.'),
     test: t => both(t, 'up', G.steerY > t.th, 'down', G.steerY < -t.th)
   },
   {
     name: 'Turn left and right',
     text: () => tilt() ? 'Tilt the phone left and right (or drag sideways) to turn.'
       : touch() ? 'Drag left and right on the screen to turn.'
-        : 'Move the mouse left and right (or press ← and →) to turn.',
+        : mouse() ? 'Move the mouse left and right (or press ← and →) to turn.' : 'Hold ← and → to turn.',
     test: t => both(t, 'left', G.steerX < -t.th, 'right', G.steerX > t.th)
   },
   {
@@ -60,14 +63,13 @@ const LESSONS = [
     test: t => both(t, 'sLeft', G.strafe < -t.strafe, 'sRight', G.strafe > t.strafe)
   },
   {
-    name: 'Surge',
-    text: () => touch() ? 'Press up on the pad (Surge) for a burst of speed. Held, it comes again every 2 seconds.'
-      : 'Press W for a burst of speed. Held, it comes again every 2 seconds.',
-    test: () => G.surging
+    name: 'Speed up',
+    text: () => (touch() ? 'Hold up on the pad (Go)' : 'Hold W') + ' to speed up until you fly at full speed. The carpet keeps its speed when you let go.',
+    test: () => G.speed > CFG.player.baseSpeed * 0.95
   },
   {
     name: 'Brake',
-    text: () => touch() ? 'Hold down on the pad (Back) to brake and fly backwards. Between two arms of the pad you do both, for example surge and slide.'
+    text: () => touch() ? 'Hold down on the pad (Back) to brake and fly backwards. Between two arms of the pad you do both, for example speed up and slide.'
       : 'Hold S to brake and fly backwards.',
     test: () => G.speed < 0
   }
@@ -80,10 +82,10 @@ function both(t, a, aNow, b, bNow) { if (aNow) t[a] = true; if (bNow) t[b] = tru
 const TASKS = {
   gather: () => ['Gather mana', 'Fly through the golden orbs around your palace to gather their mana. Close by, they are drawn to you.', count(G.carried, CFG.tutorial.manaGoal)],
   bank: () => ['Bank it in the beam', 'Fly home into the golden beam above your palace (the turquoise diamond on the map). The mana you carry is banked there.', count(G.castleMana, CFG.tutorial.manaGoal)],
-  fight: () => ['Slay the wyverns', 'Wyverns are coming (red dots on the map). Aim at them and ' + (touch() ? 'hold Fire' : 'click or press Space') +
+  fight: () => ['Slay the wyverns', 'Wyverns are coming (red dots on the map). Aim at them and ' + fireHow() +
     ' to throw fireballs; they curve a little towards a creature near your aim.', count(CFG.tutorial.wyverns - countKind('wyvern'), CFG.tutorial.wyverns)],
   skeletons: T => ['Nova the skeletons', 'Skeleton archers have risen (pale dots on the map). Fly in close and ' +
-    (touch() ? 'tap Nova' : 'right-click or press E') + ' to strike them all at once.', count(T.skel - countKind('skeleton'), T.skel)],
+    novaHow() + ' to strike them all at once.', count(T.skel - countKind('skeleton'), T.skel)],
   bankAgain: () => ['Bring their mana home', 'Slain creatures drop mana. Gather it and bank it in the beam.']
 };
 const count = (n, of) => Math.min(of, Math.floor(n)) + ' / ' + of;
@@ -154,6 +156,7 @@ export const tutorialHolds = () => !!(G.tut && G.tut.step === 'hud');
 function nextPage(e) {
   const T = G.tut; if (!T || T.step !== 'hud' || G.mode !== 'play') return;
   if (e.target && e.target.closest && e.target.closest('button')) return; // Pause and the spell buttons keep their jobs
+  if (e.pointerType === 'mouse' && !settings.mouse) return; // keys only: a brushed trackpad does not turn the page
   if (e.type === 'keydown' && e.code !== 'Enter' && e.code !== 'Space' && e.code !== 'NumpadEnter') return;
   if (e.type === 'keydown' && e.repeat) return;
   T.page++; sfx('mana');
@@ -231,7 +234,7 @@ export function updateTutorial(dt) {
     elCount.textContent = count(T.skel - left, T.skel);
     if (!left) {
       complete(T, 'bankAgain');
-      if (!T.novaCast) toast('Next time, try the nova: ' + (touch() ? 'tap Nova' : 'right-click or press E') + ' when they are close.', 3200);
+      if (!T.novaCast) toast('Next time, try the nova: ' + novaHow() + ' when they are close.', 3200);
     }
   } else if (T.step === 'bankAgain') {
     if (G.castleMana > T.banked0 + 0.5 && G.carried < 0.5) {

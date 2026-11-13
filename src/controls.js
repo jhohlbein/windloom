@@ -4,6 +4,7 @@ import { canvas } from './scene.js';
 import { clamp } from './util.js';
 import { CFG } from './config.js';
 import { audioInit } from './audio.js';
+import { settings } from './settings.js';
 
 /* ---------- pointer lock and fullscreen ---------- */
 // With pointer lock the cursor is hidden and cannot leave the window; mouse movement then drives a virtual
@@ -11,7 +12,7 @@ import { audioInit } from './audio.js';
 let vx = 0, vy = 0;
 export const pointerLocked = () => document.pointerLockElement === canvas;
 export function lockPointer() {
-  if (!CFG.controls.pointerLock || pointerLocked() || !canvas.requestPointerLock) return;
+  if (!CFG.controls.pointerLock || !settings.mouse || pointerLocked() || !canvas.requestPointerLock) return;
   try { const p = canvas.requestPointerLock(); if (p && p.catch) p.catch(() => { }); } catch (e) { /* not allowed now */ }
 }
 export function unlockPointer() { if (pointerLocked() && document.exitPointerLock) document.exitPointerLock(); }
@@ -41,8 +42,11 @@ export function bindControls({ onPause, onMute, onBlur, onLockLost, onCentre }) 
     if (e.code === 'KeyM') { onMute(); return; }
     if (e.code === 'KeyF' && !e.repeat) { toggleFullscreen(); return; }
     if (!G.active) return;
-    if (e.code === 'KeyE' && !e.repeat) I.novaReq = true;
+    if ((e.code === 'ShiftLeft' || e.code === 'ShiftRight') && !e.repeat) I.novaReq = true;
     if (e.code === 'Space' || e.code.startsWith('Arrow')) e.preventDefault();
+    // Steering with the arrow keys re-centres the mouse's virtual stick, which otherwise stays where the mouse
+    // last left it and would keep adding a slight turn, climb or dive on top of the keys
+    if (e.code.startsWith('Arrow') && !e.repeat) { vx = vy = 0; I.mouseX = I.mouseY = 0; }
   });
   window.addEventListener('keyup', e => { G.keys[e.code] = false; });
   window.addEventListener('blur', onBlur);
@@ -57,7 +61,7 @@ export function bindControls({ onPause, onMute, onBlur, onLockLost, onCentre }) 
   // for nova while holding fire) arrives as pointermove. Reading e.button alone left fire stuck on.
   let prevButtons = 0;
   const mouseButtons = e => {
-    if (e.pointerType !== 'mouse') return;
+    if (e.pointerType !== 'mouse' || !settings.mouse) return; // Settings → Mouse and trackpad off: keys only
     const b = e.buttons, pressed = b & ~prevButtons; prevButtons = b;
     if (!(b & 1)) I.mouseFire = false;
     if (!G.active || e.target !== canvas) return;
@@ -87,7 +91,7 @@ export function bindControls({ onPause, onMute, onBlur, onLockLost, onCentre }) 
   canvas.addEventListener('pointerup', endTouch);
   canvas.addEventListener('pointercancel', endTouch);
   window.addEventListener('pointermove', e => {
-    if (e.pointerType !== 'mouse') return;
+    if (e.pointerType !== 'mouse' || !settings.mouse) return;
     if (e.buttons !== prevButtons) mouseButtons(e);
     const w = window.innerWidth, h = window.innerHeight, s = Math.min(w, h) * 0.36, dz = 0.07;
     const shape = v => { const a = Math.abs(v); return a < dz ? 0 : Math.sign(v) * (a - dz) / (1 - dz); };
@@ -110,8 +114,8 @@ export function bindControls({ onPause, onMute, onBlur, onLockLost, onCentre }) 
   bindHold('btnNova', () => { I.novaReq = true; }, () => { });
   bindHold('btnCentre', () => { recentreTilt(); if (onCentre) onCentre(); }, () => { });
   bindHold('btnPause', () => { onPause(); }, () => { });
-  // Four-way pad: the direction from the pad's centre to the finger picks surge (up), back (down) and strafe
-  // (left/right); between two arms both are on, so surge and strafe work together. The finger may slide off the pad.
+  // Four-way pad: the direction from the pad's centre to the finger picks go (up), back (down) and strafe
+  // (left/right); between two arms both are on, so speeding up and strafing work together. The finger may slide off the pad.
   const pad = document.getElementById('dpad'), arms = {};
   for (const k of ['up', 'down', 'left', 'right']) arms[k] = pad.querySelector('.' + k);
   let padId = null;
@@ -191,5 +195,6 @@ export function requestTilt(on) {
 export function releaseInput() {
   const I = G.input;
   I.mouseFire = I.touchFire = I.touchBoost = I.touchBack = I.touchLeft = I.touchRight = false; I.mouseX = I.mouseY = 0; I.novaReq = false; vx = vy = 0;
+  G.keyPitch = 0; G.keyTurn = 0;
   for (const k in G.keys) delete G.keys[k];
 }

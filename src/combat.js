@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { CFG } from './config.js';
 import { G, W } from './state.js';
-import { scene, addSprite, mats, fireCoreMat, coreMatFor, haloMatFor } from './scene.js';
+import { scene, addSprite, mats, fireCoreMat, coreMatFor, haloMatFor, shared } from './scene.js';
 import { TAU, clamp, lerp } from './util.js';
 import { terrainH, groundH } from './terrain.js';
 import { emit, burst, C } from './particles.js';
@@ -159,7 +159,7 @@ export function castFire() {
   if (G.fireCd > 0 || G.spellExhausted) return;
   // Firing nonstop drains spell mana a little faster than it refills; once empty, wait until it reaches refireAt
   if (G.spellMana < fb.manaCost) { G.spellExhausted = true; toast('Out of spell mana', 1000, true); return; }
-  G.spellMana -= fb.manaCost; makeNoise();
+  G.spellMana -= fb.manaCost; makeNoise(); G.castFx = 1;
   G.fireCd = Math.max(G.fireCd, -0.05) + fb.cooldownSeconds; // keep the overshoot so the rate does not depend on frame rate
   const dir = aimDir();
   const g = addSprite(haloMatFor(mats.fire), 5.5); g.position.copy(G.playerPos).addScaledVector(G.fwd, 3.2); g.position.y -= 0.3; scene.add(g);
@@ -171,7 +171,7 @@ export function castNova() {
   const nv = CFG.spells.nova;
   if (G.novaCd > 0) return;
   if (G.spellMana < nv.manaCost) { toast('Nova needs ' + nv.manaCost + ' spell mana', 1400, true); G.novaCd = 0.6; return; }
-  G.spellMana -= nv.manaCost; G.novaCd = nv.cooldownSeconds; makeNoise();
+  G.spellMana -= nv.manaCost; G.novaCd = nv.cooldownSeconds; makeNoise(); G.novaFx = 1;
   mark('nova');
   if (G.tut) G.tut.novaCast = true;
   addRing(G.playerPos, nv.radius, 0.55, 0x7defff); sfx('nova');
@@ -198,15 +198,16 @@ export function updateShots(dt) {
 }
 
 /* ---------- expanding shock rings ---------- */
+const ringGeo = shared(new THREE.SphereGeometry(1, 24, 16));
 export function addRing(pos, max, dur, color) {
-  const m = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, depthWrite: false }));
+  const m = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, depthWrite: false }));
   m.position.copy(pos); m.scale.setScalar(2); scene.add(m);
   G.rings.push({ m, t: 0, dur, max });
 }
 export function updateRings(dt) {
   for (let i = G.rings.length - 1; i >= 0; i--) {
     const r = G.rings[i]; r.t += dt; const f = r.t / r.dur;
-    if (f >= 1) { scene.remove(r.m); r.m.geometry.dispose(); r.m.material.dispose(); G.rings.splice(i, 1); continue; }
+    if (f >= 1) { scene.remove(r.m); r.m.material.dispose(); G.rings.splice(i, 1); continue; }
     r.m.scale.setScalar(lerp(2, r.max, 1 - Math.pow(1 - f, 2))); r.m.material.opacity = 0.4 * (1 - f);
   }
 }

@@ -57,11 +57,11 @@
     <div id="taskCont" hidden></div>
   </div>
   <div id="cross"></div><div id="steer"></div>
-  <!-- touch: a four-way pad on the left (up surge, down back, left/right strafe; diagonals combine them),
+  <!-- touch: a four-way pad on the left (up go, down back, left/right strafe; diagonals combine them),
        spells on the right -->
   <div class="touch touchL">
     <div class="dpad" id="dpad" role="group" aria-label="Movement pad">
-      <span class="arm up">Surge</span><span class="arm left">◀</span><span class="arm right">▶</span><span class="arm down">Back</span><span class="hub"></span>
+      <span class="arm up">Go</span><span class="arm left">◀</span><span class="arm right">▶</span><span class="arm down">Back</span><span class="hub"></span>
     </div>
   </div>
   <div class="touch touchR">
@@ -78,6 +78,16 @@
     <p class="isle" id="isle">Loading…</p>
     <p class="lede" id="ovText">Ride a flying carpet over a desert island of dunes, mesas and hidden oases. Every creature you slay drops golden mana. Carry it home to the beam of light above your palace and raise it through six stages to the Crescent Sanctum, and beware Vharoth, the ash wyrm. New here? Start with the tutorial.</p>
     <p id="stats" hidden></p>
+    <!-- leaderboard: the best timed rounds in this browser with their islands; picking an island starts a round there -->
+    <section class="board" id="board" hidden aria-labelledby="boardTitle">
+      <h2 id="boardTitle">Best rounds</h2>
+      <ol id="boardList"></ol>
+      <p class="hint" id="boardEmpty"></p>
+      <div id="boardConfirm" hidden>
+        <p id="boardConfirmText"></p>
+        <div class="actions"><button class="go" id="boardFly" type="button">Fly there</button><button class="go2" id="boardCancel" type="button">Cancel</button></div>
+      </div>
+    </section>
     <div class="modes" role="radiogroup" aria-labelledby="modesLbl">
       <span class="lbl" id="modesLbl">Game mode</span>
       <div class="modeOpts">
@@ -100,16 +110,22 @@
       <h2>Settings</h2>
       <fieldset>
         <legend>Rider</legend>
-        <label><input type="radio" name="rider" value="sultan"> Turbaned rider</label>
+        <label><input type="radio" name="rider" value="sultan"> Turbaned prince</label>
         <label><input type="radio" name="rider" value="princess"> Veiled princess</label>
       </fieldset>
       <fieldset>
         <legend>Graphics</legend>
         <label><input type="checkbox" id="optShadows"> Shadows (turn off if the game runs slowly)</label>
       </fieldset>
+      <fieldset id="mouseRow" hidden>
+        <legend>Mouse and keys</legend>
+        <label><input type="checkbox" id="optMouse"> Mouse and trackpad: steer and aim with the mouse, click for fireballs, right-click for a nova. Turn off on a laptop to play with the keys only, so brushing the trackpad does nothing.</label>
+        <label><input type="checkbox" id="optInvKeys"> Invert up and down for the arrow keys (↑ lowers the nose)</label>
+        <label><input type="checkbox" id="optInvMouse"> Invert up and down for the mouse (moving it forward lowers the nose)</label>
+      </fieldset>
       <fieldset id="tiltRow" hidden>
         <legend>Controls</legend>
-        <label><input type="checkbox" id="optTilt"> Tilt to steer: tilt the phone left and right to turn, tip it towards or away from you to climb or dive. The way you hold it when you start, resume, turn the screen or tap Centre is level.</label>
+        <label><input type="checkbox" id="optTilt"> Tilt to steer: tilt the phone left and right to turn, tip it towards or away from you to <span data-hold="raise or lower the nose to aim">climb or dive</span>. The way you hold it when you start, resume, turn the screen or tap Centre is level.</label>
         <label id="autoFsRow"><input type="checkbox" id="optAutoFs"> Full screen when a flight starts</label>
         <span class="hint" id="installHint" hidden>For full screen on iPhone: tap Share, then “Add to Home Screen”, and start Windloom from its icon.</span>
       </fieldset>
@@ -122,23 +138,24 @@
         <h2>Keyboard and mouse</h2>
         <dl>
           <dt>Mouse / ← →</dt><dd>turn left and right</dd>
-          <dt>Mouse / ↑ ↓</dt><dd>climb and dive</dd>
-          <dt>W / Shift</dt><dd>surge forward in a short burst; held, it repeats every 2 s</dd>
-          <dt>S</dt><dd>fly backwards</dd>
+          <dt>Mouse / ↑ ↓</dt><dd data-hold="raise and lower the nose to aim (the arrow keys level it again when let go; the carpet keeps its height)">climb and dive</dd>
+          <dt>W</dt><dd>hold to speed up; the carpet keeps its speed when you let go (it never drops below a slow glide)</dd>
+          <dt>S</dt><dd>brake, then fly backwards</dd>
           <dt>A / D</dt><dd>strafe left and right</dd>
-          <dt>Click / Space</dt><dd>fireball</dd>
-          <dt>Right-click / E</dt><dd>nova, costs spell mana</dd>
+          <dt>Space / click</dt><dd>fireball</dd>
+          <dt>Shift / right-click</dt><dd>nova, costs spell mana</dd>
+          <dt>Trackpad</dt><dd>switch off the mouse in Settings to play with the keys only</dd>
           <dt>Esc / M / F</dt><dd>pause / mute / full screen</dd>
         </dl>
       </div>
       <div>
         <h2>Touch</h2>
         <dl>
-          <dt>Tilt</dt><dd>turn and climb (switch off in Settings)</dd>
-          <dt>Drag</dt><dd>turn and climb, with or without tilt</dd>
+          <dt>Tilt</dt><dd data-hold="turn, and raise or lower the nose to aim (switch off in Settings)">turn and climb (switch off in Settings)</dd>
+          <dt>Drag</dt><dd data-hold="turn, and raise or lower the nose to aim, with or without tilt">turn and climb, with or without tilt</dd>
           <dt>Fire</dt><dd>hold for fireballs</dd>
           <dt>Nova</dt><dd>blast, costs spell mana</dd>
-          <dt>Pad</dt><dd>up: surge burst (held, it repeats) · down: backwards · left/right: strafe · between two arms: both</dd>
+          <dt>Pad</dt><dd>up (Go): hold to speed up · down: brake, then backwards · left/right: strafe · between two arms: both</dd>
           <dt>Centre</dt><dd>takes how you hold the phone now as level</dd>
           <dt>II</dt><dd>pause</dd>
         </dl>

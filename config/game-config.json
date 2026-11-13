@@ -41,10 +41,15 @@
   },
   "graphics": {
     "shadowMapSize": 2048,
-    "shadowRange": 220
+    "shadowRange": 220,
+    "pixelRatioMax": 1.75,
+    "pixelRatioMin": 0.7,
+    "adaptiveResolution": true
   },
   "controls": {
     "pointerLock": true,
+    "expo": 1.6,
+    "keys": { "turnStart": 0.25, "turnRampSeconds": 0.5, "pitchSeconds": 0.3, "levelTimeConstant": 0.25 },
     "lockedSensitivity": 1,
     "tilt": { "steerDegrees": 15, "pitchDegrees": 12, "deadzoneDegrees": 1.5, "invertPitch": false }
   },
@@ -61,7 +66,8 @@
     "lookHeight": 5,
     "follow": 10,
     "fov": 72,
-    "fovSurgeExtra": 9
+    "fovSpeedExtra": 4,
+    "pitchFollow": 0.25
   },
   "sky": {
     "startElevationDeg": 3,
@@ -73,9 +79,7 @@
   },
   "player": {
     "baseSpeed": 44,
-    "surgeMultiplier": 1.85,
-    "surgeSeconds": 0.9,
-    "surgeCooldownSeconds": 2,
+    "throttle": { "acceleration": 44, "brakeDeceleration": 80, "minSpeed": 10 },
     "reverseMultiplier": 0.6,
     "strafeSpeed": 32,
     "turnRate": 1.55,
@@ -90,7 +94,8 @@
     "carryPerStage": 20,
     "groundClearance": 1.4,
     "cornerClearance": 0.4,
-    "response": { "steer": 12, "pitch": 6, "speed": 3.5, "strafe": 7, "roll": 6 }
+    "altitude": { "mode": "hold", "hoverHeight": 5, "lookAheadSeconds": 0.8, "response": 3, "climbRate": 30, "sinkRate": 14 },
+    "response": { "steer": 12, "pitch": 6, "strafe": 7, "roll": 6 }
   },
   "spells": {
     "mana": {
@@ -124,7 +129,8 @@
     "pointsPerStage": 100,
     "dragonSlainBonus": 500,
     "completionBonus": 1000,
-    "pointsPerSecondLeft": 10
+    "pointsPerSecondLeft": 10,
+    "leaderboardSize": 5
   },
   "tutorial": {
     "seed": 31337,
@@ -288,6 +294,8 @@
     "sfxVolume": 1,
     "musicVolume": 0.35,
     "windVolume": 0.09,
+    "reverb": 0.18,
+    "stereoWidth": 0.7,
     "tempoCalm": 88,
     "tempoDanger": 124,
     "dangerHoldSeconds": 6,

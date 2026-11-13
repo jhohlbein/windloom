@@ -124,7 +124,7 @@ body{
 }
 @media (pointer:coarse){
   .touch{display:flex}
-  #cross,#steer{display:none}
+  #steer{display:none} /* the aiming cross stays: it shows where the nose points */
 }
 #overlay{position:fixed;inset:0;display:flex;overflow-x:hidden;overflow-y:auto;touch-action:pan-y;
   padding:max(24px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(24px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));
@@ -174,4 +174,24 @@ h1{margin:0;font:800 min(5.2rem,calc((100vw - 40px) / 8.6))/.9 var(--font-displa
 .fine{margin:0;color:var(--mute);font-size:11px;line-height:1.6}
 .fine a{color:var(--sky)}
 button.update{font:inherit;color:var(--gold);background:none;border:0;padding:0;text-decoration:underline;cursor:pointer}
+/* leaderboard: rank, score, island (a button that offers to fly there), and what was reached */
+.board{display:grid;gap:10px;padding:14px 16px;border:1px solid rgba(247,238,221,.18);border-radius:3px;background:rgba(20,15,34,.35);justify-self:stretch;text-align:left}
+.board h2{margin:0;font:700 11px/1 var(--font-mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mute)}
+.board ol{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.board li{display:grid;grid-template-columns:1.6em auto minmax(0,1fr);gap:2px 12px;align-items:baseline;line-height:1.45}
+.board li.here .seed{color:var(--gold)}
+.board .rank{color:var(--mute);font-variant-numeric:tabular-nums}
+.board .score{color:var(--gold);font-weight:500;font-variant-numeric:tabular-nums;text-align:right}
+.board .seed{font:inherit;color:var(--sky);background:none;border:0;padding:0;text-align:left;cursor:pointer;text-decoration:underline;text-decoration-color:rgba(95,224,214,.4);text-underline-offset:3px;overflow-wrap:anywhere}
+.board .seed:hover,.board .seed.picked{color:var(--paper);text-decoration-color:var(--paper)}
+.board .seed:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.board .meta{grid-column:3;color:var(--mute);font-size:11px}
+.board .hint{margin:0;font-size:12px;color:var(--mute)}
+#boardConfirm{display:grid;gap:10px;padding-top:10px;border-top:1px solid rgba(247,238,221,.14)}
+#boardConfirm p{margin:0;line-height:1.5}
+#boardConfirm .actions{justify-content:flex-start}
+#boardConfirm .go,#boardConfirm .go2{padding:11px 18px;font-size:14px}
+@media (min-width:600px){.board li{grid-template-columns:1.6em auto minmax(0,1fr) auto}.board .meta{grid-column:auto;text-align:right;white-space:nowrap}}
 #stats{margin:0;text-align:left;font-size:13px;color:var(--gold);font-variant-numeric:tabular-nums;white-space:pre;overflow-x:auto;line-height:1.7}
+/* keys only (Settings → Mouse and trackpad off): no cursor over the game while flying */
+body.flying,body.flying canvas{cursor:none}
