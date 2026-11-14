@@ -4,6 +4,14 @@ All notable changes to Windloom are recorded here. The format follows [Keep a Ch
 
 ## [Unreleased]
 
+### Changed
+- The carpet flies 4 m above the ground (`player.altitude.hoverHeight`, was 5), so the terrain shows more in the flight.
+- The nose points further up and less far down: up to 57° up (`player.pitchMaxUp`, 1.0 rad) to reach high-flying creatures, and 23° down (`player.pitchMaxDown`, 0.4 rad; both replace `pitchMax`, which was 46° either way). With the carpet so low, a nose lowered further sent fireballs straight into the sand. The camera follows the nose by half (`camera.pitchFollow`, was 0.25), so the aiming circle stays on screen with the nose fully up.
+- The aim assist's cone is narrower (`spells.fireball.aimAssistCone` 0.975 ≈ 13°, was 16°), and it ignores creatures the terrain hides, which used to draw fireballs into the ridge in front of them.
+- Enemy health bars are not drawn for creatures hidden behind a hill or mountain (line of sight from the carpet, checked every 0.15 s per creature).
+- Touch: the movement pad is an outlined cross with a chevron on each arm (speed up, brake, strafe), and the fire and nova buttons show symbols instead of words (a fireball with a trail, a ring with rays), all as grey lines on a semi-transparent ground. The controls list, README and tutorial texts follow.
+- Tutorial on phones held sideways: the task panel sits at the top centre between the bars and the map, in small type, instead of below the map where it covered the middle of the screen. Messages still appear just below it.
+
 ## [0.5.0] - 2026-11-13
 
 ### Added

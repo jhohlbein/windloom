@@ -25,8 +25,8 @@ const hudEl = $('hud'), elToast = $('toast'), panel = $('task'), elName = $('tas
 const touch = () => window.matchMedia && window.matchMedia('(pointer:coarse)').matches;
 const tilt = () => settings.tilt && tiltAvailable();
 const mouse = () => settings.mouse && !touch(); // mouse play on (Settings; otherwise keys only on a computer)
-const fireHow = () => touch() ? 'hold Fire' : mouse() ? 'click or press Space' : 'press Space';
-const novaHow = () => touch() ? 'tap Nova' : mouse() ? 'right-click or press Shift' : 'press Shift';
+const fireHow = () => touch() ? 'hold the fireball button' : mouse() ? 'click or press Space' : 'press Space';
+const novaHow = () => touch() ? 'tap the nova button' : mouse() ? 'right-click or press Shift' : 'press Shift';
 
 // The HUD pages before the lessons: the element to highlight, a name, a short text (one line per thing shown)
 // and which of that element's pages it is. demo: the empty bars, or the map, blink with sample contents (see
@@ -58,18 +58,18 @@ const LESSONS = [
   },
   {
     name: 'Slide sideways',
-    text: () => touch() ? 'Press left and right on the pad to slide sideways without turning.'
+    text: () => touch() ? 'Press ◀ and ▶ on the pad to slide sideways without turning.'
       : 'Press A and D to slide sideways without turning.',
     test: t => both(t, 'sLeft', G.strafe < -t.strafe, 'sRight', G.strafe > t.strafe)
   },
   {
     name: 'Speed up',
-    text: () => (touch() ? 'Hold up on the pad (Go)' : 'Hold W') + ' to speed up until you fly at full speed. The carpet keeps its speed when you let go.',
+    text: () => (touch() ? 'Hold ▲ on the pad' : 'Hold W') + ' to speed up until you fly at full speed. The carpet keeps its speed when you let go.',
     test: () => G.speed > CFG.player.baseSpeed * 0.95
   },
   {
     name: 'Brake',
-    text: () => touch() ? 'Hold down on the pad (Back) to brake and fly backwards. Between two arms of the pad you do both, for example speed up and slide.'
+    text: () => touch() ? 'Hold ▼ on the pad to brake and fly backwards. Between two arms of the pad you do both, for example speed up and slide.'
       : 'Hold S to brake and fly backwards.',
     test: () => G.speed < 0
   }

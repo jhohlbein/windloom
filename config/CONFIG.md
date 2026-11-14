@@ -101,7 +101,7 @@ On-screen messages stay up long enough to read: `max(toastMinSeconds, toastBaseS
 | `lookHeight` | 5 | ...and this far above it. Higher tilts the view up, so the carpet sits lower on screen (0 = carpet close to the centre). |
 | `follow` | 10 | How quickly the camera catches up with the carpet (higher = tighter, less lag; was 7). |
 | `fov`, `fovSpeedExtra` | 72, 4 | Field of view in degrees at rest, and how much it widens at full speed. |
-| `pitchFollow` | 0.25 | Height mode `hold`: how much the camera follows the carpet's nose up and down (0 stays level, 1 looks exactly where the nose points). The aiming circle always shows where the nose points. |
+| `pitchFollow` | 0.5 | Height mode `hold`: how much the camera follows the carpet's nose up and down (0 stays level, 1 looks exactly where the nose points). The aiming circle always shows where the nose points; at 0.5 it stays on screen even with the nose at `player.pitchMaxUp`. |
 
 ## sky
 
@@ -119,14 +119,14 @@ The sun rises over the course of a round: dawn at the start (low, warm, dim ligh
 
 | Key | Value | Meaning |
 |---|---|---|
-| `baseSpeed` | 44 | Top speed, reached by holding W (or Go on the touch pad). The carpet keeps whatever speed it has when W is let go, but never less than `throttle.minSpeed`. |
+| `baseSpeed` | 44 | Top speed, reached by holding W (or ▲ on the touch pad). The carpet keeps whatever speed it has when W is let go, but never less than `throttle.minSpeed`. |
 | `throttle.acceleration` | 44 | How fast holding W speeds the carpet up, in m/s per second (from rest to top speed in 1 s). |
 | `throttle.minSpeed` | 10 | The carpet never flies forward slower than this (m/s) unless S is held: it glides at this speed from the start and comes back to it after braking. 0 lets it rest. |
-| `throttle.brakeDeceleration` | 80 | How fast S (or Back) brakes, and how fast it speeds up backwards after that, in m/s per second. |
+| `throttle.brakeDeceleration` | 80 | How fast S (or ▼ on the touch pad) brakes, and how fast it speeds up backwards after that, in m/s per second. |
 | `reverseMultiplier` | 0.6 | Speed backwards (S), as a fraction of top speed. |
 | `strafeSpeed` | 32 | Sideways speed (A/D). |
 | `turnRate` | 1.55 | How fast the carpet turns (radians per second at full steer). |
-| `pitchMax` | 0.8 | Steepest climb or dive angle (radians). |
+| `pitchMaxUp`, `pitchMaxDown` | 1.0, 0.4 | Steepest angle the nose can point up and down (radians; 1.0 ≈ 57°, 0.4 ≈ 23°). Up is larger to reach high-flying creatures; down is small so shots from the low-flying carpet do not go straight into the sand. In height mode `free` these are the climb and dive angles. |
 | `maxHp`, `maxHpPerStage` | 70, 7 | Starting vitality and the gain per palace stage. |
 | `regenPerSecond` | 1.5 | Healing per second away from the palace. |
 | `regenDelaySeconds` | 5 | Healing starts after this long without taking damage. |
@@ -136,7 +136,7 @@ The sun rises over the course of a round: dawn at the start (low, warm, dim ligh
 | `groundClearance` | 1.4 | Lowest the carpet's centre can fly above the ground (was a fixed 2.6). |
 | `cornerClearance` | 0.4 | Each corner of the tilted carpet stays at least this far above the ground beneath it, so it does not dip into slopes. |
 | `altitude.mode` | hold | How the carpet's height is set. `hold`: it flies level and keeps `hoverHeight` above the ground (or a palace roof) by itself, rising over hills up to `world.ceiling`; up/down (mouse, arrow keys, tilt, drag) raise and lower the carpet's nose to aim, and the camera stays nearly level (`camera.pitchFollow`). `free`: the carpet flies where it points, so up/down climb and dive, up to `world.ceiling`. |
-| `altitude.hoverHeight` | 5 | `hold` only: metres above the ground (or palace roof) the carpet keeps. |
+| `altitude.hoverHeight` | 4 | `hold` only: metres above the ground (or palace roof) the carpet keeps. |
 | `altitude.lookAheadSeconds` | 0.8 | `hold` only: how far ahead along its path (in seconds of flight) the carpet looks for rising ground, so it starts to climb before a slope. |
 | `altitude.response` | 3 | `hold` only: how quickly the height follows the ground (per second); higher is snappier. |
 | `altitude.climbRate`, `altitude.sinkRate` | 30, 14 | `hold` only: fastest climb and descent, in metres per second. |
@@ -161,7 +161,7 @@ The sun rises over the course of a round: dawn at the start (low, warm, dim ligh
 | `speed`, `lifetimeSeconds` | 400, 2.1 | Flight speed and how long a fireball lasts. |
 | `damage`, `damagePerStage` | 1, 0.25 | Damage per hit: damage + perStage × (stage − 1). |
 | `aimAssistRange` | 330 | Creatures within this distance can attract the aim assist. |
-| `aimAssistCone` | 0.962 | Cosine of the aim-assist cone (0.962 ≈ 16°). Set to 1 to turn aim assist off. |
+| `aimAssistCone` | 0.975 | Cosine of the aim-assist cone (0.975 ≈ 13°). Only creatures the terrain does not hide count. Set to 1 to turn aim assist off. |
 | `noiseRadius` | 260 | Casting within this distance of the dragon alerts it. |
 
 **nova**

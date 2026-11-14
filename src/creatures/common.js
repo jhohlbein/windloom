@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { G } from '../state.js';
 import { scene } from '../scene.js';
+import { lineOfSight } from '../terrain.js';
 
 const FLASH = 0x886655;
 export const yes = () => true;
@@ -20,3 +21,10 @@ export function baseEnemy(kind, name) {
 export function setHp(e, v) { e.hp = e.maxHp = e.ghost = v; }
 export function removeEnemyObj(e) { scene.remove(e.root); e.mats.forEach(m => m.dispose()); }
 export function countKind(k) { let n = 0; for (const e of G.enemies) if (e.kind === k) n++; return n; }
+
+// True if the terrain does not hide the creature from the carpet (the aim assist ignores hidden creatures and the
+// HUD draws no bar for them). Checked at most every 0.15 s per creature; between checks the last answer is kept.
+export function inView(e) {
+  if (e.losT === undefined || Math.abs(G.playTime - e.losT) > 0.15) { e.losT = G.playTime; e.los = lineOfSight(G.playerPos, e.pos); }
+  return e.los;
+}

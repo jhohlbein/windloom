@@ -67,7 +67,7 @@
     "follow": 10,
     "fov": 72,
     "fovSpeedExtra": 4,
-    "pitchFollow": 0.25
+    "pitchFollow": 0.5
   },
   "sky": {
     "startElevationDeg": 3,
@@ -83,7 +83,8 @@
     "reverseMultiplier": 0.6,
     "strafeSpeed": 32,
     "turnRate": 1.55,
-    "pitchMax": 0.8,
+    "pitchMaxUp": 1.0,
+    "pitchMaxDown": 0.4,
     "maxHp": 70,
     "maxHpPerStage": 7,
     "regenPerSecond": 1.5,
@@ -94,7 +95,7 @@
     "carryPerStage": 20,
     "groundClearance": 1.4,
     "cornerClearance": 0.4,
-    "altitude": { "mode": "hold", "hoverHeight": 5, "lookAheadSeconds": 0.8, "response": 3, "climbRate": 30, "sinkRate": 14 },
+    "altitude": { "mode": "hold", "hoverHeight": 4, "lookAheadSeconds": 0.8, "response": 3, "climbRate": 30, "sinkRate": 14 },
     "response": { "steer": 12, "pitch": 6, "strafe": 7, "roll": 6 }
   },
   "spells": {
@@ -111,7 +112,7 @@
       "damage": 1,
       "damagePerStage": 0.25,
       "aimAssistRange": 330,
-      "aimAssistCone": 0.962,
+      "aimAssistCone": 0.975,
       "noiseRadius": 260
     },
     "nova": {

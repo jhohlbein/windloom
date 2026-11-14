@@ -8,19 +8,19 @@ Every game generates a new island. The page address ends with the island's seed 
 
 The start screen keeps a leaderboard of your five best timed rounds in this browser, with each island's name and seed. Pick an island there to fly it again and try to beat its score.
 
-Version 0.5.0. See [CHANGELOG.md](CHANGELOG.md).
+Version 0.5.1-dev. See [CHANGELOG.md](CHANGELOG.md).
 
 ## Controls
 
 | Action | Keyboard and mouse | Touch |
 |---|---|---|
 | Turn | mouse left/right, ← → | tilt the phone left/right, or drag |
-| Aim up / down: raise or lower the nose (the carpet keeps 5 m above the ground by itself) | mouse up/down, ↑ ↓ | tip the phone towards/away from you, or drag |
-| Speed up (the carpet keeps its speed when you let go, and never drops below a slow glide) | W (hold) | pad up (Go) |
-| Brake, then fly backwards | S | pad down (Back) |
-| Strafe | A / D | pad left / right (diagonals combine with Go or Back) |
-| Fireball | Space or left click | Fire (hold) |
-| Nova (costs mana) | Shift or right click | Nova |
+| Aim up / down: raise or lower the nose (the carpet keeps 4 m above the ground by itself) | mouse up/down, ↑ ↓ | tip the phone towards/away from you, or drag |
+| Speed up (the carpet keeps its speed when you let go, and never drops below a slow glide) | W (hold) | pad ▲ |
+| Brake, then fly backwards | S | pad ▼ |
+| Strafe | A / D | pad ◀ ▶ (diagonals combine with ▲ or ▼) |
+| Fireball | Space or left click | fireball button (hold) |
+| Nova (costs mana) | Shift or right click | nova button |
 | Pause / mute | Esc / M | II |
 
 On a laptop, switch off "Mouse and trackpad" in Settings to play with the keys only, so brushing the trackpad does nothing. Browsers cannot tell a mouse from a trackpad, so this is a setting. On phones and tablets the game goes full screen when a flight starts. iPhone Safari cannot do that for web pages. Instead, tap Share → Add to Home Screen and start Windloom from its icon: it then runs without browser bars. This also works on Android.

@@ -57,15 +57,24 @@
     <div id="taskCont" hidden></div>
   </div>
   <div id="cross"></div><div id="steer"></div>
-  <!-- touch: a four-way pad on the left (up go, down back, left/right strafe; diagonals combine them),
-       spells on the right -->
+  <!-- touch: a cross-shaped pad on the left (up speeds up, down brakes, left/right strafe; diagonals combine
+       them), spells on the right. The pad is one SVG: an outlined cross with a chevron on each arm; the arm
+       groups (.arm.up …) light up while pressed (controls.js) -->
   <div class="touch touchL">
     <div class="dpad" id="dpad" role="group" aria-label="Movement pad">
-      <span class="arm up">Go</span><span class="arm left">◀</span><span class="arm right">▶</span><span class="arm down">Back</span><span class="hub"></span>
+      <svg viewBox="0 0 100 100" aria-hidden="true">
+        <path class="cross" d="M34 3h32v31h31v32H66v31H34V66H3V34h31z"/>
+        <g class="arm up"><rect x="34" y="3" width="32" height="31"/><polyline points="42,23 50,14 58,23"/></g>
+        <g class="arm down"><rect x="34" y="66" width="32" height="31"/><polyline points="42,77 50,86 58,77"/></g>
+        <g class="arm left"><rect x="3" y="34" width="31" height="32"/><polyline points="23,42 14,50 23,58"/></g>
+        <g class="arm right"><rect x="66" y="34" width="31" height="32"/><polyline points="77,42 86,50 77,58"/></g>
+        <circle class="hub" cx="50" cy="50" r="3.5"/>
+      </svg>
     </div>
   </div>
+  <!-- spell buttons carry simple line symbols: a fireball with a trail, a nova as a ring with rays -->
   <div class="touch touchR">
-    <div class="col"><button id="btnPause" type="button" class="small" aria-label="Pause">II</button><button id="btnCentre" type="button" class="small" aria-label="Centre tilt steering">Centre</button><button id="btnNova" type="button">Nova</button><button id="btnFire" type="button">Fire</button></div>
+    <div class="col"><button id="btnPause" type="button" class="small" aria-label="Pause">II</button><button id="btnCentre" type="button" class="small" aria-label="Centre tilt steering">Centre</button><button id="btnNova" type="button" aria-label="Nova"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="6"/><path d="M20 4v6M20 30v6M4 20h6M30 20h6M8.7 8.7l4.2 4.2M27.1 27.1l4.2 4.2M31.3 8.7l-4.2 4.2M12.9 27.1l-4.2 4.2"/></svg></button><button id="btnFire" type="button" aria-label="Fireball"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="26" cy="14" r="7.5"/><path d="M20 20L7 33M16 11l-8 8M29 24l-8 8"/></svg></button></div>
   </div>
   <div id="toast"></div>
   <div id="hurt"></div>
@@ -153,9 +162,9 @@
         <dl>
           <dt>Tilt</dt><dd data-hold="turn, and raise or lower the nose to aim (switch off in Settings)">turn and climb (switch off in Settings)</dd>
           <dt>Drag</dt><dd data-hold="turn, and raise or lower the nose to aim, with or without tilt">turn and climb, with or without tilt</dd>
-          <dt>Fire</dt><dd>hold for fireballs</dd>
-          <dt>Nova</dt><dd>blast, costs spell mana</dd>
-          <dt>Pad</dt><dd>up (Go): hold to speed up · down: brake, then backwards · left/right: strafe · between two arms: both</dd>
+          <dt>Fireball button</dt><dd>hold for fireballs</dd>
+          <dt>Nova button</dt><dd>blast, costs spell mana</dd>
+          <dt>Pad</dt><dd>▲ hold to speed up · ▼ brake, then backwards · ◀ ▶ strafe · between two arms: both</dd>
           <dt>Centre</dt><dd>takes how you hold the phone now as level</dd>
           <dt>II</dt><dd>pause</dd>
         </dl>

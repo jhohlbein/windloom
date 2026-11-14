@@ -9,7 +9,7 @@ import { emit, burst, C } from './particles.js';
 import { sfx } from './audio.js';
 import { toast, flashHurt } from './hud.js';
 import { carryCap, stageCount } from './progress.js';
-import { removeEnemyObj } from './creatures/common.js';
+import { removeEnemyObj, inView } from './creatures/common.js';
 import { mark } from './perf.js';
 import { dragonAlert } from './creatures/dragon.js';
 import { placePlayerAtCastle } from './player.js';
@@ -144,7 +144,7 @@ function aimDir() {
     tmp.copy(e.pos).sub(G.playerPos); const d = tmp.length();
     if (d > fb.aimAssistRange || d < 8) continue;
     const dot = tmp.dot(G.fwd) / d;
-    if (dot > bd) { bd = dot; best = e; bdist = d; }
+    if (dot > bd && inView(e)) { bd = dot; best = e; bdist = d; } // a creature behind a ridge would draw the shot into it
   }
   const out = G.fwd.clone();
   if (best) { tmp.copy(best.pos).addScaledVector(best.vel, bdist / fb.speed).sub(G.playerPos).normalize(); out.lerp(tmp, 0.7).normalize(); }

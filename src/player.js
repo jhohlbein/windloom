@@ -321,9 +321,9 @@ export function updatePlayer(dt) {
   const RS = cp.response; // how quickly steering, pitch, speed, strafe and roll follow the controls (per second)
   G.steerX = lerp(G.steerX, sx, Math.min(1, dt * RS.steer)); G.steerY = lerp(G.steerY, sy, Math.min(1, dt * RS.steer));
   G.yaw -= G.steerX * cp.turnRate * dt;
-  G.pitch = lerp(G.pitch, G.steerY * cp.pitchMax, Math.min(1, dt * RS.pitch));
-  // Throttle: W (or Go on the pad) speeds the carpet up to baseSpeed; let go and it keeps its speed, but never drops
-  // below minSpeed (0: it can rest). S (or Back) brakes, then flies backwards; let go and it comes back to minSpeed.
+  G.pitch = lerp(G.pitch, G.steerY * (G.steerY > 0 ? cp.pitchMaxUp : cp.pitchMaxDown), Math.min(1, dt * RS.pitch)); // the nose points further up than down
+  // Throttle: W (or the pad's up arrow) speeds the carpet up to baseSpeed; let go and it keeps its speed, but never drops
+  // below minSpeed (0: it can rest). S (or the pad's down arrow) brakes, then flies backwards; let go and it comes back to minSpeed.
   const T = cp.throttle, fwd = !!(keys.KeyW || I.touchBoost), back = keys.KeyS || I.touchBack;
   if (fwd && !throttleHeld && G.speed < cp.baseSpeed * 0.6) sfx('whoosh', 0.9); // the throttle engaging from a glide
   throttleHeld = fwd;

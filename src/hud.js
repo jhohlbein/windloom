@@ -5,6 +5,7 @@ import { G, W } from './state.js';
 import { camera } from './scene.js';
 import { clamp, smooth, TAU } from './util.js';
 import { carryCap } from './progress.js';
+import { inView } from './creatures/common.js';
 import { SIZE } from './terrain.js';
 import { formatClock } from './round.js';
 
@@ -153,7 +154,7 @@ export function drawBars() {
   spacing('1.5px');
   fctx.font = "500 10px 'IBM Plex Mono', ui-monospace, monospace";
   for (const e of G.enemies) {
-    if (!e.showBar()) continue;
+    if (!e.showBar() || !inView(e)) continue; // no bar for a creature hidden behind a hill
     e.barPos(projV);
     const d = projV.distanceTo(camera.position);
     if (d > (e.kind === 'dragon' ? 950 : 540)) continue;
