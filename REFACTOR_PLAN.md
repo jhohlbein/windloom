@@ -20,6 +20,7 @@ Today the palace stage already raises creature counts and hit points a little. M
 - Unlock new behaviours by stage: drakes from stage 2, wyverns hunting in packs from stage 3, sandworms that can surface twice in a row from stage 4, a second kraken from stage 5.
 - Let Vharoth notice the palace: from stage 4 it may attack the palace's outer wall instead of the player, draining banked mana unless driven off.
 - Keep the early game gentle: stage 1 should feel like learning to fly.
+- Difficulty levels chosen on the start screen (for example gentle, normal, fierce) as multipliers on the same table: creature damage, fire rate and counts; the current numbers (0.5.1) are the normal level and already a little hotter than before, by choice.
 
 ## 3. Weapon upgrades
 

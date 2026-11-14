@@ -4,7 +4,17 @@ All notable changes to Windloom are recorded here. The format follows [Keep a Ch
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-11-14
+
+### Added
+- Two springs of fire on every island, placed from its seed on level ground away from the palace, the dragon's peak and each other: an ember spring (tall crimson flames, unlike the lair's orange fire) mends you at the palace's rate while you hover in its flames, with no waiting after a hit, and an azure spring (blue flames) restores spell mana five times faster than usual. Both show on the map as small flames, and a toast names each the first time you drink from it (config `springs`).
+
 ### Changed
+- The carpet is faster: top speed 50 m/s (`player.baseSpeed`, was 44) and it accelerates at 50 m/s² (`player.throttle.acceleration`, was 44), so it still reaches top speed in 1 s.
+- Both riders sit cross-legged: the robe and gown now end at the hips and drape over the lap, and the thighs, knees, folded shins and slippers show in front of and beside it from every angle (before, a bell-shaped robe down to the carpet hid the legs except from straight ahead).
+- Creatures are smooth-shaded like the riders (the world keeps its low-poly facets): rounder bodies, finer spheres, wing fingers as tapered rods instead of bars, and the wyverns, drakes and the dragon have a rounded skull, brow and snout instead of boxes.
+- Creature motion: wyverns and drakes bank into their turns (from the turn rate) instead of rolling on a fixed sine, beat harder when climbing and glide into a dive, and their tails trail out of turns; wyverns, drakes and the dragon turn their heads to follow the carpet while they see it. Skeleton archers have knees and walk with a bob and a lean that ease in and out, fold the draw arm at the elbow when they shoot, and turn their heads towards the carpet. The kraken's mantle breathes.
+- Enemies attack with different rhythms instead of all sitting in the same band (damage per second barely changes for each kind): skeleton archers shoot often and lightly (`fireIntervalSeconds` 1.6, `arrowDamage` 4; were 2.6, 6); wyverns sting often with quick bolts (2.2 s, 6 damage, `boltSpeed` 95; were 3.4 s, 9, 76); drakes fire rarely, slowly and hard (4.5 s, 22 damage, `boltSpeed` 70, `boltSize` 11; were 2.3 s, 15, 84, 9); the kraken lobs slow, heavy ink (3.5 s, 16; was 2.3 s, 10); the sandworm sprays light acid while surfaced (1.2 s, 6; was 1.7 s, 10) and its bite hurts more (20, was 16).
 - The carpet flies 4 m above the ground (`player.altitude.hoverHeight`, was 5), so the terrain shows more in the flight.
 - The nose points further up and less far down: up to 57° up (`player.pitchMaxUp`, 1.0 rad) to reach high-flying creatures, and 23° down (`player.pitchMaxDown`, 0.4 rad; both replace `pitchMax`, which was 46° either way). With the carpet so low, a nose lowered further sent fireballs straight into the sand. The camera follows the nose by half (`camera.pitchFollow`, was 0.25), so the aiming circle stays on screen with the nose fully up.
 - The aim assist's cone is narrower (`spells.fireball.aimAssistCone` 0.975 ≈ 13°, was 16°), and it ignores creatures the terrain hides, which used to draw fireballs into the ridge in front of them.

@@ -64,7 +64,7 @@ export function placeCross() {
 export function updateHud() {
   const hpPct = clamp(G.hp / G.maxHp, 0, 1);
   elHp.style.width = (hpPct * 100).toFixed(1) + '%';
-  setText(elHpLbl, 'hl', G.hp < G.maxHp && G.playTime - G.lastHurt > CFG.player.regenDelaySeconds ? 'Vitality · mending' : 'Vitality');
+  setText(elHpLbl, 'hl', G.atSpring === 'health' && G.hp < G.maxHp ? 'Vitality · at the spring' : G.hp < G.maxHp && G.playTime - G.lastHurt > CFG.player.regenDelaySeconds ? 'Vitality · mending' : 'Vitality');
   elSp.style.width = (clamp(G.spellMana / CFG.spells.mana.max, 0, 1) * 100).toFixed(1) + '%';
   elSp.classList.toggle('out', G.spellExhausted);
   setText(elSpLbl, 'sl', G.spellExhausted ? 'Spell mana · recovering' : 'Spell mana');
@@ -131,6 +131,11 @@ export function drawRadar() {
     for (const [x, y, col, r] of DEMO_FOES) { rctx.fillStyle = col; rctx.beginPath(); rctx.arc(c + x, c + y, r, 0, TAU); rctx.fill(); }
   }
   rctx.globalAlpha = 1;
+  for (const s of W.SPRINGS || []) { // the springs: small flames in their colour
+    const p = toScreen(s.x, s.z, false); if (!p) continue;
+    rctx.fillStyle = s.kind === 'health' ? '#e0343c' : '#62a6ff'; rctx.beginPath(); rctx.moveTo(p[0], p[1] - 5); rctx.quadraticCurveTo(p[0] + 4, p[1] - 1, p[0], p[1] + 3.5); rctx.quadraticCurveTo(p[0] - 4, p[1] - 1, p[0], p[1] - 5); rctx.fill();
+    rctx.strokeStyle = 'rgba(247,238,221,.7)'; rctx.lineWidth = 1; rctx.stroke();
+  }
   const cs = toScreen(W.CX, W.CZ, true);
   rctx.fillStyle = '#5fe0d6'; diamond(cs, 7); rctx.fill();
   rctx.fillStyle = '#f7eedd'; rctx.beginPath(); rctx.moveTo(c, c - 8); rctx.lineTo(c + 5.5, c + 6); rctx.lineTo(c, c + 3); rctx.lineTo(c - 5.5, c + 6); rctx.closePath(); rctx.fill();

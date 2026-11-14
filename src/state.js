@@ -4,7 +4,7 @@ import * as THREE from 'three';
 
 // World layout for the current island (set by world.js on every new island)
 export const W = {
-  SEED: 0, OFF: [0, 0, 0, 0, 0, 0, 0, 0], ISL_ANG: 0, ISL_EX: 0, DUNE_ANG: 0, OASES: [],
+  SEED: 0, OFF: [0, 0, 0, 0, 0, 0, 0, 0], ISL_ANG: 0, ISL_EX: 0, DUNE_ANG: 0, OASES: [], SPRINGS: [],
   CX: 0, CZ: 0, PH: 18,   // palace centre and plateau height
   LX: 0, LZ: 0, LH: 12,   // dragon lair
   MT: 1, MK: 0,           // mountain threshold and height factor (terrain.js calibrateTerrain)
@@ -18,7 +18,7 @@ export const G = {
   active: false,          // true while the player is flying
   keys: {},
   carried: 0, castleMana: 0, level: 1, hp: 100, maxHp: 100, invuln: 0,
-  kills: 0, playTime: 0, lastHurt: -99,
+  kills: 0, playTime: 0, lastHurt: -99, atSpring: null,
   timed: true, timeLeft: 0, killsBy: {}, dragonSlain: false, endTimer: -1, endReason: '', finished: false, // round (see round.js)
   gameMode: 'timed', tut: null, // 'timed' | 'free' | 'tutorial'; tut holds the tutorial's progress (see tutorial.js)
   yaw: 0, pitch: 0, bodyPitch: 0, keyPitch: 0, keyTurn: 0, keyTurnDir: 0, roll: 0, // pitch: view and aim; bodyPitch: the carpet's own nose up or down

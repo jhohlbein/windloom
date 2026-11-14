@@ -18,7 +18,7 @@ const headGeo = (() => { const g = new THREE.SphereGeometry(1, 18, 14, 0, Math.P
 const throatGeo = (() => { const g = new THREE.SphereGeometry(0.96, 14, 10); return g; })();
 const petalGeo = (() => { const g = new THREE.ConeGeometry(0.9, 3.6, 5); g.rotateX(Math.PI / 2); g.translate(0, 0, 1.8); return g; })();
 const toothGeo = new THREE.ConeGeometry(0.2, 0.9, 5), mouthGeo = new THREE.CircleGeometry(2.3, 18);
-const toothM = new THREE.MeshStandardMaterial({ color: 0xf3ead2, roughness: 0.6, flatShading: true }), mouthM = new THREE.MeshBasicMaterial({ color: 0x2a0606 });
+const toothM = new THREE.MeshStandardMaterial({ color: 0xf3ead2, roughness: 0.55 }), mouthM = new THREE.MeshBasicMaterial({ color: 0x2a0606 });
 const throatM = new THREE.MeshBasicMaterial({ color: 0x1c0707, side: THREE.BackSide });
 const HEAD_R = 2.9, MOUTH_Z = Math.cos(Math.PI - HEAD_OPEN) * HEAD_R, MOUTH_R = Math.sin(Math.PI - HEAD_OPEN) * HEAD_R;
 const Y_AX = new THREE.Vector3(0, 1, 0);
@@ -27,8 +27,8 @@ const tA = new THREE.Vector3(), tM = new THREE.Vector3();
 export function createWorm(pos) {
   const K = CFG.creatures.sandworm, e = baseEnemy('worm', 'Sandworm');
   // warm grey with darker bands: stands out against the sand
-  const mA = trackMat(e, new THREE.MeshStandardMaterial({ color: 0x8a8178, roughness: 0.85, flatShading: true }));
-  const mB = trackMat(e, new THREE.MeshStandardMaterial({ color: 0x4d4741, roughness: 0.9, flatShading: true }));
+  const mA = trackMat(e, new THREE.MeshStandardMaterial({ color: 0x8a8178, roughness: 0.8 }));
+  const mB = trackMat(e, new THREE.MeshStandardMaterial({ color: 0x4d4741, roughness: 0.85 }));
   const root = new THREE.Group();
   const head = new THREE.Group(); root.add(head);
   const hc = new THREE.Mesh(headGeo, mA); hc.scale.setScalar(HEAD_R); head.add(hc);

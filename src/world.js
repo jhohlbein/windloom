@@ -4,6 +4,7 @@ import { CFG } from './config.js';
 import { W } from './state.js';
 import { TAU, clamp, smooth, mulberry, vnoise } from './util.js';
 import { scene, shared, addSprite, glowMat, disposeTree } from './scene.js';
+import { buildSprings } from './springs.js';
 import { emit, C } from './particles.js';
 import { rawH, terrainH, greenAt, SIZE, calibrateTerrain } from './terrain.js';
 import { castle } from './palace.js';
@@ -191,6 +192,8 @@ export function buildWorld(seed) {
   const terrainMesh = new THREE.Mesh(tg, terrainMat); terrainMesh.castShadow = terrainMesh.receiveShadow = true; worldGroup.add(terrainMesh);
 
   buildMap(colorAt, grid);
+  buildSprings(rnd); // the ember and azure springs (springs.js); palms and rocks keep off their basins
+  const clearOfSprings = (x, z) => !W.SPRINGS.some(s => Math.hypot(x - s.x, z - s.z) < 9);
 
   // palms: around oases, in the palace garden and along the shore
   const palms = [];
@@ -209,6 +212,7 @@ export function buildWorld(seed) {
     const wet = gh(px + 16, pz) < 0 || gh(px - 16, pz) < 0 || gh(px, pz + 16) < 0 || gh(px, pz - 16) < 0;
     if (wet) palms.push([px, pz]);
   }
+  const kept = palms.filter(p => clearOfSprings(p[0], p[1])); palms.length = 0; palms.push(...kept);
   const trunks = new THREE.InstancedMesh(trunkGeo, trunkMat, palms.length), leaves = new THREE.InstancedMesh(leafGeo, leafMat, palms.length * 7);
   const m4 = new THREE.Matrix4(), q4 = new THREE.Quaternion(), e4 = new THREE.Euler(), sc = new THREE.Vector3(), ps = new THREE.Vector3(), topV = new THREE.Vector3(), col = new THREE.Color();
   let li = 0;
@@ -231,7 +235,7 @@ export function buildWorld(seed) {
   const rocks = new THREE.InstancedMesh(rockGeo, rockMat, W.P.rockCount); let ri = 0;
   for (let rt = 0; rt < 2000 && ri < W.P.rockCount; rt++) {
     const rx = (rnd() - 0.5) * SIZE * 0.9, rz = (rnd() - 0.5) * SIZE * 0.9, rh = gh(rx, rz);
-    if (rh < 2 || Math.hypot(rx - W.CX, rz - W.CZ) < 50) continue;
+    if (rh < 2 || Math.hypot(rx - W.CX, rz - W.CZ) < 50 || !clearOfSprings(rx, rz)) continue;
     const rsc = 1 + rnd() * 3.5;
     e4.set(rnd() * 3, rnd() * 3, rnd() * 3, 'XYZ'); q4.setFromEuler(e4); ps.set(rx, rh + rsc * 0.2, rz);
     sc.set(rsc * (0.8 + rnd() * 0.6), rsc * (0.5 + rnd() * 0.5), rsc * (0.8 + rnd() * 0.6));

@@ -7,6 +7,7 @@ import { renderer, scene, camera, updateSky, resizeRenderer, setDaylight, setSha
 import { R } from './util.js';
 import { isleName } from './terrain.js';
 import { buildWorld, updateLair, islandTraits } from './world.js';
+import { updateSprings } from './springs.js';
 import { updatePalace } from './palace.js';
 import { updateParticles, resizeParticles } from './particles.js';
 import { audioInit, toggleMute, updateAudio } from './audio.js';
@@ -275,7 +276,7 @@ function tick(now) {
         if (updateRound(dt)) showOverlay('results');
       }
     }
-    updateLair(dt);
+    updateLair(dt); updateSprings(dt);
     updatePalace(dt, now);
     updateParticles(dt);
   }

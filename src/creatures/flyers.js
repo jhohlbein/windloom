@@ -3,12 +3,12 @@ import * as THREE from 'three';
 import { CFG, hpFor } from '../config.js';
 import { G } from '../state.js';
 import { scene, mats } from '../scene.js';
-import { clamp, TAU } from '../util.js';
+import { clamp, lerp, wrapA, TAU } from '../util.js';
 import { groundH, lineOfSight } from '../terrain.js';
 import { C } from '../particles.js';
 import { addBolt } from '../combat.js';
 import { baseEnemy, setHp, yes } from './common.js';
-import { instBeast, animBeast } from './beasts.js';
+import { instBeast, animBeast, lookBeast } from './beasts.js';
 
 // Look and feel per kind; numbers come from CFG.creatures[kind]
 const LOOK = {
@@ -27,6 +27,7 @@ export function createFlyer(kind, pos) {
   e.state = 'patrol'; e.home = new THREE.Vector3(pos.x, 0, pos.z); e.homeY = pos.y; e.ang = Math.random() * TAU;
   e.shootCd = 1.5 + Math.random() * 2; e.circ = (Math.random() < 0.5 ? -1 : 1) * (0.45 + Math.random() * 0.3);
   e.dropN = K.drops; e.dropV = K.manaPerDrop; e.seeCd = Math.random() * 0.3; e.canSee = false; e.lostT = 99; e.ph = Math.random() * TAU; e.jawOpen = 0;
+  e.lastYaw = Math.atan2(-e.vel.x, -e.vel.z); e.bank = 0; e.yawRate = 0;
   e.update = updateFlyer; e.targetable = yes; e.showBar = yes;
   e.hitTest = (p, rad) => p.distanceTo(e.pos) < e.r + rad;
   e.barPos = o => { o.copy(e.pos); o.y += e.r + 2.5; return o; };
@@ -62,12 +63,19 @@ function updateFlyer(e, dt) {
   e.pos.addScaledVector(e.vel, dt);
   if (e.pos.y < minY - 5) e.pos.y = minY - 5;
   const vs = e.vel.length() || 1;
-  e.root.rotation.y = Math.atan2(-e.vel.x, -e.vel.z);
+  // banks into turns (from the yaw rate), beats harder when climbing and glides into a dive, and looks at the
+  // carpet while chasing it
+  const yaw = Math.atan2(-e.vel.x, -e.vel.z), yawRate = dt > 0 ? wrapA(yaw - e.lastYaw) / dt : 0; e.lastYaw = yaw;
+  e.yawRate = lerp(e.yawRate, yawRate, Math.min(1, dt * 3));
+  e.bank = lerp(e.bank, clamp(e.yawRate * 1.3, -0.7, 0.7), Math.min(1, dt * 2.5));
+  e.root.rotation.y = yaw;
   e.root.rotation.x = Math.asin(clamp(e.vel.y / vs, -1, 1)) * 0.8;
-  e.root.rotation.z = Math.sin(e.t * 1.3) * 0.18;
-  e.ph += dt * K.wingbeat;
+  e.root.rotation.z = e.bank + Math.sin(e.t * 1.3) * 0.04;
+  const climb = clamp(e.vel.y / 8, -1, 1);
+  e.ph += dt * K.wingbeat * (0.85 + 0.15 * climb);
   e.jawOpen = Math.max(0, e.jawOpen - dt * 2.5);
-  animBeast(e.B, e.t, e.ph, e.L.amp, e.jawOpen);
+  lookBeast(e.B, e.state === 'chase' && e.canSee ? P : null, e.pos, dt);
+  animBeast(e.B, e.t, e.ph, e.L.amp * (0.75 + 0.25 * climb), e.jawOpen, e.yawRate);
   e.shootCd -= dt;
   if (G.active && e.state === 'chase' && e.canSee && dist < K.fireRange && e.shootCd <= 0) {
     const facing = (e.vel.x * toX + e.vel.y * toY + e.vel.z * toZ) / (vs * dist);

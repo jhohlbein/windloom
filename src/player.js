@@ -40,21 +40,31 @@ function limb(parent, material, at, len, r, lower, lowerMat = material) {
   const low = new THREE.Group(); low.position.y = -len; g.add(low); bone(low, lower, r * 0.85, lowerMat);
   return { up: g, low };
 }
-// Seated arms, with hands (and a glow in the right palm for casting), and crossed legs with pointed slippers.
-// Shoulders at y = sh; the knees come forward of the robe so the figure reads as sitting cross-legged.
-function seatedBody(R, sleeve, trouser, slipper, sh, cuff) {
-  const hand = new THREE.SphereGeometry(0.075, 8, 6), U = {};
+// A tapered rod from point a to point b (both in the parent's frame), radius r at a and r2 at b
+const rA = new THREE.Vector3(), rB = new THREE.Vector3(), UP = new THREE.Vector3(0, 1, 0);
+function rod(parent, material, a, b, r, r2 = r) {
+  rA.set(...a); rB.set(...b).sub(rA); const l = rB.length();
+  const geo = new THREE.CylinderGeometry(r2, r, l, 7); geo.translate(0, l / 2, 0);
+  const m = part(geo, material, ...a, parent); m.quaternion.setFromUnitVectors(UP, rB.divideScalar(l)); return m;
+}
+// Seated arms, with hands (and a glow in the right palm for casting), and legs crossed tailor-fashion on the carpet.
+// Shoulders at y = sh. The torso ends at the hips (y ≈ 0.28); the robe's lap (a flattened dome in the sleeve cloth)
+// drapes over the thighs, and the knees and the folded shins show in front of and beside it: the thighs run forward
+// and out from the hips, the left shin lies on the carpet across the front, the right one over it, pointed slippers
+// at the ankles. `legs` is the cloth on the legs (trousers, or the gown itself).
+function seatedBody(R, sleeve, legs, slipper, sh, cuff) {
+  const hand = new THREE.SphereGeometry(0.075, 8, 6), knee = new THREE.SphereGeometry(0.115, 8, 6), toe = new THREE.ConeGeometry(0.07, 0.26, 6), U = {};
+  part(new THREE.SphereGeometry(0.5, 12, 8), sleeve, 0, 0.3, 0.36, R).scale.set(0.8, 0.22, 0.56); // lap
   for (const sd of [-1, 1]) {
     const arm = limb(R, sleeve, [sd * 0.3, sh, 0.48], 0.42, 0.085, 0.4, sleeve);
     if (cuff) part(new THREE.TorusGeometry(0.085, 0.022, 5, 10), cuff, 0, -0.36, 0, arm.low).rotation.x = Math.PI / 2;
     const h = part(hand, skin, 0, -0.43, 0, arm.low);
     arm.up.rotation.set(0.55, 0, sd * 0.18); arm.low.rotation.x = 1.0; // forearms forward, hands near the knees
     if (sd > 0) { U.armR = arm; U.palm = addSprite(glowMat(0xffa040), 0.001); U.palm.position.y = -0.08; h.add(U.palm); } else U.armL = arm;
-    if (trouser) {
-      const leg = limb(R, trouser, [sd * 0.2, 0.42, 0.42], 0.44, 0.11, 0.4, trouser);
-      leg.up.rotation.set(1.3, 0, sd * 0.5); leg.low.rotation.set(0, 0, -sd * 1.9); // thighs forward and a little out, shins crossed in front
-      part(new THREE.ConeGeometry(0.07, 0.26, 6), slipper, 0, -0.42, -0.04, leg.low).rotation.set(-Math.PI / 2, 0, 0);
-    } else part(new THREE.ConeGeometry(0.07, 0.26, 6), slipper, sd * 0.16, 0.17, 0.0, R).rotation.set(-Math.PI / 2, 0, -sd * 0.25); // slippers peeking out of the gown
+    const hip = [sd * 0.16, 0.3, 0.55], kn = [sd * 0.5, 0.23, 0.12], ankle = sd > 0 ? [-0.14, 0.3, -0.06] : [0.14, 0.16, 0.0];
+    rod(R, legs, hip, kn, 0.11, 0.1); part(knee, legs, ...kn, R);
+    const shin = rod(R, legs, kn, ankle, 0.095, 0.08);
+    const foot = part(toe, slipper, ...ankle, R); foot.quaternion.copy(shin.quaternion); foot.translateY(0.12); // toes carry on past the ankle
   }
   return U;
 }
@@ -63,9 +73,9 @@ const riders = { sultan: new THREE.Group(), princess: new THREE.Group() };
   // Turbaned prince: deep blue robe with an ember vest and gold sash, a cream turban with a wrapped band, a teal
   // plume and a jewel; the turban's loose end streams behind
   const R = riders.sultan, cloth = mat(0xf4e7d0, { roughness: 0.8, side: THREE.DoubleSide }), robe = mat(0x2b2f7a, { roughness: 0.9 }), trouser = mat(0x3d4fb0, { roughness: 0.9 });
-  part(new THREE.CylinderGeometry(0.12, 0.42, 1.3, 10), robe, 0, 0.78, 0.5, R);
+  part(new THREE.CylinderGeometry(0.12, 0.34, 1.15, 10), robe, 0, 0.855, 0.5, R); // torso, shoulders to hips
   part(new THREE.CylinderGeometry(0.26, 0.34, 0.42, 10, 1, true), mat(0xc8582a, { roughness: 0.8, side: THREE.DoubleSide }), 0, 1.12, 0.5, R); // vest
-  part(new THREE.TorusGeometry(0.33, 0.045, 6, 16), gold, 0, 0.9, 0.5, R).rotation.x = Math.PI / 2; // sash
+  part(new THREE.TorusGeometry(0.3, 0.045, 6, 16), gold, 0, 0.9, 0.5, R).rotation.x = Math.PI / 2; // sash
   const head = new THREE.Group(); head.position.set(0, 1.6, 0.5); R.add(head);
   part(new THREE.SphereGeometry(0.3, 10, 8), skin, 0, 0, 0, head);
   part(new THREE.ConeGeometry(0.1, 0.22, 6), mat(0x2a1a14), 0, -0.3, -0.16, head).rotation.x = 0.35; // beard
@@ -77,10 +87,10 @@ const riders = { sultan: new THREE.Group(), princess: new THREE.Group() };
 }
 {
   // Veiled princess: teal gown with a gold sash and cuffs, lavender head scarf down the back, sheer face veil,
-  // gold circlet; slippers peek out of the gown
+  // gold circlet; the gown covers the crossed legs, with the slippers peeking out
   const P = riders.princess, gown = mat(0x1f7a80);
-  part(new THREE.CylinderGeometry(0.11, 0.6, 1.3, 10), gown, 0, 0.78, 0.5, P);
-  part(new THREE.TorusGeometry(0.27, 0.045, 6, 16), gold, 0, 1.05, 0.5, P).rotation.x = Math.PI / 2;
+  part(new THREE.CylinderGeometry(0.11, 0.36, 1.15, 10), gown, 0, 0.855, 0.5, P); // torso, shoulders to hips
+  part(new THREE.TorusGeometry(0.25, 0.045, 6, 16), gold, 0, 1.05, 0.5, P).rotation.x = Math.PI / 2;
   const head = new THREE.Group(); head.position.set(0, 1.6, 0.5); P.add(head);
   part(new THREE.SphereGeometry(0.28, 12, 10), skin, 0, 0, 0, head);
   // head scarf: a hood over the crown and a long fall of cloth down the back, hinged at the crown so it can lift
@@ -98,7 +108,7 @@ const riders = { sultan: new THREE.Group(), princess: new THREE.Group() };
   part(new THREE.OctahedronGeometry(0.06, 0), mat(0x5fe0d6, { emissive: 0x1f6b66 }), 0, 0.18, -0.3, head);
   // two scarf ends from the back of the head and a sash ribbon from the waist, all streaming behind
   const sash = mat(0xe8b44a, { roughness: 0.5, metalness: 0.3, side: THREE.DoubleSide });
-  P.userData = { head, fallPivot, veil, ...seatedBody(P, gown, null, gold, 1.3, gold), tails: [
+  P.userData = { head, fallPivot, veil, ...seatedBody(P, gown, gown, gold, 1.3, gold), tails: [
     { j: streamer(head, scarf, [-0.12, 0.05, 0.3], 0.16, 5, 0.26), droop: 0.7, phase: 0 },
     { j: streamer(head, scarf, [0.13, 0.0, 0.3], 0.14, 5, 0.24), droop: 0.75, phase: 1.7 },
     { j: streamer(P, sash, [0.18, 1.05, 0.78], 0.09, 5, 0.2, 0.9), droop: 0.9, phase: 3.1 }

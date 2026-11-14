@@ -10,7 +10,7 @@ import { sfx, sfxAt } from '../audio.js';
 import { toast } from '../hud.js';
 import { addBolt, hurtPlayer } from '../combat.js';
 import { baseEnemy, setHp, yes } from './common.js';
-import { instBeast, animBeast } from './beasts.js';
+import { instBeast, animBeast, lookBeast } from './beasts.js';
 
 export function createDragon() {
   const K = CFG.creatures.dragon, e = baseEnemy('dragon', 'Vharoth');
@@ -142,7 +142,8 @@ function updateDragon(e, dt) {
   e.flapPh += dt * rate;
   const cyc = Math.floor(e.flapPh / (Math.PI * 2)); if (cyc !== e.lastFlap) { e.lastFlap = cyc; sfxAt('flap', e.pos, 300); }
   e.jawOpen = lerp(e.jawOpen, e.st === 'breath' ? 1 : 0.08, Math.min(1, dt * (e.st === 'breath' ? 8 : 2)));
-  animBeast(e.B, e.t, e.flapPh, amp, e.jawOpen);
+  lookBeast(e.B, e.canSee && e.st !== 'pass' ? P : null, e.pos, dt, 2.5); // the head follows the carpet while it is in sight
+  animBeast(e.B, e.t, e.flapPh, amp, e.jawOpen, yawRate);
   if (e.st !== 'roost' && Math.random() < 0.35) { e.mouth.getWorldPosition(e._m); emit(e._m.x, e._m.y, e._m.z, (R() - 0.5) * 4, 2 + R() * 3, (R() - 0.5) * 4, C.EMBER, 2.4, 1.1); }
   if (G.active && e.contactCd <= 0 && e.hitTest(P, 2.5)) { e.contactCd = 1.2; hurtPlayer(K.contactDamage); burst(P, 20, C.EMBER, 20, 2, 0.6); }
 }

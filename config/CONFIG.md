@@ -119,8 +119,8 @@ The sun rises over the course of a round: dawn at the start (low, warm, dim ligh
 
 | Key | Value | Meaning |
 |---|---|---|
-| `baseSpeed` | 44 | Top speed, reached by holding W (or ▲ on the touch pad). The carpet keeps whatever speed it has when W is let go, but never less than `throttle.minSpeed`. |
-| `throttle.acceleration` | 44 | How fast holding W speeds the carpet up, in m/s per second (from rest to top speed in 1 s). |
+| `baseSpeed` | 50 | Top speed, reached by holding W (or ▲ on the touch pad). The carpet keeps whatever speed it has when W is let go, but never less than `throttle.minSpeed`. |
+| `throttle.acceleration` | 50 | How fast holding W speeds the carpet up, in m/s per second (from rest to top speed in 1 s). |
 | `throttle.minSpeed` | 10 | The carpet never flies forward slower than this (m/s) unless S is held: it glides at this speed from the start and comes back to it after braking. 0 lets it rest. |
 | `throttle.brakeDeceleration` | 80 | How fast S (or ▼ on the touch pad) brakes, and how fast it speeds up backwards after that, in m/s per second. |
 | `reverseMultiplier` | 0.6 | Speed backwards (S), as a fraction of top speed. |
@@ -218,6 +218,18 @@ A practice island. It opens with five pages on the HUD (the bars, the map and th
 | `stageUpHealBonus` | 20 | Instant healing when the palace rises. |
 | `wardRadius` | 110 | The dragon will not enter this radius, and cannot see you inside it. |
 
+## springs
+
+Every island has an ember spring (tall crimson flames) that mends you and an azure spring (blue flames) that restores spell mana, while the carpet hovers in their flames. Both are placed from the island's seed on level ground the carpet can reach, and shown on the map as small flames.
+
+| Key | Value | Meaning |
+|---|---|---|
+| `radius` | 28 | How close to a spring's centre (horizontally) the carpet must be to drink from it. |
+| `height` | 40 | ... and no higher than this above the spring (the flight ceiling keeps you within it anyway). |
+| `healPerSecond` | 10 | Healing at the ember spring (the same rate as the palace beam), with no waiting after a hit. |
+| `manaPerSecond` | 40 | Spell mana restored per second at the azure spring (five times the normal regeneration). |
+| `minPalaceDistance`, `minLairDistance`, `minSpringDistance` | 150, 80, 200 | Springs keep these distances from the palace, from Vharoth's peak and from each other, so neither sits in a safe spot and the two are on different parts of the island. |
+
 ## mana
 
 | Key | Value | Meaning |
@@ -262,8 +274,8 @@ Common keys (values are listed per creature in the tables below):
 | `walkSpeed`, `roamRadius` | 4, 70 | Walking speed; each group roams within this radius of where it appeared. |
 | `groupAlertSeconds` | 6 | When one member sees you or is hit, the whole group turns to fight for this long (renewed while any member still sees you). |
 | `sightRange` | 170 | Distance at which it spots you (needs line of sight). |
-| `fireIntervalSeconds`, `fireRange` | 2.6, 160 | Time between arrows and maximum shooting distance. |
-| `arrowDamage`, `arrowSpeed` | 6, 110 | Its arrows, which drop slightly and are aimed where you are heading. |
+| `fireIntervalSeconds`, `fireRange` | 1.6, 160 | Time between arrows and maximum shooting distance. Archers shoot often and lightly: a group is a hail of small, dodgeable arrows. |
+| `arrowDamage`, `arrowSpeed` | 4, 110 | Its arrows, which drop slightly and are aimed where you are heading. |
 | `drops`, `manaPerDrop` | 2, 3 | Mana orbs dropped on death and mana per orb. |
 
 **wyvern / drake**
@@ -276,8 +288,8 @@ Common keys (values are listed per creature in the tables below):
 | `patrolSpeed`, `chaseSpeed` | 20, 34 | 16, 28 | Speed while wandering and while hunting you. |
 | `sightRange` | 150 | 215 | Distance at which it can spot you (needs line of sight). |
 | `giveUpSeconds` | 3 | 3 | It stops chasing after this long without seeing you. |
-| `fireIntervalSeconds`, `fireRange` | 3.4, 135 | 2.3, 135 | Time between shots and maximum shooting distance. |
-| `boltDamage`, `boltSpeed`, `boltSize` | 9, 76, 6 | 15, 84, 9 | Its projectile. |
+| `fireIntervalSeconds`, `fireRange` | 2.2, 135 | 4.5, 135 | Time between shots and maximum shooting distance. Wyverns sting often and lightly with quick bolts; drakes fire rarely, slowly and hard, so a drake's bolt is worth dodging. |
+| `boltDamage`, `boltSpeed`, `boltSize` | 6, 95, 6 | 22, 70, 11 | Its projectile. |
 | `drops`, `manaPerDrop` | 4, 3 | 8, 4 | Mana orbs dropped on death and mana per orb. |
 | `wingbeat` | 6.5 | 4.2 | Wing flap speed (visual). |
 
@@ -289,7 +301,7 @@ Common keys (values are listed per creature in the tables below):
 | `hp`, `hpBonus`, `hpBonusEveryStages` | 12, 2, 2 | Toughness. |
 | `aggroRange` | 260 | It reacts to you within this horizontal distance. |
 | `swimSpeed` | 15 | Speed while submerged (slower when surfaced or idle). |
-| `inkDamage`, `inkIntervalSeconds`, `inkRange` | 10, 2.3, 220 | Lobbed ink. |
+| `inkDamage`, `inkIntervalSeconds`, `inkRange` | 16, 3.5, 220 | Lobbed ink: slow, heavy lobs to steer around. |
 | `grabDamage`, `grabRange`, `grabCooldownSeconds` | 12, 30, 2.2 | Tentacle grab when you fly low over it. |
 | `surfacedSeconds` | 7 | Minimum time it stays up before diving. |
 | `drops`, `manaPerDrop` | 8, 4 | Mana orbs dropped on death and mana per orb. |
@@ -302,8 +314,8 @@ Common keys (values are listed per creature in the tables below):
 | `hp`, `hpBonus`, `hpBonusEveryStages` | 9, 2, 2 | Toughness. |
 | `aggroRange` | 240 | It tunnels towards you within this distance. |
 | `burrowSpeed` | 20 | Tunnelling speed when hunting. |
-| `acidDamage`, `acidIntervalSeconds`, `acidRange` | 10, 1.7, 200 | Spat acid. |
-| `biteDamage`, `biteRange` | 16, 10 | Bite when you fly into its maw. |
+| `acidDamage`, `acidIntervalSeconds`, `acidRange` | 6, 1.2, 200 | Spat acid: a rapid, light spray while it is surfaced. |
+| `biteDamage`, `biteRange` | 20, 10 | Bite when you fly into its maw: the real threat of a sandworm. |
 | `surfacedSeconds` | 5 | Minimum time it stays reared up. |
 | `drops`, `manaPerDrop` | 6, 4 | Mana orbs dropped on death and mana per orb. |
 

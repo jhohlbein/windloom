@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { CFG, hpFor } from '../config.js';
 import { G } from '../state.js';
-import { scene, geo, mats } from '../scene.js';
+import { scene, mats } from '../scene.js';
 import { TAU, lerp, smooth, lerpAngle, R } from '../util.js';
 import { terrainH } from '../terrain.js';
 import { emit, burst, C } from '../particles.js';
@@ -12,24 +12,24 @@ import { baseEnemy, setHp, trackMat } from './common.js';
 
 const tentGeos = (() => {
   const L = [1.7, 1.6, 1.5, 1.35, 1.2, 1.05], RR = [0.62, 0.5, 0.4, 0.31, 0.23, 0.15, 0.07], out = [];
-  for (let j = 0; j < 6; j++) { const g = new THREE.CylinderGeometry(RR[j + 1], RR[j], L[j], 7); g.rotateX(Math.PI / 2); g.translate(0, 0, L[j] / 2); out.push({ g, L: L[j] }); }
+  for (let j = 0; j < 6; j++) { const g = new THREE.CylinderGeometry(RR[j + 1], RR[j], L[j], 10); g.rotateX(Math.PI / 2); g.translate(0, 0, L[j] / 2); out.push({ g, L: L[j] }); }
   return out;
 })();
 const eyeM = new THREE.MeshBasicMaterial({ color: 0xffd36b }), pupM = new THREE.MeshBasicMaterial({ color: 0x120a18 });
 const pupGeo = new THREE.BoxGeometry(0.62, 0.14, 0.1), crestGeo = new THREE.ConeGeometry(0.9, 2.2, 6);
-const KS = 2.4;
+const KS = 2.4, sph = new THREE.SphereGeometry(1, 20, 14);
 const tmp = new THREE.Vector3();
 
 export function createKraken(pos) {
   const K = CFG.creatures.kraken, e = baseEnemy('kraken', 'Kraken');
-  const skin = trackMat(e, new THREE.MeshStandardMaterial({ color: 0x7c2d63, roughness: 0.55, flatShading: true }));
-  const skin2 = trackMat(e, new THREE.MeshStandardMaterial({ color: 0xa4467c, roughness: 0.6, flatShading: true }));
+  const skin = trackMat(e, new THREE.MeshStandardMaterial({ color: 0x7c2d63, roughness: 0.5 }));
+  const skin2 = trackMat(e, new THREE.MeshStandardMaterial({ color: 0xa4467c, roughness: 0.55 }));
   const g = new THREE.Group(); g.position.set(pos.x, 0, pos.z);
   const body = new THREE.Group(); g.add(body);
-  const mantle = new THREE.Mesh(geo.sph, skin); mantle.scale.set(2.2, 3, 2.2); mantle.position.y = 2.4; body.add(mantle);
+  const mantle = new THREE.Mesh(sph, skin); mantle.scale.set(2.2, 3, 2.2); mantle.position.y = 2.4; body.add(mantle); e.mantle = mantle;
   const crest = new THREE.Mesh(crestGeo, skin2); crest.position.set(0, 5.6, 0.6); crest.rotation.x = 0.35; body.add(crest);
   for (const s of [-1, 1]) {
-    const ey = new THREE.Mesh(geo.sph, eyeM); ey.scale.setScalar(0.5); ey.position.set(s * 1.15, 1.7, -1.75); body.add(ey);
+    const ey = new THREE.Mesh(sph, eyeM); ey.scale.setScalar(0.5); ey.position.set(s * 1.15, 1.7, -1.75); body.add(ey);
     const pu = new THREE.Mesh(pupGeo, pupM); pu.position.set(s * 1.15, 1.7, -2.24); body.add(pu);
   }
   e.tents = [];
@@ -96,6 +96,7 @@ function updateKraken(e, dt) {
     if (terrainH(nx, nz) < -4 && nx * nx + nz * nz < B * B) { g.position.x = nx; g.position.z = nz; e.vel.set(mx / ml * sp, 0, mz / ml * sp); }
   }
   e.body.position.y = lerp(-8, 0, smooth(0, 1, e.rise)) + Math.sin(e.t * 1.4) * 0.15 * e.rise;
+  const pulse = Math.sin(e.t * 1.4); e.mantle.scale.set(2.2 - pulse * 0.08, 3 + pulse * 0.16, 2.2 - pulse * 0.08); // the mantle breathes
   g.rotation.y = lerpAngle(g.rotation.y, Math.atan2(-dx, -dz), Math.min(1, dt * 1.5));
   const wantLift = (e.st === 'up' && aggro && hd < 70) ? 1 : (e.rise > 0.5 ? 0.35 : 0);
   e.lift = lerp(e.lift, wantLift, Math.min(1, dt * 2));
