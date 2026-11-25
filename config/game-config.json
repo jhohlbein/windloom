@@ -27,16 +27,39 @@
     "lairMinDistanceFromPalace": 290,
     "lairSearchRadius": 440,
     "variation": {
-      "landCover": { "spread": 0.45 },
-      "lowlandScale": { "spread": 0.25 },
-      "mountainHeight": { "spread": 0.3 },
-      "mountainCover": { "spread": 0.35 },
-      "duneHeight": { "spread": 0.35 },
-      "duneWavelength": { "spread": 0.25 },
-      "greenCover": { "min": 0.25, "max": 0.55 },
-      "oasisCount": { "dist": "poisson", "min": 1, "max": 5 },
-      "rockCount": { "spread": 0.4 },
-      "palmMax": { "spread": 0.3 }
+      "landCover": {
+        "spread": 0.45
+      },
+      "lowlandScale": {
+        "spread": 0.25
+      },
+      "mountainHeight": {
+        "spread": 0.3
+      },
+      "mountainCover": {
+        "spread": 0.35
+      },
+      "duneHeight": {
+        "spread": 0.35
+      },
+      "duneWavelength": {
+        "spread": 0.25
+      },
+      "greenCover": {
+        "min": 0.25,
+        "max": 0.55
+      },
+      "oasisCount": {
+        "dist": "poisson",
+        "min": 1,
+        "max": 5
+      },
+      "rockCount": {
+        "spread": 0.4
+      },
+      "palmMax": {
+        "spread": 0.3
+      }
     }
   },
   "graphics": {
@@ -49,9 +72,19 @@
   "controls": {
     "pointerLock": true,
     "expo": 1.6,
-    "keys": { "turnStart": 0.25, "turnRampSeconds": 0.5, "pitchSeconds": 0.3, "levelTimeConstant": 0.25 },
+    "keys": {
+      "turnStart": 0.25,
+      "turnRampSeconds": 0.5,
+      "pitchSeconds": 0.3,
+      "levelTimeConstant": 0.25
+    },
     "lockedSensitivity": 1,
-    "tilt": { "steerDegrees": 15, "pitchDegrees": 12, "deadzoneDegrees": 1.5, "invertPitch": false }
+    "tilt": {
+      "steerDegrees": 15,
+      "pitchDegrees": 12,
+      "deadzoneDegrees": 1.5,
+      "invertPitch": false
+    }
   },
   "hud": {
     "toastMinSeconds": 2.5,
@@ -79,11 +112,15 @@
   },
   "player": {
     "baseSpeed": 50,
-    "throttle": { "acceleration": 50, "brakeDeceleration": 80, "minSpeed": 10 },
+    "throttle": {
+      "acceleration": 50,
+      "brakeDeceleration": 80,
+      "minSpeed": 10
+    },
     "reverseMultiplier": 0.6,
     "strafeSpeed": 32,
     "turnRate": 1.55,
-    "pitchMaxUp": 1.0,
+    "pitchMaxUp": 1,
     "pitchMaxDown": 0.4,
     "maxHp": 70,
     "maxHpPerStage": 7,
@@ -97,8 +134,20 @@
     "cornerClearance": 0.4,
     "wallSmoothRadius": 14,
     "wallOvershoot": 4,
-    "altitude": { "mode": "hold", "hoverHeight": 4, "lookAheadSeconds": 0.8, "response": 3, "climbRate": 30, "sinkRate": 14 },
-    "response": { "steer": 12, "pitch": 6, "strafe": 7, "roll": 6 }
+    "altitude": {
+      "mode": "hold",
+      "hoverHeight": 4,
+      "lookAheadSeconds": 0.8,
+      "response": 3,
+      "climbRate": 30,
+      "sinkRate": 14
+    },
+    "response": {
+      "steer": 12,
+      "pitch": 6,
+      "strafe": 7,
+      "roll": 6
+    }
   },
   "spells": {
     "mana": {
@@ -128,7 +177,13 @@
   "round": {
     "durationSeconds": 240,
     "warnSeconds": 30,
-    "pointsPerKill": { "skeleton": 8, "wyvern": 10, "drake": 25, "worm": 30, "kraken": 40 },
+    "pointsPerKill": {
+      "skeleton": 8,
+      "wyvern": 10,
+      "drake": 25,
+      "worm": 30,
+      "kraken": 40
+    },
     "pointsPerStage": 100,
     "dragonSlainBonus": 500,
     "completionBonus": 1000,
@@ -149,11 +204,28 @@
     "wyvernRadiusMax": 220,
     "skeletonRadiusMin": 160,
     "skeletonRadiusMax": 260,
-    "practiceSpawns": ["wyverns", "skeletons"]
+    "practiceSpawns": [
+      "wyverns",
+      "skeletons"
+    ]
   },
   "palace": {
-    "stageNames": ["Minaret", "Palace", "Garden Walls", "Golden Dome", "Lantern Ring", "Crescent Sanctum"],
-    "stageThresholds": [0, 50, 130, 250, 420, 650],
+    "stageNames": [
+      "Minaret",
+      "Palace",
+      "Garden Walls",
+      "Golden Dome",
+      "Lantern Ring",
+      "Crescent Sanctum"
+    ],
+    "stageThresholds": [
+      0,
+      50,
+      130,
+      250,
+      420,
+      650
+    ],
     "depositPerSecond": 28,
     "depositPerSecondPerStage": 12,
     "depositRadius": 30,
@@ -180,12 +252,48 @@
   },
   "spawning": {
     "intervalSeconds": 4,
-    "wyverns": { "fromStage": 1, "base": 5, "add": 0.5, "max": 7 },
-    "drakes": { "fromStage": 2, "base": 1, "add": 0.5, "max": 3, "announce": "Drakes join the wyverns in the sky." },
-    "skeletons": { "fromStage": 1, "perLand": true, "base": 4, "add": 0.5, "max": 6, "groupSizeMin": 2, "groupSizeMax": 4 },
-    "sandworms": { "fromStage": 3, "perLand": true, "base": 2, "add": 0.5, "max": 3, "announce": "Sandworms wake beneath the dunes." },
-    "krakens": { "fromStage": 4, "base": 2, "add": 0.5, "max": 3, "announce": "Krakens stir in the deep water around the island." },
-    "dragon": { "fromStage": 5, "respawnSeconds": 240, "announce": "Vharoth wakes on the highest peak." }
+    "wyverns": {
+      "fromStage": 1,
+      "base": 5,
+      "add": 0.5,
+      "max": 7
+    },
+    "drakes": {
+      "fromStage": 2,
+      "base": 1,
+      "add": 0.5,
+      "max": 3,
+      "announce": "Drakes join the wyverns in the sky."
+    },
+    "skeletons": {
+      "fromStage": 1,
+      "perLand": true,
+      "base": 4,
+      "add": 0.5,
+      "max": 6,
+      "groupSizeMin": 2,
+      "groupSizeMax": 4
+    },
+    "sandworms": {
+      "fromStage": 3,
+      "perLand": true,
+      "base": 2,
+      "add": 0.5,
+      "max": 3,
+      "announce": "Sandworms wake beneath the dunes."
+    },
+    "krakens": {
+      "fromStage": 4,
+      "base": 2,
+      "add": 0.5,
+      "max": 3,
+      "announce": "Krakens stir in the deep water around the island."
+    },
+    "dragon": {
+      "fromStage": 5,
+      "respawnSeconds": 240,
+      "announce": "Vharoth wakes on the highest peak."
+    }
   },
   "creatures": {
     "skeleton": {
@@ -312,5 +420,26 @@
     "tempoDanger": 124,
     "dangerHoldSeconds": 6,
     "melodyGlideSeconds": 0.25
+  },
+  "multiplayer": {
+    "maxPlayers": 8,
+    "inputHz": 10,
+    "maxInputsPerSecond": 30,
+    "transitionMinMs": 40,
+    "simulationHz": 60,
+    "maxCatchupSteps": 15,
+    "tickHz": 20,
+    "snapshotHz": 10,
+    "reconnectSeconds": 30,
+    "maxMessageBytes": 4096,
+    "maxBufferedBytes": 1048576,
+    "maxViewers": 128,
+    "maxActiveRooms": 16,
+    "ticketSeconds": 30,
+    "presenceLeaseSeconds": 90,
+    "presenceRefreshSeconds": 30,
+    "leaderboardSize": 100,
+    "backgroundLeaveSeconds": 90,
+    "maxUnackedSnapshots": 50
   }
 }

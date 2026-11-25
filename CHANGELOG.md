@@ -4,6 +4,18 @@ All notable changes to Windloom are recorded here. The format follows [Keep a Ch
 
 ## [Unreleased]
 
+### Fixed
+- Localhost keeps using its development Worker after a production backend address is configured.
+
+### Added
+- Optional co-op and competitive online rooms for up to eight guest players on the same seed, with shared island links, live participants, presence and saved rankings. Competitive players compare independent hunts without player combat; free flight is unranked and the tutorial stays solo.
+- An authoritative Cloudflare Worker using SQLite-backed Durable Objects, expiring single-use admission tickets, exact-origin checks, validated controls and bounded rankings. The game files continue to use the existing GitHub Pages deployment.
+- Local simulation, storage, Worker and browser tests; a capacity benchmark; multiplayer setup and free-plan operating documentation.
+
+### Changed
+- Shared gameplay factories now support isolated headless simulations and the original browser presentation.
+- Springs use a separate deterministic seed stream, keeping their positions identical between browser and server.
+
 ## [0.5.2] - 2026-11-14
 
 ### Added

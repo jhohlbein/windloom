@@ -1,0 +1,21 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "windloom-online",
+  "main": "worker.js",
+  "compatibility_date": "2026-11-18",
+  "workers_dev": true,
+  "vars": { "ALLOWED_ORIGINS": "https://jhohlbein.github.io", "MAX_ACTIVE_ROOMS": "16" },
+  "durable_objects": { "bindings": [
+    { "name": "ROOMS", "class_name": "GameRoom" },
+    { "name": "LIVE", "class_name": "LiveBoard" }
+  ] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["GameRoom", "LiveBoard"] }],
+  "env": { "local": {
+    "name": "windloom-online-local",
+    "vars": { "ALLOWED_ORIGINS": "http://localhost:8000,http://127.0.0.1:8000", "MAX_ACTIVE_ROOMS": "16" },
+    "durable_objects": { "bindings": [
+      { "name": "ROOMS", "class_name": "GameRoom" },
+      { "name": "LIVE", "class_name": "LiveBoard" }
+    ] }
+  } }
+}

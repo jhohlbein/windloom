@@ -22,6 +22,7 @@ import { renderLeaderboard, bindLeaderboard } from './leaderboard.js';
 import { settings, saveSetting } from './settings.js';
 import { mark, endFrame, hitches } from './perf.js';
 import { startTutorial, stopTutorial, updateTutorial, tutorialFinished, tutorialHolds } from './tutorial.js';
+import { createOnline } from './online/ui.js';
 
 const $ = id => document.getElementById(id);
 const overlay = $('overlay'), goBtn = $('go'), startBtn = $('start'), exitTutBtn = $('exitTut'), rerollBtn = $('reroll'), ovTitle = $('ovTitle'), ovText = $('ovText'),
@@ -49,17 +50,34 @@ function chooseMode(m) {
 $('modeTimedLbl').textContent = 'Timed round · ' + Math.round(CFG.round.durationSeconds / 60) + ' min';
 for (const r of modeRadios) r.addEventListener('change', () => { if (r.checked) { saveSetting('mode', r.value); chooseMode(r.value); } });
 chooseMode(settings.mode);
+let onlineJoining = false, onlineFinishedRun = null;
+const online = createOnline(CFG, {
+  round: chosenMode, setRound: chooseMode,
+  modeChanged() { if (online.client.active) { online.leave(); newIsland(W.SEED); showOverlay('title'); } },
+  frame(frame) {
+    if (onlineJoining) { onlineJoining = false; resume(); }
+    if (frame.finished && onlineFinishedRun !== frame.room.runId) { onlineFinishedRun = frame.room.runId; showOverlay('results'); online.results(); }
+  },
+  error(message) { onlineJoining = false; online.leave(); newIsland(W.SEED); showOverlay('title'); online.status(message); }
+});
 
 function showOverlay(mode) {
   G.mode = mode; G.active = false; unlockPointer(); document.body.classList.remove('flying');
+  if (online.client.active) online.client.sendControls(G, settings, performance.now(), true);
   overlay.hidden = false; hud.hidden = (mode === 'title');
   ovStats.hidden = true; ovIsle.textContent = isleLabel();
   openPanel(null); // Settings and Controls + more: on every screen, closed at first
   if (mode === 'title') { ovTitle.textContent = 'Windloom'; ovText.textContent = ovLede; }
   else if (mode === 'pause') {
     ovTitle.textContent = 'Paused';
-    ovText.textContent = G.tut ? 'The tutorial will wait. Resume, start a game with the mode below, or leave the tutorial.'
+    ovText.textContent = online.client.active ? 'Your controls are paused. The online world and its clock keep going. Resume or leave the room.' : G.tut ? 'The tutorial will wait. Resume, start a game with the mode below, or leave the tutorial.'
       : 'The creatures will wait. Your palace stands at ' + stageLabel(G.level) + ' of ' + stageCount() + ' stages.';
+  }
+  else if (mode === 'results' && online.client.active && G.timed) {
+    const frame = online.client.frame, sc = frame.score;
+    ovTitle.textContent = G.endReason === 'complete' ? 'The Sanctum is whole' : 'Time is up';
+    ovText.textContent = frame.room.mode === 'coop' ? 'Your team’s round is complete. Compare your team with others of the same size in the online rankings.' : 'Your round is complete. Compare your best result in the competitive online rankings.';
+    ovStats.textContent = [...sc.lines, ['Score', sc.total]].map(row => row[0] + '  ' + row[1]).join('\n'); ovStats.hidden = false;
   }
   else if (mode === 'results' && G.tut) {
     ovTitle.textContent = 'Tutorial complete';
@@ -91,7 +109,7 @@ function showOverlay(mode) {
     : mode === 'results' && (G.tut || (!G.timed && G.gameMode === 'free')) ? 'Keep flying' : null;
   exitTutBtn.hidden = !G.tut || mode === 'title';
   goBtn.hidden = !main; goBtn.textContent = main || '';
-  startBtn.textContent = mode === 'pause' ? 'Start again' : mode === 'results' && G.gameMode === 'timed' ? 'Play again' : 'Start';
+  startBtn.textContent = mode === 'pause' ? (online.client.active ? 'Leave room' : 'Start again') : mode === 'results' && G.gameMode === 'timed' ? 'Play again' : 'Start';
   startBtn.className = main ? 'go alt' : 'go';
   rerollBtn.textContent = 'New island';
   // The leaderboard (best timed rounds, with their islands) on the start screen and after a timed round
@@ -99,7 +117,7 @@ function showOverlay(mode) {
   releaseInput();
 }
 // The address keeps the island's seed as #s<seed>; any query string (e.g. ?seed=) is dropped so it cannot go stale
-function rememberSeed() { try { history.replaceState(null, '', location.pathname + '#s' + W.SEED); } catch (err) { /* optional */ } }
+function rememberSeed() { try { const u = new URL(location.href); u.searchParams.delete('seed'); u.searchParams.delete('s'); if (/^\?\d+$/.test(u.search)) u.search = ''; u.hash = 's' + W.SEED; history.replaceState(null, '', u); } catch (err) { /* optional */ } }
 // Accepts #s123, #123, #seed=123, ?seed=123, ?s=123 and ?123. Seeds are 32-bit; larger numbers wrap around.
 function seedFromUrl() {
   const h = /^#(?:s(?:eed)?=?)?(\d{1,10})$/i.exec(location.hash || '');
@@ -108,13 +126,31 @@ function seedFromUrl() {
   return v && /^\d{1,10}$/.test(v) ? parseInt(v, 10) >>> 0 : undefined;
 }
 function newIsland(seed) {
+  onlineJoining = false; if (online.client.active) online.leave();
   stopTutorial(); clearCreatures(); clearProjectiles();
   buildWorld(seed === undefined ? Math.floor(R() * 1e9) : seed);
   G.level = 0; applyLevel(1, false);
   populate(); rememberSeed();
   ovIsle.textContent = isleLabel();
+  online.updateSeed(W.SEED);
 }
-function startGame(gameMode) {
+async function startGame(gameMode) {
+  if (gameMode !== 'tutorial' && online.mode() !== 'solo') {
+    try {
+      const seed = online.seed();
+      if (online.client.active && online.client.frame?.finished && seed === W.SEED && online.client.connected &&
+          online.client.descriptor.mode === online.mode() && online.client.descriptor.round === gameMode) {
+        onlineJoining = true; online.client.socket.send(JSON.stringify({ type: 'restart' })); return;
+      }
+      if (seed !== W.SEED) newIsland(seed);
+      stopTutorial(); online.view.clear(); releaseInput(); onlineJoining = true; startBtn.disabled = true;
+      history.replaceState(null, '', new URL('?online=' + online.mode() + '&round=' + gameMode + '#s' + seed, location.href));
+      await online.join(gameMode);
+    } catch (err) { onlineJoining = false; online.leave(); showOverlay('title'); online.status(err.message); }
+    finally { startBtn.disabled = false; }
+    return;
+  }
+  if (online.client.active) online.leave();
   mark('start ' + gameMode);
   const C = CFG.tutorial, tutorial = gameMode === 'tutorial', timed = gameMode === 'timed';
   stopTutorial();
@@ -152,7 +188,7 @@ const tiltStart = () => {
   requestTilt(settings.tilt);
 };
 goBtn.addEventListener('click', () => { audioInit(); tiltStart(); if (G.mode === 'pause' || G.mode === 'results') resume(); });
-startBtn.addEventListener('click', () => { audioInit(); tiltStart(); if (G.mode !== 'play') startGame(chosenMode()); });
+startBtn.addEventListener('click', () => { audioInit(); tiltStart(); if (online.client.active && G.mode === 'pause') { online.leave(); newIsland(W.SEED); showOverlay('title'); return; } if (G.mode !== 'play') startGame(chosenMode()); });
 exitTutBtn.addEventListener('click', () => { stopTutorial(); showOverlay('title'); });
 // A new island always goes to its start screen, where you choose the game mode
 rerollBtn.addEventListener('click', () => { audioInit(); newIsland(); showOverlay('title'); });
@@ -250,7 +286,13 @@ function tick(now) {
   const interval = now - last, t0 = performance.now();
   countFps(now, interval);
   const dt = Math.min(0.05, Math.max(0.0001, (now - last) / 1000)); last = now;
-  if (G.mode === 'play' || G.mode === 'title') {
+  if (online.client.active) {
+    if (online.client.connected && G.mode === 'play' && !(online.client.frame?.finished && G.timed)) updatePlayer(dt, false);
+    online.client.sendControls(G, settings, now); online.view.render(now);
+    const active = G.active; G.active = false; updateSprings(dt); G.active = active;
+    updateLair(dt); updatePalace(dt, now); updateParticles(dt);
+  }
+  else if (G.mode === 'play' || G.mode === 'title') {
     if (G.mode === 'play') { G.playTime += dt; if (!tutorialHolds()) updatePlayer(dt); }
     updateEnemies(dt);
     updateShots(dt); updateBolts(dt); updateOrbs(dt); updateRings(dt);
@@ -309,4 +351,5 @@ goBtn.disabled = startBtn.disabled = rerollBtn.disabled = false;
 requestAnimationFrame(frame);
 
 // Handy in the browser console while tuning
-window.windloom = { G, W, CFG, version: VERSION, hitches };
+window.windloom = { G, W, CFG, version: VERSION, hitches, online: { get connected() { return online.client.connected; }, get frame() { return online.client.frame; }, get rtt() { return online.client.rtt; } } };
+online.init();

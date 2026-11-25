@@ -1,0 +1,9 @@
+node_modules/
+.wrangler/
+.artifacts/
+test-results/
+playwright-report/
+.dev.vars*
+.env*
+.superpowers/
+docs/superpowers/

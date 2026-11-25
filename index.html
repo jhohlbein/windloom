@@ -19,6 +19,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/online.css">
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js" } }
 </script>
@@ -50,6 +51,12 @@
   <div id="radarWrap"><canvas id="radar" width="336" height="336"></canvas></div>
   <div id="fps">– fps</div>
   <div id="clock" class="glass">4:00</div>
+  <details id="roomHud" class="glass" hidden open>
+    <summary id="roomTitle" title="Press Tab to toggle online standings while flying">Online room</summary>
+    <p id="roomConnection"></p>
+    <ol id="roomPlayers"></ol>
+  </details>
+  <div id="remoteNames" aria-hidden="true"></div>
   <!-- tutorial: the current task, with 1/5 … 5/5 chips for the flying lessons -->
   <div id="task" class="glass" hidden aria-live="polite">
     <div class="taskHead"><span id="taskName"></span><span id="taskChips" class="chips"></span><span id="taskCount"></span></div>
@@ -98,6 +105,16 @@
         <p id="boardConfirmText"></p>
         <div class="actions"><button class="go" id="boardFly" type="button">Fly there</button><button class="go2" id="boardCancel" type="button">Cancel</button></div>
       </div>
+    </section>
+    <section id="onlinePanel" class="online-panel" aria-labelledby="onlineHeading">
+      <div class="online-heading"><h2 id="onlineHeading">Play together</h2><span id="onlineCount" aria-live="polite">Online —</span></div>
+      <label>Play style <select id="networkMode"><option value="solo">Solo</option><option value="coop">Co-op · shared palace</option><option value="competitive">Competitive · score race</option></select></label>
+      <div id="onlineFields" hidden>
+        <div class="online-fields"><label>Guest nickname <input id="nickname" maxlength="48" autocomplete="nickname" placeholder="Your name"></label><label>Island seed <input id="onlineSeed" inputmode="numeric" pattern="[0-9]*" maxlength="10" aria-label="Island seed"></label></div>
+        <p id="onlineHint" class="hint"></p>
+        <button id="shareIsland" type="button" class="go2">Copy island link</button>
+      </div>
+      <p id="onlineStatus" class="hint" role="status">Checking online play…</p>
     </section>
     <div class="modes" role="radiogroup" aria-labelledby="modesLbl">
       <span class="lbl" id="modesLbl">Game mode</span>

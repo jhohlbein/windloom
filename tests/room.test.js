@@ -1,0 +1,98 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import config from '../config/game-config.json' with { type: 'json' };
+import { Room } from '../server/room-core.js';
+const descriptor = { seed: 12345, mode: 'coop', round: 'timed', ruleset: 'v1-test' };
+const guest = (n) => ({ id: 'g' + n, name: 'Player ' + n });
+test('eight players share a co-op world, late arrivals inherit time, and the ninth cannot enter', () => {
+  const r = new Room(descriptor, config, 0);
+  r.connect(guest(0), 'c0', 0);
+  r.advance(1000);
+  r.connect(guest(1), 'c1', 1000);
+  assert.ok(r.snapshotFor('g1').timeLeft < 240);
+  assert.equal(r.clients.get('g0').game, r.clients.get('g1').game);
+  for (let i = 2; i < 8; i++) r.connect(guest(i), 'c' + i, 1000);
+  assert.throws(() => r.connect(guest(8), 'c8', 1000), /full/i);
+});
+test('competitive players retain independent progress and a fresh full round on joining', () => {
+  const r = new Room({ ...descriptor, mode: 'competitive' }, config, 0);
+  r.connect(guest(0), 'c0', 0);
+  r.advance(1000);
+  r.connect(guest(1), 'c1', 1000);
+  assert.equal(r.snapshotFor('g1').timeLeft, 240);
+  r.clients.get('g0').game.G.castleMana = 120;
+  assert.equal(r.clients.get('g1').game.G.castleMana, 0);
+  assert.equal(r.snapshotFor('g1').roster.length, 2);
+});
+test('reconnect reuses progress and old socket closure cannot disconnect its replacement', () => {
+  const r = new Room(descriptor, config, 0);
+  r.connect(guest(0), 'old', 0);
+  const p = r.clients.get('g0').game.players.get('g0');
+  p.carried = 20;
+  r.disconnect('g0', 'old', 100);
+  r.connect(guest(0), 'new', 200);
+  r.disconnect('g0', 'old', 300);
+  assert.equal(r.clients.get('g0').connected, true);
+  assert.equal(p.carried, 20);
+  r.disconnect('g0', 'new', 400);
+  r.advance(30401);
+  assert.equal(r.hasSimulation, false);
+});
+test('duplicate or excessive inputs cannot advance time, and nova is latched until simulated', () => {
+  const r = new Room(descriptor, config, 0);
+  r.connect(guest(0), 'c0', 0);
+  r.receive('g0', { type: 'input', seq: 1, input: { novaReq: true } }, 0);
+  r.receive('g0', { type: 'input', seq: 2, input: { novaReq: false } }, 1);
+  assert.equal(r.clients.get('g0').game.players.get('g0').input.novaReq, true);
+  assert.throws(() => r.receive('g0', { type: 'input', seq: 2 }, 2), /sequence/i);
+  for (let i = 3; i <= 30; i++) r.receive('g0', { type: 'input', seq: i }, i);
+  assert.throws(() => r.receive('g0', { type: 'input', seq: 31 }, 31), { code: 'RATE_LIMIT' });
+  assert.equal(r.snapshotFor('g0').timeLeft, 240);
+});
+test('completed server rounds publish once; free flight never publishes a ranked result', () => {
+  const r = new Room(descriptor, config, 0);
+  r.connect(guest(0), 'c0', 0);
+  r.clients.get('g0').game.G.killsBy = { wyvern: 2 };
+  r.advance(240001);
+  const results = r.takeResults();
+  assert.equal(results.length, 1);
+  assert.equal(results[0].score, 20);
+  assert.equal(r.hasSimulation, false);
+  r.advance(240100);
+  assert.deepEqual(r.takeResults(), []);
+  const f = new Room({ ...descriptor, round: 'free' }, config, 0);
+  f.connect(guest(0), 'c0', 0);
+  f.advance(240001);
+  assert.deepEqual(f.takeResults(), []);
+});
+test('a completed free-flight palace does not stop the shared world', () => {
+  const r = new Room({ ...descriptor, round: 'free' }, config, 0);
+  r.connect(guest(0), 'c0', 0);
+  r.clients.get('g0').game.G.finished = true;
+  assert.equal(r.hasSimulation, true);
+  assert.deepEqual(r.activeIds, ['g0']);
+});
+test('finished disconnected slots expire before admission without another simulation tick', () => {
+  const room = new Room(descriptor, config, 0);
+  for (let i = 0; i < 8; i++) room.connect(guest(i), 'c' + i, 0);
+  room.advance(240001);
+  const old = room.shared;
+  for (let i = 0; i < 8; i++) room.disconnect('g' + i, 'c' + i, 240010);
+  assert.equal(room.hasSimulation, false);
+  assert.throws(() => room.connect(guest(8), 'new', 240020), { code: 'ROOM_FULL' });
+  room.connect(guest(8), 'new', 270011);
+  assert.equal(room.clients.size, 1);
+  assert.notEqual(room.shared, old);
+  assert.equal(room.snapshotFor('g8').timeLeft, 240);
+  assert.equal(room.peak, 1);
+});
+test('restarting an idle finished co-op round excludes expired reservations from its party size', () => {
+  const room = new Room(descriptor, config, 0);
+  for (let i = 0; i < 8; i++) room.connect(guest(i), 'c' + i, 0);
+  room.advance(240001);
+  for (let i = 1; i < 8; i++) room.disconnect('g' + i, 'c' + i, 240010);
+  room.restart('g0', 270011);
+  assert.equal(room.peak, 1);
+  assert.equal(room.clients.size, 1);
+  assert.equal(room.shared.players.size, 1);
+});

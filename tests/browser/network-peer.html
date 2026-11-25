@@ -1,0 +1,20 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Windloom network test peer</title>
+<script type="module">
+  import { OnlineClient } from '../../src/online/client.js';
+  const options = new URLSearchParams(location.search);
+  const config = await (await fetch('../../config/game-config.json')).json();
+  window.peer = new OnlineClient(config);
+  // Resolve the production client's relative configuration against the game root.
+  const base = document.createElement('base');
+  base.href = '/';
+  document.head.append(base);
+  await peer.init();
+  await peer.join(options.get('name'), Number(options.get('seed')), 'coop', 'timed');
+  setInterval(
+    () => peer.sendControls({ mode: 'play', keys: {}, input: {} }, {}, performance.now()),
+    100
+  );
+  window.addEventListener('pagehide', () => peer.leave());
+</script>

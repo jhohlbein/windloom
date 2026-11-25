@@ -8,7 +8,11 @@ Every game generates a new island. The page address ends with the island's seed 
 
 The start screen keeps a leaderboard of your five best timed rounds in this browser, with each island's name and seed. Pick an island there to fly it again and try to beat its score.
 
-Version 0.5.1-dev. See [CHANGELOG.md](CHANGELOG.md).
+Version 0.6.0-dev. See [CHANGELOG.md](CHANGELOG.md).
+
+Optional online play keeps this same GitHub Pages site. Choose Co-op to share creatures, mana and palace progress, or Competitive to compare independent hunts while seeing other carpets. Both support up to eight players and no player combat. Share the island link, choose a nickname and press Start. Timed results have separate online rankings; free flight is unranked. Solo play and the tutorial work independently of the backend.
+
+Online uses a **Cloudflare Workers Free** backend configured at `https://windloom-online.alatiaun.workers.dev`. The backend was deployed on 2026-11-25; the existing Pages site receives multiplayer when these frontend changes are merged and published. Localhost continues to use the local development Worker. See [online setup and limits](docs/ONLINE.md).
 
 ## Controls
 
@@ -22,6 +26,7 @@ Version 0.5.1-dev. See [CHANGELOG.md](CHANGELOG.md).
 | Fireball | Space or left click | fireball button (hold) |
 | Nova (costs mana) | Shift or right click | nova button |
 | Pause / mute | Esc / M | II |
+| Online standings | Tab | tap the room heading |
 
 On a laptop, switch off "Mouse and trackpad" in Settings to play with the keys only, so brushing the trackpad does nothing. Browsers cannot tell a mouse from a trackpad, so this is a setting. On phones and tablets the game goes full screen when a flight starts. iPhone Safari cannot do that for web pages. Instead, tap Share → Add to Home Screen and start Windloom from its icon: it then runs without browser bars. This also works on Android.
 
@@ -51,6 +56,17 @@ python3 tools/serve.py        # or: python3 -m http.server 8000 (may serve stale
 
 Alternatives: `npx serve .` or the "Live Server" extension in VS Code.
 
+For local multiplayer and automated checks, use Node.js 22.13 or later:
+
+```bash
+npm ci
+npm run dev:server    # local Worker, port 8787; creates an ignored local secret
+# in a second terminal
+npm run dev           # game files at http://127.0.0.1:8000
+```
+
+`npm test` runs simulation, protocol, SQLite and real Worker checks. Run `npm run install:browser` once, then `npm run test:browser` for browser checks. `npm run benchmark` writes local capacity measurements to `.artifacts/benchmark.json`. `npm run check:server` bundles the Worker with a dry run and does not publish it. Tests and local development require no Cloudflare account.
+
 ## Project layout
 
 ```
@@ -73,6 +89,10 @@ src/combat.js           spells, projectiles, mana orbs, damage
 src/hud.js              HUD, radar, health bars, toasts
 src/particles.js        sparks, dust and spray
 src/audio.js            synthesised sound effects
+src/simulation/         isolated shared gameplay and headless presentation
+src/online/             Pages networking, reconciliation and room/ranking UI
+server/                 Cloudflare Worker, room lifecycle, guest auth and SQLite store
+config/online.json      public optional backend origin
 src/creatures/          beasts (shared winged-reptile model), flyers, kraken, sandworm, dragon, spawning
 ```
 

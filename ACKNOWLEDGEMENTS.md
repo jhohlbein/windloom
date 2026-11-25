@@ -31,3 +31,6 @@
 ## Tools
 
 - Prototyped and refactored with Claude (Anthropic).
+## Multiplayer development tools
+
+The browser still uses only the existing Three.js runtime dependency. The backend bundles the same Three.js math and transform code; its presentation adapter does not initialize WebGL. Local tooling uses [Cloudflare Wrangler and Miniflare](https://github.com/cloudflare/workers-sdk) (MIT/Apache-2.0), [Playwright](https://github.com/microsoft/playwright) (Apache-2.0), [esbuild](https://github.com/evanw/esbuild) (MIT) and [ws](https://github.com/websockets/ws) (MIT), and [Prettier](https://github.com/prettier/prettier) (MIT). They are development dependencies and are not downloaded by players.

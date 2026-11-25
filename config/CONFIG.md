@@ -12,6 +12,32 @@ The **Value** column shows what `game-config.json` currently contains. Keep it i
 - **Population targets** (every creature in `spawning` except the dragon): none before `fromStage`, then `min(base + floor(add × (stage − fromStage)), max)`. `add` may be a fraction: 0.5 adds one creature every second stage. Example: sandworms `fromStage 3, base 2, add 0.5, max 3` give 2 at stages 3–4 and 3 from stage 5.
 - **perLand:** a rule with `"perLand": true` (skeletons, sandworms) multiplies that target by the island's land relative to the mean (`landCover` drawn for this island ÷ `world.landCover`, so 0.55–1.45), rounded, and at least 1 once unlocked. Example: 4 skeleton groups become 2 on a small island and 6 on a large one.
 
+## multiplayer
+
+These defaults implement the online protocol. Keep client and backend configurations together; changing settings or the game version creates a separate ruleset and leaderboard. The backend address is public configuration in `online.json`; it contains no secrets.
+
+| Key | Value | Meaning |
+|---|---|---|
+| `maxPlayers` | 8 | Room capacity, including reserved reconnect slots. |
+| `inputHz` | 10 | Regular control updates per second. |
+| `maxInputsPerSecond` | 30 | Maximum incoming messages per player per second, including restarts. |
+| `transitionMinMs` | 40 | Minimum gap between extra button-transition messages. Brief fire taps are retained until sent. |
+| `simulationHz` | 60 | Authoritative physics steps per second. |
+| `maxCatchupSteps` | 15 | Maximum physics steps after a delayed callback; the timed clock still follows wall time. |
+| `tickHz` | 20 | Server simulation callbacks per second. |
+| `snapshotHz` | 10 | World snapshots per second. |
+| `reconnectSeconds` | 30 | Disconnected player's reserved slot and progress lifetime. |
+| `maxMessageBytes` | 4096 | Maximum incoming API body or WebSocket message size. |
+| `maxBufferedBytes` | 1048576 | Maximum unacknowledged snapshot bytes; also checks the outgoing queue when exposed by the runtime. |
+| `maxUnackedSnapshots` | 50 | Snapshot backlog cap. Clients acknowledge snapshots in their existing input packets; a byte cap also applies even when runtime queue size is unavailable. |
+| `maxViewers` | 128 | Concurrent read-only presence connections. |
+| `maxActiveRooms` | 16 | Default admission cap, overridable with the Worker `MAX_ACTIVE_ROOMS` variable. This is a capacity cap, not a daily quota guarantee. |
+| `ticketSeconds` | 30 | Single-use WebSocket admission ticket lifetime. |
+| `presenceLeaseSeconds` | 90 | Presence expiration after an interrupted room. |
+| `presenceRefreshSeconds` | 30 | Active room presence renewal interval. |
+| `leaderboardSize` | 100 | Persisted rows per ruleset/mode/team-size cohort. |
+| `backgroundLeaveSeconds` | 90 | Time before a hidden browser tab leaves the online room. |
+
 ## world
 
 | Key | Value | Meaning |

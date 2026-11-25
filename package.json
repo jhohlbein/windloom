@@ -1,0 +1,23 @@
+{
+  "name": "windloom",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "test:browser": "playwright test",
+    "dev": "node tools/static-server.mjs",
+    "dev:server": "node tools/dev-server.mjs",
+    "install:browser": "node tools/install-browser.mjs",
+    "check:server": "wrangler deploy --dry-run --config server/wrangler.jsonc --outdir .artifacts/worker",
+    "benchmark": "node --expose-gc tools/benchmark.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.1",
+    "esbuild": "^0.28.2",
+    "miniflare": "^5.20261117.0-beta",
+    "prettier": "^3.10.1",
+    "three": "^0.128.0",
+    "wrangler": "^4.164.0",
+    "ws": "^8.23.0"
+  }
+}
